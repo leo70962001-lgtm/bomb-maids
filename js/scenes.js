@@ -8,8 +8,54 @@
     gold: '#ffd23f', white: '#ffffff', mint: '#b8f28a', sky: '#8fc6ff', gray: '#a9a2c2', dim: '#8d86a8', ink: '#5a4470',
   };
   const SC = (G.SCENES = {});
-  // the character illustration (2x2 maids) used for select, battle lineup and diary portraits
+  // the character illustration: the four maids in a 2x2 grid (Berry TL, Yoru TR, Honey BL, Yukino BR;
+  // dividers at x 477-482 and y 557-562 of the 960x1113 image)
   const CG_ART = 'img/maids-select.jpg';
+  // crops of it as [sx, sy, sw, sh, imageWidth, imageHeight] (see E.art), one set per frame shape
+  const CG_CROP = {
+    // head to waist: character select cards
+    select: {
+      berry: [45, 8, 400, 500, 960, 1113],
+      yoru: [522, 8, 400, 500, 960, 1113],
+      honey: [62, 572, 400, 500, 960, 1113],
+      yukino: [520, 588, 400, 500, 960, 1113],
+    },
+    // head and shoulders, tall: growth diary
+    diary: {
+      berry: [112, 20, 256, 354, 960, 1113],
+      yoru: [594, 28, 256, 354, 960, 1113],
+      honey: [138, 588, 256, 354, 960, 1113],
+      yukino: [588, 598, 256, 354, 960, 1113],
+    },
+    // head and shoulders: job results, café counter
+    bust: {
+      berry: [95, 35, 300, 318, 960, 1113],
+      yoru: [572, 30, 300, 318, 960, 1113],
+      honey: [115, 580, 300, 318, 960, 1113],
+      yukino: [568, 588, 300, 318, 960, 1113],
+    },
+    // face, a little wide: maid-battle lineup
+    lineup: {
+      berry: [92, 40, 306, 274, 960, 1113],
+      yoru: [570, 34, 306, 274, 960, 1113],
+      honey: [112, 590, 306, 274, 960, 1113],
+      yukino: [566, 594, 306, 274, 960, 1113],
+    },
+    // face: room dialog boxes
+    face: {
+      berry: [105, 45, 280, 280, 960, 1113],
+      yoru: [582, 40, 280, 280, 960, 1113],
+      honey: [125, 590, 280, 280, 960, 1113],
+      yukino: [578, 598, 280, 280, 960, 1113],
+    },
+    // tight face: status panels and small badges
+    head: {
+      berry: [135, 70, 220, 220, 960, 1113],
+      yoru: [612, 62, 220, 220, 960, 1113],
+      honey: [155, 615, 220, 220, 960, 1113],
+      yukino: [608, 622, 220, 220, 960, 1113],
+    },
+  };
   let SAVE = null;
   const persist = () => E.writeSave(SAVE);
   G.initSave = function () {
@@ -228,7 +274,7 @@
   G.outfitOf = (k) => (SAVE && SAVE.outfits && SAVE.outfits[k]) || 'maid';
   G.persist = persist;
   G.BOND = { getBond, affLevel, trainLevel, perks, maidStats, getRoom, roomHas, unlockPlan, syncUnlocks };
-  G.UI = { C, CG_ART, bg, lace, heartCursor, hint, header, coinLabel, maidImg, drawHead, isLocked, silhouette, maidName, rankColor, paper, darkPanel, statPips, wrapLines, marquee };
+  G.UI = { C, CG_ART, CG_CROP, bg, lace, heartCursor, hint, header, coinLabel, maidImg, drawHead, isLocked, silhouette, maidName, rankColor, paper, darkPanel, statPips, wrapLines, marquee };
 
   // ------------------------------------------------------------------ Title cast
   // The maids who have joined live on the title screen. Each one picks something to do: sweep up a dust bunny,
@@ -724,22 +770,6 @@
   };
 
   // ------------------------------------------------------------------ Maid select / hire
-  // portraits come from one illustration with the four maids in quadrants
-  // (dividers at x 477-482 and y 557-562 of the 960x1113 image); crops frame head to waist
-  const SELECT_ART = CG_ART;
-  // face crops for the maid-battle lineup (48x43 boxes)
-  const BATTLE_CROP = {
-    berry: [92, 40, 306, 274, 960, 1113],
-    yoru: [570, 34, 306, 274, 960, 1113],
-    honey: [112, 590, 306, 274, 960, 1113],
-    yukino: [566, 594, 306, 274, 960, 1113],
-  };
-  const SELECT_CROP = {
-    berry: [45, 8, 400, 500, 960, 1113],
-    yoru: [522, 8, 400, 500, 960, 1113],
-    honey: [62, 572, 400, 500, 960, 1113],
-    yukino: [520, 588, 400, 500, 960, 1113],
-  };
   SC.select = {
     enter(arg) {
       this.mode = (arg && arg.mode) || 'first';
@@ -802,7 +832,7 @@
         E.text((duty ? '★ ' : '') + maidName(k), x + 35, y + 3, { color: C.white, align: 'center', fit: 64 });
         // portrait window: the character art, darkened until she joins
         E.rect(x + 2, y + 16, 66, 82, C.plum);
-        E.art('select-' + k, SELECT_ART, x + 3, y + 17, 64, 80, SELECT_CROP[k], locked ? 'grayscale(1) brightness(0.18) contrast(1.4)' : on ? 'none' : 'saturate(0.8) brightness(0.9)');
+        E.art('select-' + k, CG_ART, x + 3, y + 17, 64, 80, CG_CROP.select[k], locked ? 'grayscale(1) brightness(0.18) contrast(1.4)' : on ? 'none' : 'saturate(0.8) brightness(0.9)');
         if (locked) {
           E.rect(x + 3, y + 104, 64, 14, C.plum);
           E.text(G.t('打倒 {id}', { id: unlockPlan()[k] }), x + 35, y + 105, { color: C.gold, align: 'center', fit: 62 });
@@ -1102,17 +1132,20 @@
     },
     drawCounter(x, y) {
       const ctx = E.ctx;
+      const k = SAVE.maid || 'berry';
       E.panel(x, y, 84, 70, '#ffd6e4', C.pink, { shine: C.white });
       E.rect(x + 3, y + 3, 78, 24, '#ffe9f0');
       E.rect(x + 8, y + 13, 68, 2, '#c98a5a');
-      ctx.drawImage(E.spr.room.gifts.daifuku, x + 10, y - 2);
-      ctx.drawImage(E.spr.room.gifts.honeycake, x + 58, y - 2);
-      ctx.drawImage(E.spr.monsters.penguin.frames[(this.t >> 5) % 2], x + 14, y + 20);
-      ctx.drawImage(maidImg(SAVE.maid || 'berry', 'down', 0), x + 50, y + 12);
+      ctx.drawImage(E.spr.room.gifts.daifuku, x + 6, y - 2);
+      ctx.drawImage(E.spr.room.gifts.honeycake, x + 24, y - 2);
+      ctx.drawImage(E.spr.monsters.penguin.frames[(this.t >> 5) % 2], x + 8, y + 20);
+      // the maid on duty: her CG portrait stands behind the counter, cut off at the counter top
+      E.panel(x + 46, y + 2, 34, 36, '#ffe0ea', G.MAID_DATA[k].color, {});
+      E.art('cafe-maid', CG_ART, x + 48, y + 4, 30, 32, CG_CROP.bust[k]);
       E.rect(x + 3, y + 36, 78, 31, '#9c5f3a');
       E.rect(x + 3, y + 36, 78, 4, '#c98a5a');
       for (let i = 0; i < 78; i += 6) E.rect(x + 4 + i, y + 42, 3, 23, '#8c5230');
-      ctx.drawImage(E.spr.bomb[(this.t >> 4) % 3], x + 34, y + 24);
+      ctx.drawImage(E.spr.bomb[(this.t >> 4) % 3], x + 27, y + 24);
     },
     drawGifts() {
       E.text(G.t('禮物專櫃'), 106, 30, { color: C.red, size: 14 });
@@ -1215,6 +1248,7 @@
     drawGachaReveal() {
       const g = this.gacha;
       E.rect(0, 0, E.W, E.H, 'rgba(42,27,48,0.88)');
+      E.artShade(0);
       if (g.t < 60) {
         this.drawMachine(130, 50, g.t, true);
         if (g.t > 36) {
@@ -1410,6 +1444,7 @@
     drawTutorial() {
       const touch = E.input.lastDevice === 'touch';
       E.rect(0, 0, E.W, E.H, 'rgba(42,27,48,0.72)');
+      E.artShade(0); // the rules sheet covers the HUD portrait
       paper(20, 22, 280, 196);
       E.text(G.t('女僕的工作守則'), 160, 30, { color: C.red, align: 'center', size: 14 });
       const rows = [
@@ -1470,6 +1505,7 @@
       if (this.tutorial) this.drawTutorial();
       if (this.paused) {
         E.rect(0, 0, E.W, E.H, 'rgba(42,27,48,0.6)');
+        E.artShade(0.4);
         darkPanel(70, 70, 180, 96);
         E.text(G.t('暫停'), 160, 76, { color: C.gold, align: 'center', size: 14 });
         [G.t('繼續'), G.t('重新開始'), G.t('放棄委託')].forEach((s, i) => {
@@ -1488,10 +1524,10 @@
     const x0 = 240;
     E.rect(x0, 0, 80, 240, C.panel);
     for (let y = 0; y < 240; y += 6) { E.rect(x0, y + 1, 2, 4, C.white); E.rect(x0 + 2, y + 2, 1, 2, C.white); }
-    // portrait
+    // CG portrait: sooty and shaking for a moment when she gets blasted
+    const hurt = m.burnT > 0;
     E.panel(x0 + 6, 4, 36, 36, '#ffe0ea', D.color, {});
-    ctx.drawImage(E.spr.maids[m.maidKey].down[0], 0, 0, 16, 16, x0 + 8, 6, 32, 32);
-    if (m.burnT > 0) ctx.drawImage(E.spr.maids[m.maidKey].burnt, 0, 0, 16, 16, x0 + 8, 6, 32, 32);
+    E.art('play-portrait', CG_ART, x0 + 8 + (hurt ? ((E.frame >> 1) % 2 ? 1 : -1) : 0), 6, 32, 32, CG_CROP.head[m.maidKey], hurt ? 'sepia(0.7) brightness(0.45) contrast(1.3)' : null);
     E.text(D.name, x0 + 44, 6, { color: C.white, fit: 34 });
     E.text(D.en, x0 + 46, 24, { color: D.color === '#6b5a8e' ? '#b8a8e0' : D.color, small: false });
     // hearts
@@ -1608,22 +1644,26 @@
         const s = this.t < 110 ? 6 - (this.t - 100) * 0.3 : 3;
         const col = rankColor(this.rank);
         E.ctx.save();
-        E.ctx.translate(266, 92);
+        E.ctx.translate(266, 70);
         E.ctx.rotate(-0.12);
         E.panel(-36, -36, 72, 72, C.paper, col, {});
         E.text(this.rank, 0, -8 * s / 3 - 12, { color: col, outline: C.plum, align: 'center', scale: Math.round(s) });
         E.ctx.restore();
-        E.text(G.t({ S: '完美的女僕！', A: '非常優秀！', B: '做得不錯！', C: '再加油喔！' }[this.rank]), 266, 140, { color: C.plum, align: 'center' });
+        E.text(G.t({ S: '完美的女僕！', A: '非常優秀！', B: '做得不錯！', C: '再加油喔！' }[this.rank]), 266, 112, { color: C.plum, align: 'center' });
         E.ctx.drawImage(E.spr.fx.heart, 236, 213);
         E.text(G.t('好感度 +{n}', { n: this.affGain }), 244, 210, { color: C.red });
       }
       const m = SAVE.maid;
-      E.ctx.drawImage(this.t > 100 ? E.spr.maids[m].faces.happy : maidImg(m, 'down', 0), 250, 158 - (this.t > 100 ? Math.abs(Math.sin(this.t * 0.15)) * 6 : 0), 32, 48);
+      const hop = this.t > 100 ? Math.round(Math.abs(Math.sin(this.t * 0.15)) * 4) : 0;
+      E.panel(231, 132 - hop, 70, 74, '#ffe0ea', G.MAID_DATA[m].color, {});
+      E.art('result-portrait', CG_ART, 233, 134 - hop, 66, 70, CG_CROP.bust[m]);
       if (this.newMaid && this.t > 130) {
         const k = this.newMaid;
         const pop = Math.min(1, (this.t - 130) / 12);
+        const rise = Math.round((1 - pop) * 6);
         E.rect(20, 197, 188, 17, C.red);
-        drawHead(k, 26, 197 - Math.round((1 - pop) * 6), 1);
+        E.panel(24, 194 + rise, 22, 22, '#ffe0ea', G.MAID_DATA[k].color, {});
+        E.art('result-newcomer', CG_ART, 26, 196 + rise, 18, 18, CG_CROP.head[k]);
         E.text(G.t('新夥伴 {name} 加入了！', { name: G.MAID_DATA[k].name }), 126, 199, { color: C.white, align: 'center', fit: 156 });
       }
       if (this.t > 60) hint(G.t(this.ending ? 'Z 繼續' : 'Z 回房間'));
@@ -1789,7 +1829,7 @@
         E.text(p.human ? (p.pad + 1) + 'P' : 'CPU', x + 26, y + 2, { color: p.human ? C.gold : C.gray, align: 'center', small: false });
         // CG portrait from the character illustration (CPU copies of the same maid share it; in the arena they wear other outfits)
         E.rect(x + 1, y + 12, 50, 45, p.human ? C.gold : C.plum);
-        E.art('battle-' + i, SELECT_ART, x + 2, y + 13, 48, 43, BATTLE_CROP[p.maid]);
+        E.art('battle-' + i, CG_ART, x + 2, y + 13, 48, 43, CG_CROP.lineup[p.maid]);
         E.text(G.MAID_DATA[p.maid].name, x + 26, y + 58, { color: C.white, outline: C.panel2, align: 'center', fit: 50 });
       });
       if (c.humans === 2) {
@@ -1895,12 +1935,10 @@
         const y = 6 + i * 56;
         const p = this.lineup[i];
         E.panel(246, y, 70, 52, m.alive ? '#4a3d66' : '#322840', m.alive ? m.color : '#5a4a6e', {});
-        E.ctx.save();
-        if (!m.alive) E.ctx.globalAlpha = 0.45;
-        const set = m.outfit ? E.spr.outfits[m.maidKey][m.outfit] : E.spr.maids[m.maidKey];
-        E.ctx.drawImage(m.alive ? set.down[0] : set.burnt, 0, 0, 16, 16, 250, y + 4, 24, 24);
-        E.ctx.restore();
+        E.rect(249, y + 3, 26, 26, C.plum);
+        E.art('battle-face-' + i, CG_ART, 250, y + 4, 24, 24, CG_CROP.head[m.maidKey], m.alive ? null : 'grayscale(1) brightness(0.45)');
         E.text(m.name, 278, y + 4, { color: C.white, fit: 34 });
+        E.text(String(m.slot + 1), 281, y + 20, { color: C.white, outline: m.alive ? m.color : '#5a4a6e', align: 'center', small: true });
         E.text(p.human ? (p.pad + 1) + 'P' : 'CPU', 312, y + 20, { color: p.human ? C.gold : C.gray, align: 'right' });
         for (let s = 0; s < this.cfg.wins; s++) E.ctx.drawImage(E.spr.fx.star[s < this.wins[i] ? 0 : 1], 252 + s * 8, y + 32);
         const stat = (icon, val, x) => { E.ctx.drawImage(E.spr.ui[icon], x, y + 42); E.text(String(val), x + 8, y + 43, { color: C.paper, small: true }); };
@@ -1923,6 +1961,7 @@
       }
       if (this.paused) {
         E.rect(0, 0, E.W, E.H, 'rgba(42,27,48,0.6)');
+        E.artShade(0.4);
         darkPanel(80, 80, 160, 70);
         E.text(G.t('暫停'), 160, 86, { color: C.gold, align: 'center' });
         [G.t('繼續'), G.t('離開對決')].forEach((s, i) => {

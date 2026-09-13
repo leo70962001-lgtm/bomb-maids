@@ -118,26 +118,6 @@
       if (n > 0) E.text(line.slice(0, n), x, y + i * 14, { color });
     });
   }
-  // face crops of the character illustration: dialog portrait (square) and the room status bar (tight square)
-  const FACE_CROP = {
-    berry: [105, 45, 280, 280, 960, 1113],
-    yoru: [582, 40, 280, 280, 960, 1113],
-    honey: [125, 590, 280, 280, 960, 1113],
-    yukino: [578, 598, 280, 280, 960, 1113],
-  };
-  const HUD_CROP = {
-    berry: [135, 70, 220, 220, 960, 1113],
-    yoru: [612, 62, 220, 220, 960, 1113],
-    honey: [155, 615, 220, 220, 960, 1113],
-    yukino: [608, 622, 220, 220, 960, 1113],
-  };
-  // head-and-shoulders crops of the character illustration for the growth diary
-  const DIARY_CROP = {
-    berry: [112, 20, 256, 354, 960, 1113],
-    yoru: [594, 28, 256, 354, 960, 1113],
-    honey: [138, 588, 256, 354, 960, 1113],
-    yukino: [588, 598, 256, 354, 960, 1113],
-  };
   function moodName(m) { return G.t(m >= 80 ? '開心' : m >= 45 ? '普通' : m >= 25 ? '低落' : '很沮喪'); }
   function faceFor(k) {
     const b = bond(k);
@@ -1447,7 +1427,7 @@
       UI.lace(0, 36, E.W, C.plum);
       E.panel(3, 2, 32, 32, '#ffe0ea', D.color, {});
       // CG face (the diary covers this corner with its own portrait)
-      if (!(this.panel && this.panel.kind === 'diary')) E.art('hud-portrait', UI.CG_ART, 5, 4, 28, 28, HUD_CROP[k]);
+      if (!(this.panel && this.panel.kind === 'diary')) E.art('hud-portrait', UI.CG_ART, 5, 4, 28, 28, UI.CG_CROP.head[k]);
       E.text(D.name, 40, 3, { color: C.white });
       const ai = affInfo(k);
       E.text('Lv' + (ai.lv + 1) + ' ' + ai.name, 40, 19, { color: C.pink });
@@ -1553,7 +1533,7 @@
       if (cur.who) {
         // CG portrait; the expression shows as a little bubble beside the name plate
         E.panel(10, 176, 54, 54, '#ffe0ea', G.MAID_DATA[cur.who].color, {});
-        E.art('dialog-portrait', UI.CG_ART, 12, 178, 50, 50, FACE_CROP[cur.who]);
+        E.art('dialog-portrait', UI.CG_ART, 12, 178, 50, 50, UI.CG_CROP.face[cur.who]);
         const nameW = E.textWidth(G.MAID_DATA[cur.who].name);
         E.rect(66, 174, nameW + 10, 15, G.MAID_DATA[cur.who].color);
         E.text(G.MAID_DATA[cur.who].name, 71, 175, { color: C.white });
@@ -1569,6 +1549,7 @@
       const p = this.panel;
       if (p.kind === 'diary') return this.drawDiary(p);
       E.rect(0, 0, E.W, E.H, 'rgba(42,27,48,0.55)');
+      E.artShade(0.45);
       if (p.kind === 'train') {
         UI.paper(60, 66, 200, 110);
         E.text(G.t('{name} 完成！', { name: p.tr.name }), 160, 74, { color: C.red, align: 'center', size: 14 });
@@ -1603,7 +1584,7 @@
       UI.paper(6, 4, 308, 232);
       // her CG portrait from the character illustration
       E.panel(12, 8, 56, 76, '#ffe0ea', D.color, {});
-      E.art('diary-portrait', UI.CG_ART, 14, 10, 52, 72, DIARY_CROP[k]);
+      E.art('diary-portrait', UI.CG_ART, 14, 10, 52, 72, UI.CG_CROP.diary[k]);
       E.text(G.t('{name}的成長日記', { name: D.name }), 74, 10, { color: C.red, size: 14, fit: 170 });
       E.text(G.t('第 {day} 天　出任務 {jobs} 次', { day: save().day, jobs: b.jobs }), 74, 28, { color: C.ink });
       if (p.list.length > 1) E.text('◀ ' + (p.i + 1) + '/' + p.list.length + ' ▶', 306, 10, { color: C.dim, align: 'right' });

@@ -39,7 +39,7 @@
   // ------------------------------------------------------------------ illustration layer
   // The canvas is 320x240 pixel art, so full-resolution illustrations are shown as DOM elements laid over it.
   // A scene calls E.art() from draw() every frame it wants a picture; pictures not drawn in a frame are hidden.
-  const artLayer = { el: null, items: new Map(), used: new Set() };
+  const artLayer = { el: null, items: new Map(), used: new Set(), shade: 1 };
   // crop: [sx, sy, sw, sh, imageWidth, imageHeight] in source pixels; x/y/w/h in screen pixels
   E.art = function (id, src, x, y, w, h, crop, filter) {
     if (!artLayer.el) return;
@@ -62,8 +62,17 @@
     };
     for (const k of Object.keys(css)) if (it.style[k] !== css[k]) it.style[k] = css[k];
   };
+  // overlays drawn on the canvas (pause menus, pop-ups) cannot cover the pictures, so they shade them for the frame:
+  // 1 leaves them as drawn, 0.4 darkens them like a 60% dim, 0 hides them
+  E.artShade = function (v) { artLayer.shade = Math.min(artLayer.shade, v); };
   function endArt() {
     if (!artLayer.el) return;
+    const shade = artLayer.shade;
+    artLayer.shade = 1;
+    const vis = shade > 0 ? 'visible' : 'hidden';
+    const filter = shade > 0 && shade < 1 ? 'brightness(' + shade + ')' : 'none';
+    if (artLayer.el.style.visibility !== vis) artLayer.el.style.visibility = vis;
+    if (artLayer.el.style.filter !== filter) artLayer.el.style.filter = filter;
     for (const [id, it] of artLayer.items) if (!artLayer.used.has(id) && it.style.display !== 'none') it.style.display = 'none';
     artLayer.used.clear();
     // pictures fade with the diamond wipe between scenes
