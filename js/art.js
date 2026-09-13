@@ -22,10 +22,11 @@
   };
 
   const MAIDS = {
-    berry: { h: '#ec4a62', H: '#a82545', l: '#ff9aa9', e: '#4f86d8', E: '#23457e', x: '#ffffff', b: '#e6e3f0' },
-    yoru: { h: '#403a55', H: '#1f1a2c', l: '#77709a', e: '#ff9a2e', E: '#a4480f', x: '#d8dcea' },
-    honey: { h: '#ffd23f', H: '#d9951c', l: '#fff4a8', e: '#ee4455', E: '#9a1c2e', x: '#ffffff', d: '#d6d1e6', D: '#f4f2fa', c: '#c3bcd8', r: '#3b2f45', R: '#1c1526', b: '#eeeaf6' },
-    yukino: { h: '#45d2e2', H: '#1f8aa8', l: '#b2f6ff', e: '#ee4455', E: '#9a1c2e', x: '#f4feff' },
+    // colours follow the character illustration used on the select screen
+    berry: { h: '#f5889c', H: '#cf5874', l: '#ffc4cd', e: '#3d9ee8', E: '#1f5a9a', x: '#ffffff', b: '#e6e3f0' },
+    yoru: { h: '#3c3842', H: '#1d1a22', l: '#6f6a78', e: '#e59a3c', E: '#8c4c16', x: '#c0392b', r: '#2e2638', R: '#16121c' },
+    honey: { h: '#f7cf6a', H: '#d9973f', l: '#fff0a8', e: '#4cc05a', E: '#1d6e2e', x: '#f5a623', r: '#f5a623', R: '#c47a12', b: '#eeeaf6' },
+    yukino: { h: '#8fd8e8', H: '#4d9cc4', l: '#d6f6fb', e: '#4a8fe0', E: '#1f4a9a', x: '#f4feff', r: '#3d86f0', R: '#1f4a9a' },
   };
 
   function pal(maid) {
@@ -219,8 +220,8 @@
     yoru: {
       down: {
         head: HD.concat([
-          '.k|hhhh|l|hhhhhhh|k.',
-          '.k|hhh|ll|hhhhhhh|k.',
+          '.k|hhhh|l|hhhhh|xx|k.',
+          '.k|hhh|ll|hhhhh|xx|k.',
           '.k|hhhhhhhhhhhh|k.',
           '.k|H|hhhhhhhhhh|H|k.',
           '.k|HHHHHHHHHHHH|k.',
@@ -289,19 +290,17 @@
           '.k|hhhhhHHhhhhh|k.',
           '.k|HhhhH|ss|HhhhH|k.',
         ]).concat(FACE, ['..|kk|sss|tt|sss|kk|..']),
-        over: pad(10, [
+        over: pad(9, [
           'kxxk|........|kxxk',
           'khhk|........|khhk',
           'khlk|........|klhk',
-          'khlk|........|klhk',
+          'kHhhk|......|khhHk',
+          'khlhk|......|khlhk',
+          'kHhk|........|khHk',
           'khhk|........|khhk',
-          'khhk|........|khhk',
-          'kHhk|........|khHk',
-          'kHhk|........|khHk',
-          'kHhk|........|khHk',
-          'kHHk|........|kHHk',
-          '.kHk|........|kHk.',
-          '..kk|........|kk..',
+          '.kHhk|......|khHk.',
+          '..kHk|......|kHk..',
+          '...kk|......|kk...',
         ]),
       },
       up: {
@@ -328,15 +327,15 @@
           '.k|HhH|hhhhhhhhh|k.',
           '.k|hsHs|hhhhhhhh|k.',
         ]).concat(FACE_SIDE, ['..k|k|ss|t|kkkkkk|...']),
-        over: pad(11, [
+        over: pad(10, [
           '.........|kxk|....',
           '.........|khhk|...',
-          '.........|khlk|...',
-          '.........|khhk|...',
+          '.........|khlhk|..',
+          '.........|kHhhk|..',
           '.........|khhk|...',
           '.........|kHhk|...',
-          '.........|kHhk|...',
-          '.........|kHHk|...',
+          '..........|kHhk|..',
+          '..........|kHk|...',
           '..........|kk|....',
         ]),
       },
