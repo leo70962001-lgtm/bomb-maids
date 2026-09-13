@@ -8,6 +8,8 @@
     gold: '#ffd23f', white: '#ffffff', mint: '#b8f28a', sky: '#8fc6ff', gray: '#a9a2c2', dim: '#8d86a8', ink: '#5a4470',
   };
   const SC = (G.SCENES = {});
+  // the character illustration (2x2 maids) used for select, battle lineup and diary portraits
+  const CG_ART = 'img/maids-select.jpg';
   let SAVE = null;
   const persist = () => E.writeSave(SAVE);
   G.initSave = function () {
@@ -226,7 +228,7 @@
   G.outfitOf = (k) => (SAVE && SAVE.outfits && SAVE.outfits[k]) || 'maid';
   G.persist = persist;
   G.BOND = { getBond, affLevel, trainLevel, perks, maidStats, getRoom, roomHas, unlockPlan, syncUnlocks };
-  G.UI = { C, bg, lace, heartCursor, hint, header, coinLabel, maidImg, drawHead, isLocked, silhouette, maidName, rankColor, paper, darkPanel, statPips, wrapLines, marquee };
+  G.UI = { C, CG_ART, bg, lace, heartCursor, hint, header, coinLabel, maidImg, drawHead, isLocked, silhouette, maidName, rankColor, paper, darkPanel, statPips, wrapLines, marquee };
 
   // ------------------------------------------------------------------ Title cast
   // The maids who have joined live on the title screen. Each one picks something to do: sweep up a dust bunny,
@@ -724,7 +726,14 @@
   // ------------------------------------------------------------------ Maid select / hire
   // portraits come from one illustration with the four maids in quadrants
   // (dividers at x 477-482 and y 557-562 of the 960x1113 image); crops frame head to waist
-  const SELECT_ART = 'img/maids-select.jpg';
+  const SELECT_ART = CG_ART;
+  // face crops for the maid-battle lineup (48x43 boxes)
+  const BATTLE_CROP = {
+    berry: [92, 40, 306, 274, 960, 1113],
+    yoru: [570, 34, 306, 274, 960, 1113],
+    honey: [112, 590, 306, 274, 960, 1113],
+    yukino: [566, 594, 306, 274, 960, 1113],
+  };
   const SELECT_CROP = {
     berry: [45, 8, 400, 500, 960, 1113],
     yoru: [522, 8, 400, 500, 960, 1113],
@@ -1777,9 +1786,11 @@
       lineup.forEach((p, i) => {
         const x = 192 + (i % 2) * 58, y = 32 + ((i / 2) | 0) * 76;
         E.rect(x, y, 52, 72, C.panel2);
-        E.text(p.human ? (p.pad + 1) + 'P' : 'CPU', x + 26, y + 3, { color: p.human ? C.gold : C.gray, align: 'center', small: false });
-        E.ctx.drawImage(maidImg(p.maid, 'down', [0, 1, 0, 2][((this.t >> 4) + i) % 4], p.outfit), x + 10, y + 11, 32, 48);
-        E.text(G.MAID_DATA[p.maid].name, x + 26, y + 58, { color: C.white, outline: C.panel2, align: 'center' });
+        E.text(p.human ? (p.pad + 1) + 'P' : 'CPU', x + 26, y + 2, { color: p.human ? C.gold : C.gray, align: 'center', small: false });
+        // CG portrait from the character illustration (CPU copies of the same maid share it; in the arena they wear other outfits)
+        E.rect(x + 1, y + 12, 50, 45, p.human ? C.gold : C.plum);
+        E.art('battle-' + i, SELECT_ART, x + 2, y + 13, 48, 43, BATTLE_CROP[p.maid]);
+        E.text(G.MAID_DATA[p.maid].name, x + 26, y + 58, { color: C.white, outline: C.panel2, align: 'center', fit: 50 });
       });
       if (c.humans === 2) {
         E.text('1P  WASD・F・G', 248, 188, { color: C.paper, align: 'center' });

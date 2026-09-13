@@ -118,6 +118,13 @@
       if (n > 0) E.text(line.slice(0, n), x, y + i * 14, { color });
     });
   }
+  // head-and-shoulders crops of the character illustration for the growth diary
+  const DIARY_CROP = {
+    berry: [112, 20, 256, 354, 960, 1113],
+    yoru: [594, 28, 256, 354, 960, 1113],
+    honey: [138, 588, 256, 354, 960, 1113],
+    yukino: [588, 598, 256, 354, 960, 1113],
+  };
   function moodName(m) { return G.t(m >= 80 ? '開心' : m >= 45 ? '普通' : m >= 25 ? '低落' : '很沮喪'); }
   function faceFor(k) {
     const b = bond(k);
@@ -1579,18 +1586,19 @@
       const D = G.MAID_DATA[k];
       const ctx = E.ctx;
       UI.paper(6, 4, 308, 232);
-      E.panel(12, 10, 52, 52, '#ffe0ea', D.color, {});
-      ctx.drawImage(E.spr.maids[k].faces[faceFor(k)], 0, 0, 16, 16, 14, 12, 48, 48);
-      E.text(G.t('{name}的成長日記', { name: D.name }), 70, 10, { color: C.red, size: 14 });
-      E.text(G.t('第 {day} 天　出任務 {jobs} 次', { day: save().day, jobs: b.jobs }), 70, 28, { color: C.ink });
+      // her CG portrait from the character illustration
+      E.panel(12, 8, 56, 76, '#ffe0ea', D.color, {});
+      E.art('diary-portrait', UI.CG_ART, 14, 10, 52, 72, DIARY_CROP[k]);
+      E.text(G.t('{name}的成長日記', { name: D.name }), 74, 10, { color: C.red, size: 14, fit: 170 });
+      E.text(G.t('第 {day} 天　出任務 {jobs} 次', { day: save().day, jobs: b.jobs }), 74, 28, { color: C.ink });
       if (p.list.length > 1) E.text('◀ ' + (p.i + 1) + '/' + p.list.length + ' ▶', 306, 10, { color: C.dim, align: 'right' });
       const ai = affInfo(k);
-      E.ctx.drawImage(E.spr.ui.heart, 70, 47);
-      E.text(G.t('好感度 Lv{lv}「{name}」', { lv: ai.lv + 1, name: ai.name }), 80, 44, { color: C.plum, fit: 128 });
+      E.ctx.drawImage(E.spr.ui.heart, 74, 47);
+      E.text(G.t('好感度 Lv{lv}「{name}」', { lv: ai.lv + 1, name: ai.name }), 84, 44, { color: C.plum, fit: 124 });
       E.bar(212, 48, 94, 7, ai.t, C.pink);
-      E.text(G.t('體力'), 16, 68, { color: C.ink }); E.bar(44, 72, 70, 7, b.stamina / 100, C.mint);
-      E.text(G.t('心情'), 124, 68, { color: C.ink }); E.bar(152, 72, 70, 7, b.mood / 100, C.gold);
-      E.text(moodName(b.mood), 228, 68, { color: C.dim });
+      E.text(G.t('體力'), 74, 68, { color: C.ink }); E.bar(102, 72, 46, 7, b.stamina / 100, C.mint);
+      E.text(G.t('心情'), 156, 68, { color: C.ink }); E.bar(184, 72, 46, 7, b.mood / 100, C.gold);
+      E.text(moodName(b.mood), 236, 68, { color: C.dim, fit: 70 });
       // training
       E.rect(12, 86, 296, 1, C.pink);
       G.TRAININGS.forEach((tr, i) => {
