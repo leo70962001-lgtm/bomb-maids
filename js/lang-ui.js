@@ -342,6 +342,9 @@
     '還沒加入的神秘女僕。': ['まだ仲間になっていない、なぞのメイド。', 'A mysterious maid who has not joined yet.'],
 
     // ---- page (outside the canvas)
+    '全螢幕': ['全画面', 'Fullscreen'],
+    '無法切換成全螢幕。': ['全画面にできませんでした。', 'Couldn\'t switch to fullscreen.'],
+    '這個瀏覽器不支援全螢幕。iPhone 請點「分享」→「加入主畫面」，從主畫面打開就能全螢幕遊玩。': ['このブラウザは全画面に対応していません。iPhoneは「共有」→「ホーム画面に追加」から開くと全画面で遊べます。', 'This browser can\'t go fullscreen. On iPhone, tap Share → Add to Home Screen, then open the game from the home screen.'],
     '炸彈女僕 遊戲畫面，使用方向鍵移動、Z 放炸彈、X 使用特技': ['爆弾メイドのゲーム画面。十字キーで移動、Zでボム、Xで特技', 'BOMB MAIDS game screen. Arrow keys move, Z drops a bomb, X uses a skill'],
     '方向鍵': ['十字キー', 'Arrows'],
     '移動': ['移動', 'Move'],

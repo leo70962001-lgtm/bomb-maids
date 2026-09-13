@@ -3,6 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2a1b30">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BOMB MAIDS">
+<link rel="icon" type="image/png" href="img/icon-192.png">
+<link rel="apple-touch-icon" href="img/icon-192.png">
 <title>炸彈女僕 BOMB MAIDS</title>
 <meta name="description" content="炸彈超人玩法 × 女僕咖啡廳的點陣圖遊戲">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,6 +29,7 @@
     color-scheme: dark;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html, body { height: 100%; }
   body {
     margin: 0;
@@ -105,7 +114,7 @@
   #pad { display: none; }
   body.touch .keys { display: none; }
   @media (orientation: portrait) {
-    body.touch #holder { place-items: start center; padding-top: 18px; }
+    body.touch #holder { place-items: start center; padding-top: 58px; }
     body.touch #pad { align-self: center; padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
   }
   body.touch #pad {
@@ -173,6 +182,44 @@
     body.touch #dpad, body.touch .btns { pointer-events: auto; opacity: 0.85; }
     #holder { padding: 6px; }
   }
+  /* full screen toggle and the hint shown where the browser cannot go full screen */
+  #fullscreen {
+    position: fixed;
+    top: calc(8px + env(safe-area-inset-top));
+    right: calc(8px + env(safe-area-inset-right));
+    z-index: 5;
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 8px;
+    color: var(--lace);
+    background: rgba(255, 248, 252, 0.12);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  #fullscreen:hover { background: rgba(255, 248, 252, 0.22); }
+  #fullscreen:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--gold); }
+  #fullscreen .exit, #fullscreen.is-full .enter { display: none; }
+  #fullscreen.is-full .exit { display: inline; }
+  #toast {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 6;
+    width: max-content;
+    max-width: min(92vw, 440px);
+    padding: 10px 14px;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--lace);
+    background: var(--plum-deep);
+    border: 2px solid var(--lace);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  }
   @media (prefers-reduced-motion: reduce) {
     .btn.on, #dpad i { transform: none !important; }
   }
@@ -195,6 +242,12 @@
   <span data-i18n="房間裡可以直接用滑鼠點女僕和家具">房間裡可以直接用滑鼠點女僕和家具</span>
   <span data-i18n="支援手把・雙人對決 1P WASD+F/G、2P 方向鍵+K/L">支援手把・雙人對決 1P WASD+F/G、2P 方向鍵+K/L</span>
 </p>
+
+<button id="fullscreen" type="button" data-i18n-label="全螢幕" aria-label="全螢幕">
+  <svg class="enter" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 9V3h6M15 3h6v6M21 15v6h-6M9 21H3v-6" fill="none" stroke="currentColor" stroke-width="2.5"/></svg>
+  <svg class="exit" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M9 3v6H3M21 9h-6V3M15 21v-6h6M3 15h6v6" fill="none" stroke="currentColor" stroke-width="2.5"/></svg>
+</button>
+<div id="toast" role="status" hidden></div>
 
 <div id="pad" aria-hidden="true">
   <div id="dpad"><i class="u"></i><i class="l"></i><i class="r"></i><i class="d"></i></div>

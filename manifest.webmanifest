@@ -1,0 +1,36 @@
+{
+  "name": "炸彈女僕 BOMB MAIDS",
+  "short_name": "BOMB MAIDS",
+  "description": "炸彈超人玩法 × 女僕育成的點陣圖遊戲",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": [
+    "fullscreen",
+    "standalone"
+  ],
+  "orientation": "any",
+  "background_color": "#2a1b30",
+  "theme_color": "#2a1b30",
+  "icons": [
+    {
+      "src": "img/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "img/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "img/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

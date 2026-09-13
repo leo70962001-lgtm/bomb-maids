@@ -41,6 +41,42 @@
     pad.addEventListener('contextmenu', (e) => e.preventDefault());
   }
 
+  // full screen: the Fullscreen API where the browser offers it (Android, desktop);
+  // iPhone Safari does not, so explain Add to Home Screen, which launches the game without browser bars
+  function toast(text) {
+    const el = document.getElementById('toast');
+    if (!el) return;
+    el.textContent = text;
+    el.hidden = false;
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => { el.hidden = true; }, 7000);
+    el.onclick = () => { el.hidden = true; };
+  }
+  function setupFullscreen() {
+    const btn = document.getElementById('fullscreen');
+    if (!btn) return;
+    const mq = (q) => window.matchMedia && window.matchMedia(q).matches;
+    if (mq('(display-mode: fullscreen)') || mq('(display-mode: standalone)') || navigator.standalone) { btn.hidden = true; return; }
+    const root = document.documentElement;
+    const request = root.requestFullscreen || root.webkitRequestFullscreen;
+    const exit = document.exitFullscreen || document.webkitExitFullscreen;
+    const current = () => document.fullscreenElement || document.webkitFullscreenElement;
+    const sync = () => { btn.classList.toggle('is-full', !!current()); E.fit(); };
+    document.addEventListener('fullscreenchange', sync);
+    document.addEventListener('webkitfullscreenchange', sync);
+    btn.addEventListener('click', () => {
+      E.audio.unlock();
+      if (current()) exit.call(document);
+      else if (request) {
+        const p = request.call(root, { navigationUI: 'hide' });
+        if (p && p.catch) p.catch(() => toast(G.t('無法切換成全螢幕。')));
+      } else {
+        toast(G.t('這個瀏覽器不支援全螢幕。iPhone 請點「分享」→「加入主畫面」，從主畫面打開就能全螢幕遊玩。'));
+      }
+      E.canvas.focus();
+    });
+  }
+
   function boot() {
     const canvas = document.getElementById('screen');
     E.holder = document.getElementById('holder');
@@ -51,6 +87,7 @@
     E.loadArt();
     G.initSave();
     setupTouch();
+    setupFullscreen();
     canvas.addEventListener('pointerdown', () => { canvas.focus(); E.audio.unlock(); E.input.tapped = true; });
     E.go(G.SCENES.title, null, true);
     E.run();
