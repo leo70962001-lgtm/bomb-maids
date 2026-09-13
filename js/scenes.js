@@ -1248,7 +1248,7 @@
     drawGachaReveal() {
       const g = this.gacha;
       E.rect(0, 0, E.W, E.H, 'rgba(42,27,48,0.88)');
-      E.artShade(0);
+      E.artShade(0); // hides the café counter portrait; the card drawn below shows its own picture
       if (g.t < 60) {
         this.drawMachine(130, 50, g.t, true);
         if (g.t > 36) {
@@ -1266,7 +1266,7 @@
           E.ctx.drawImage(E.spr.fx.sparkle[(g.t >> 3) % 3], 160 + Math.cos(a) * 70 - 2, 110 + Math.sin(a) * 60 - 2);
         }
       }
-      drawCard(g.card, 160 - w / 2, 58, w, 108, true);
+      drawCard(g.card, 160 - w / 2, 58, w, 108, true, 'gacha');
       if (g.t > 72) {
         const info = cardInfo(g.card);
         E.text(G.RARE_NAME[g.card.rare] + '  ' + info.name, 160, 174, { color: g.card.rare === 3 ? C.gold : g.card.rare === 2 ? C.pink : C.white, align: 'center', size: 14 });
@@ -1286,7 +1286,8 @@
     }
     return { name: card.name, desc: card.desc };
   }
-  function drawCard(card, x, y, w, h, faceUp) {
+  // slot: a stable name for where the card is shown (its CG picture is reused frame to frame)
+  function drawCard(card, x, y, w, h, faceUp, slot) {
     const ctx = E.ctx;
     const rim = card.rare === 3 ? ['#ffd23f', '#ff9fbb', '#8fc6ff', '#b8f28a'][(E.frame >> 4) % 4] : card.rare === 2 ? C.gold : '#c6c0d8';
     E.panel(x, y, w, h, faceUp ? '#fff' : C.panel, rim, {});
@@ -1296,9 +1297,9 @@
     const cx = x + w / 2, cy = y + (h - 18) / 2;
     const big = h > 80;
     if (card.kind === 'maid') {
-      const img = maidImg(card.ref, 'down', 0);
-      const s = big ? 3 : w < 50 ? 1 : 2;
-      ctx.drawImage(img, Math.round(cx - 8 * s), Math.round(cy - 12 * s + 2), 16 * s, 24 * s);
+      // her CG fills the picture window: head to waist on the big card, head and shoulders on small ones
+      // (a dark shadow while she has not joined yet, like the character select)
+      E.art('card-' + slot, CG_ART, x + 4, y + 4, w - 8, h - 22, (big ? CG_CROP.select : CG_CROP.bust)[card.ref], isLocked(card.ref) ? 'grayscale(1) brightness(0.18) contrast(1.4)' : null);
     } else if (card.kind === 'monster') {
       const img = E.spr.monsters[card.ref].frames[(E.frame >> 5) % 2];
       const s = big ? 3 : w < 50 ? 1 : 2;
@@ -1335,7 +1336,7 @@
         const col = i % 9, row = (i / 9) | 0;
         const x = 9 + col * 34, y = 26 + row * 58;
         const has = !!SAVE.cards[card.id];
-        drawCard(card, x, y, 31, 52, has);
+        drawCard(card, x, y, 31, 52, has, 'album-' + i);
         if (!has) E.text('?', x + 15, y + 22, { color: C.gray, align: 'center' });
         if (i === this.sel) { E.ctx.strokeStyle = C.red; E.ctx.lineWidth = 2; E.ctx.strokeRect(x - 1, y - 1, 33, 54); }
       });
@@ -1343,7 +1344,7 @@
       const has = SAVE.cards[card.id];
       darkPanel(8, 144, 304, 78);
       if (has) {
-        drawCard(card, 16, 150, 50, 66, true);
+        drawCard(card, 16, 150, 50, 66, true, 'album-detail');
         const info = cardInfo(card);
         E.text(G.RARE_NAME[card.rare] + '  ' + info.name, 76, 154, { color: card.rare === 3 ? C.gold : card.rare === 2 ? C.pink : C.white, size: 14 });
         E.text(info.desc, 76, 176, { color: C.paper });

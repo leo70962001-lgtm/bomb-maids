@@ -39,10 +39,12 @@
   // ------------------------------------------------------------------ illustration layer
   // The canvas is 320x240 pixel art, so full-resolution illustrations are shown as DOM elements laid over it.
   // A scene calls E.art() from draw() every frame it wants a picture; pictures not drawn in a frame are hidden.
-  const artLayer = { el: null, items: new Map(), used: new Set(), shade: 1 };
-  // crop: [sx, sy, sw, sh, imageWidth, imageHeight] in source pixels; x/y/w/h in screen pixels
+  const artLayer = { el: null, items: new Map(), used: new Map() };
+  // crop: [sx, sy, sw, sh, imageWidth, imageHeight] in source pixels; x/y/w/h in screen pixels.
+  // Pictures are never stretched: a crop shaped differently from its box is trimmed to fit
+  // (evenly from the sides, or more from the bottom than the top so faces stay in frame).
   E.art = function (id, src, x, y, w, h, crop, filter) {
-    if (!artLayer.el) return;
+    if (!artLayer.el || w <= 0 || h <= 0) return;
     let it = artLayer.items.get(id);
     if (!it) {
       it = document.createElement('div');
@@ -50,30 +52,33 @@
       artLayer.el.appendChild(it);
       artLayer.items.set(id, it);
     }
-    artLayer.used.add(id);
-    const [sx, sy, sw, sh, iw, ih] = crop;
+    artLayer.used.set(id, { filter: filter || 'none', shade: 1 });
+    let [sx, sy, sw, sh] = crop;
+    const iw = crop[4], ih = crop[5];
+    if (sw / sh > w / h) { const nw = (sh * w) / h; sx += (sw - nw) / 2; sw = nw; }
+    else if (sw / sh < w / h) { const nh = (sw * h) / w; sy += (sh - nh) / 3; sh = nh; }
     const css = {
       left: (x / W) * 100 + '%', top: (y / H) * 100 + '%', width: (w / W) * 100 + '%', height: (h / H) * 100 + '%',
       backgroundImage: 'url("' + src + '")',
       backgroundSize: (iw / sw) * 100 + '% ' + (ih / sh) * 100 + '%',
       backgroundPosition: (iw > sw ? (sx / (iw - sw)) * 100 : 0) + '% ' + (ih > sh ? (sy / (ih - sh)) * 100 : 0) + '%',
-      filter: filter || 'none',
-      display: 'block',
     };
     for (const k of Object.keys(css)) if (it.style[k] !== css[k]) it.style[k] = css[k];
   };
-  // overlays drawn on the canvas (pause menus, pop-ups) cannot cover the pictures, so they shade them for the frame:
-  // 1 leaves them as drawn, 0.4 darkens them like a 60% dim, 0 hides them
-  E.artShade = function (v) { artLayer.shade = Math.min(artLayer.shade, v); };
+  // Overlays drawn on the canvas (pause menus, pop-ups) cannot cover the pictures, so an overlay shades the pictures
+  // already drawn this frame: 1 leaves them as they are, 0.4 darkens them like a 60% dim, 0 hides them.
+  // Pictures drawn after the call (a card shown on the pop-up itself) are not affected.
+  E.artShade = function (v) { for (const u of artLayer.used.values()) u.shade = Math.min(u.shade, v); };
   function endArt() {
     if (!artLayer.el) return;
-    const shade = artLayer.shade;
-    artLayer.shade = 1;
-    const vis = shade > 0 ? 'visible' : 'hidden';
-    const filter = shade > 0 && shade < 1 ? 'brightness(' + shade + ')' : 'none';
-    if (artLayer.el.style.visibility !== vis) artLayer.el.style.visibility = vis;
-    if (artLayer.el.style.filter !== filter) artLayer.el.style.filter = filter;
-    for (const [id, it] of artLayer.items) if (!artLayer.used.has(id) && it.style.display !== 'none') it.style.display = 'none';
+    for (const [id, it] of artLayer.items) {
+      const u = artLayer.used.get(id);
+      const display = u && u.shade > 0 ? 'block' : 'none';
+      if (it.style.display !== display) it.style.display = display;
+      if (display === 'none') continue;
+      const filter = u.shade < 1 ? (u.filter === 'none' ? '' : u.filter + ' ') + 'brightness(' + u.shade + ')' : u.filter;
+      if (it.style.filter !== filter) it.style.filter = filter;
+    }
     artLayer.used.clear();
     // pictures fade with the diamond wipe between scenes
     const o = fade.t > 0 ? String(Math.max(0, 1 - (fade.t / fade.dur) * 1.5).toFixed(2)) : '1';
