@@ -31,9 +31,45 @@
     canvas.height = H;
     E.ctx = canvas.getContext('2d');
     E.ctx.imageSmoothingEnabled = false;
+    artLayer.el = document.getElementById('art');
     E.fit();
     window.addEventListener('resize', E.fit);
   };
+
+  // ------------------------------------------------------------------ illustration layer
+  // The canvas is 320x240 pixel art, so full-resolution illustrations are shown as DOM elements laid over it.
+  // A scene calls E.art() from draw() every frame it wants a picture; pictures not drawn in a frame are hidden.
+  const artLayer = { el: null, items: new Map(), used: new Set() };
+  // crop: [sx, sy, sw, sh, imageWidth, imageHeight] in source pixels; x/y/w/h in screen pixels
+  E.art = function (id, src, x, y, w, h, crop, filter) {
+    if (!artLayer.el) return;
+    let it = artLayer.items.get(id);
+    if (!it) {
+      it = document.createElement('div');
+      it.className = 'art';
+      artLayer.el.appendChild(it);
+      artLayer.items.set(id, it);
+    }
+    artLayer.used.add(id);
+    const [sx, sy, sw, sh, iw, ih] = crop;
+    const css = {
+      left: (x / W) * 100 + '%', top: (y / H) * 100 + '%', width: (w / W) * 100 + '%', height: (h / H) * 100 + '%',
+      backgroundImage: 'url("' + src + '")',
+      backgroundSize: (iw / sw) * 100 + '% ' + (ih / sh) * 100 + '%',
+      backgroundPosition: (iw > sw ? (sx / (iw - sw)) * 100 : 0) + '% ' + (ih > sh ? (sy / (ih - sh)) * 100 : 0) + '%',
+      filter: filter || 'none',
+      display: 'block',
+    };
+    for (const k of Object.keys(css)) if (it.style[k] !== css[k]) it.style[k] = css[k];
+  };
+  function endArt() {
+    if (!artLayer.el) return;
+    for (const [id, it] of artLayer.items) if (!artLayer.used.has(id) && it.style.display !== 'none') it.style.display = 'none';
+    artLayer.used.clear();
+    // pictures fade with the diamond wipe between scenes
+    const o = fade.t > 0 ? String(Math.max(0, 1 - (fade.t / fade.dur) * 1.5).toFixed(2)) : '1';
+    if (artLayer.el.style.opacity !== o) artLayer.el.style.opacity = o;
+  }
   E.fit = function () {
     const c = E.canvas;
     const holder = E.holder || c.parentElement;
@@ -653,6 +689,7 @@
     ctx.imageSmoothingEnabled = false;
     if (E.scene && E.scene.draw) E.scene.draw(ctx);
     drawFade();
+    endArt();
   };
 
   E.run = function () {
@@ -671,6 +708,7 @@
       ctx.imageSmoothingEnabled = false;
       if (E.scene && E.scene.draw) E.scene.draw(ctx);
       drawFade();
+      endArt();
       requestAnimationFrame(loop);
     }
     requestAnimationFrame(loop);

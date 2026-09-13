@@ -722,6 +722,15 @@
   };
 
   // ------------------------------------------------------------------ Maid select / hire
+  // portraits come from one illustration with the four maids in quadrants
+  // (dividers at x 477-482 and y 557-562 of the 960x1113 image); crops frame head to waist
+  const SELECT_ART = 'img/maids-select.jpg';
+  const SELECT_CROP = {
+    berry: [45, 8, 400, 500, 960, 1113],
+    yoru: [522, 8, 400, 500, 960, 1113],
+    honey: [62, 572, 400, 500, 960, 1113],
+    yukino: [520, 588, 400, 500, 960, 1113],
+  };
   SC.select = {
     enter(arg) {
       this.mode = (arg && arg.mode) || 'first';
@@ -776,46 +785,40 @@
       G.MAID_ORDER.forEach((k, i) => {
         const D = G.MAID_DATA[k];
         const on = i === this.sel;
-        const x = 10 + i * 76, y = on ? 24 : 28;
+        const x = 10 + i * 76, y = on ? 22 : 26;
         const locked = isLocked(k);
-        E.panel(x, y, 70, 118, on ? C.paper : '#f7e3ec', on ? C.gold : C.pink, { shine: C.white });
-        const f = on ? [0, 1, 0, 2][(this.t >> 4) % 4] : 0;
-        E.ctx.fillStyle = 'rgba(42,27,48,0.15)';
-        E.ctx.fillRect(x + 21, y + 84, 28, 4);
-        drawMaidFigure(k, x + 11, y + 16, 3, f);
+        const duty = !locked && this.mode !== 'first' && SAVE.maid === k;
+        E.panel(x, y, 70, 128, on ? C.paper : '#f7e3ec', on ? C.gold : C.pink, { shine: C.white });
         E.rect(x + 2, y + 2, 66, 14, locked ? '#8d86a8' : D.color);
-        E.text(maidName(k), x + 35, y + 3, { color: C.white, align: 'center' });
+        E.text((duty ? '★ ' : '') + maidName(k), x + 35, y + 3, { color: C.white, align: 'center', fit: 64 });
+        // portrait window: the character art, darkened until she joins
+        E.rect(x + 2, y + 16, 66, 82, C.plum);
+        E.art('select-' + k, SELECT_ART, x + 3, y + 17, 64, 80, SELECT_CROP[k], locked ? 'grayscale(1) brightness(0.18) contrast(1.4)' : on ? 'none' : 'saturate(0.8) brightness(0.9)');
         if (locked) {
-          E.text('?', x + 35, y + 96, { color: C.dim, align: 'center', scale: 2 });
+          E.rect(x + 3, y + 104, 64, 14, C.plum);
+          E.text(G.t('打倒 {id}', { id: unlockPlan()[k] }), x + 35, y + 105, { color: C.gold, align: 'center', fit: 62 });
         } else {
           const st = this.mode === 'first' ? D.stats : maidStats(k);
-          statPips(x + 6, y + 90, 'bomb', st.bombs, 6, C.red);
-          statPips(x + 6, y + 99, 'fire', st.fire, 6, '#ff8a2e');
-          statPips(x + 6, y + 108, 'speed', st.speed, 6, '#3d86f0');
-        }
-        if (locked) {
-          E.rect(x + 3, y + 74, 64, 14, C.plum);
-          E.text(G.t('打倒 {id}', { id: unlockPlan()[k] }), x + 35, y + 75, { color: C.gold, align: 'center', fit: 62 });
-        } else if (this.mode !== 'first' && SAVE.maid === k) {
-          E.rect(x + 8, y + 74, 54, 14, C.red);
-          E.text(G.t('值班中'), x + 35, y + 75, { color: C.white, align: 'center', fit: 52 });
+          statPips(x + 6, y + 100, 'bomb', st.bombs, 6, C.red);
+          statPips(x + 6, y + 109, 'fire', st.fire, 6, '#ff8a2e');
+          statPips(x + 6, y + 118, 'speed', st.speed, 6, '#3d86f0');
         }
       });
       const key = G.MAID_ORDER[this.sel];
       const D = G.MAID_DATA[key];
-      darkPanel(8, 148, 304, 74);
+      darkPanel(8, 156, 304, 66);
       if (isLocked(key)) {
         // nothing about her is revealed until she joins
         const id = unlockPlan()[key];
-        E.text(G.t('特技「{skill}」', { skill: '？？？' }), 16, 154, { color: C.gold });
-        E.text(G.t('愛心 {n}', { n: '?' }), 304, 154, { color: C.pink, align: 'right' });
-        if (id) wrapLines([G.t('打倒 {id} 就會加入。', { id })], 16, 170, C.paper, 14, 290);
-        E.text(this.msg || G.t('「{line}」', { line: '……' }), 16, 202, { color: this.msg ? C.mint : C.gray, fit: 290 });
+        E.text(G.t('特技「{skill}」', { skill: '？？？' }), 16, 161, { color: C.gold });
+        E.text(G.t('愛心 {n}', { n: '?' }), 304, 161, { color: C.pink, align: 'right' });
+        if (id) wrapLines([G.t('打倒 {id} 就會加入。', { id })], 16, 176, C.paper, 13, 290);
+        E.text(this.msg || G.t('「{line}」', { line: '……' }), 16, 205, { color: this.msg ? C.mint : C.gray, fit: 290 });
       } else {
-        E.text(G.t('特技「{skill}」', { skill: D.skill }), 16, 154, { color: C.gold });
-        E.text(G.t('愛心 {n}', { n: this.mode === 'first' ? D.stats.hearts : maidStats(key).hearts }), 304, 154, { color: C.pink, align: 'right' });
-        wrapLines([G.joinLines(D.skillDesc)], 16, 170, C.paper, 14, 290);
-        E.text(this.msg || G.t('「{line}」', { line: D.line }), 16, 202, { color: this.msg ? C.mint : C.gray, fit: 290 });
+        E.text(G.t('特技「{skill}」', { skill: D.skill }), 16, 161, { color: C.gold });
+        E.text(G.t('愛心 {n}', { n: this.mode === 'first' ? D.stats.hearts : maidStats(key).hearts }), 304, 161, { color: C.pink, align: 'right' });
+        wrapLines([G.joinLines(D.skillDesc)], 16, 176, C.paper, 13, 290);
+        E.text(this.msg || G.t('「{line}」', { line: D.line }), 16, 205, { color: this.msg ? C.mint : C.gray, fit: 290 });
       }
       hint(G.t(this.mode === 'first' ? '←→ 選擇　Z 決定　X 返回' : '←→ 選擇　Z 值班　X 返回'));
     },

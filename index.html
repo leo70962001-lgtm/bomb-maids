@@ -76,6 +76,10 @@
     background: var(--plum);
   }
   canvas:focus-visible { box-shadow: 0 0 0 2px var(--gold); }
+  /* full-resolution illustrations laid over the pixel canvas (see E.art) */
+  .screen { position: relative; }
+  #art { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  #art .art { position: absolute; display: none; background-repeat: no-repeat; }
   .keys {
     margin: 0;
     padding: 6px 12px 10px;
@@ -176,7 +180,10 @@
 
 <div id="holder">
   <div class="apron">
+    <div class="screen">
     <canvas id="screen" tabindex="0" data-i18n-label="炸彈女僕 遊戲畫面，使用方向鍵移動、Z 放炸彈、X 使用特技" aria-label="炸彈女僕 遊戲畫面，使用方向鍵移動、Z 放炸彈、X 使用特技"></canvas>
+    <div id="art" aria-hidden="true"></div>
+    </div>
   </div>
 </div>
 
