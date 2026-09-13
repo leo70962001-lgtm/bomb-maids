@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>炸彈女僕 BOMB MAIDS</title>
+<meta name="description" content="炸彈超人玩法 × 女僕咖啡廳的點陣圖遊戲">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap">
+<style>
+  :root {
+    --plum: #2a1b30;
+    --plum-deep: #1a1020;
+    --milk: #ffd9e5;
+    --lace: #fff8fc;
+    --cherry: #ec3d5f;
+    --gold: #ffd23f;
+    --ink: #cdbfd8;
+    --pixel: "DotGothic16", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", monospace;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background-color: var(--plum);
+    background-image:
+      radial-gradient(circle at 50% 50%, rgba(255, 217, 229, 0.07) 1.5px, transparent 2px),
+      radial-gradient(circle at 0 0, rgba(255, 217, 229, 0.05) 1px, transparent 1.5px);
+    background-size: 16px 16px, 16px 16px;
+    background-position: 0 0, 8px 8px;
+    color: var(--ink);
+    font-family: var(--pixel);
+    display: grid;
+    grid-template-rows: 1fr auto;
+    height: 100dvh;
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+  #holder {
+    min-height: 0;
+    display: grid;
+    place-items: center;
+    padding: 12px;
+  }
+  .apron {
+    position: relative;
+    padding: 8px;
+    background: var(--plum-deep);
+    border-radius: 4px;
+    box-shadow: 0 0 0 3px var(--lace), 0 0 0 6px var(--plum-deep), 0 16px 36px rgba(0, 0, 0, 0.5);
+  }
+  /* lace scallops along the top and bottom of the screen frame */
+  .apron::before, .apron::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    height: 7px;
+    background-image: radial-gradient(circle at 5px 7px, var(--lace) 4.5px, transparent 5px);
+    background-size: 10px 7px;
+    background-repeat: repeat-x;
+    pointer-events: none;
+  }
+  .apron::before { top: -10px; }
+  .apron::after { bottom: -10px; transform: scaleY(-1); }
+  canvas {
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    outline: none;
+    background: var(--plum);
+  }
+  canvas:focus-visible { box-shadow: 0 0 0 2px var(--gold); }
+  .keys {
+    margin: 0;
+    padding: 6px 12px 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    justify-content: center;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+  }
+  .keys span { white-space: nowrap; }
+  kbd {
+    font-family: var(--pixel);
+    font-size: 12px;
+    color: var(--plum);
+    background: var(--lace);
+    border-radius: 3px;
+    box-shadow: inset 0 -3px 0 var(--milk);
+    padding: 1px 6px 3px;
+    margin-right: 4px;
+  }
+  /* touch controls */
+  #pad { display: none; }
+  body.touch .keys { display: none; }
+  @media (orientation: portrait) {
+    body.touch #holder { place-items: start center; padding-top: 18px; }
+    body.touch #pad { align-self: center; padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
+  }
+  body.touch #pad {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 18px calc(12px + env(safe-area-inset-bottom));
+    gap: 12px;
+  }
+  #dpad {
+    position: relative;
+    width: 132px;
+    height: 132px;
+    border-radius: 50%;
+    background: rgba(255, 248, 252, 0.08);
+    touch-action: none;
+  }
+  #dpad i {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    background: var(--lace);
+    border-radius: 6px;
+    box-shadow: inset 0 -4px 0 var(--milk);
+  }
+  #dpad i::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border: 8px solid transparent;
+    transform: translate(-50%, -50%);
+  }
+  #dpad .u { left: 44px; top: 0; }
+  #dpad .d { left: 44px; bottom: 0; }
+  #dpad .l { left: 0; top: 44px; }
+  #dpad .r { right: 0; top: 44px; }
+  #dpad .u::after { border-bottom-color: var(--plum); margin-top: -4px; }
+  #dpad .d::after { border-top-color: var(--plum); margin-top: 4px; }
+  #dpad .l::after { border-right-color: var(--plum); margin-left: -4px; }
+  #dpad .r::after { border-left-color: var(--plum); margin-left: 4px; }
+  #dpad[data-dir="up"] .u, #dpad[data-dir="down"] .d, #dpad[data-dir="left"] .l, #dpad[data-dir="right"] .r { background: var(--milk); box-shadow: none; transform: translateY(2px); }
+  .btns { display: grid; grid-template-columns: auto auto; grid-template-rows: auto auto; gap: 10px 14px; align-items: center; touch-action: none; }
+  .btn {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 0;
+    font-family: var(--pixel);
+    font-size: 15px;
+    color: #fff;
+    background: var(--cherry);
+    box-shadow: inset 0 -5px 0 #a51f40;
+    touch-action: none;
+    line-height: 1.1;
+  }
+  .btn small { display: block; font-size: 11px; opacity: 0.9; }
+  .btn.b { background: #6b5a8e; box-shadow: inset 0 -5px 0 #463a5e; grid-row: 2; grid-column: 1; }
+  .btn.a { grid-row: 1; grid-column: 2; }
+  .btn.start { width: 54px; height: 26px; border-radius: 13px; font-size: 11px; background: #4a3d66; box-shadow: inset 0 -3px 0 #2e2440; grid-row: 2; grid-column: 2; justify-self: center; }
+  .btn.on { transform: translateY(2px); box-shadow: none; filter: brightness(1.15); }
+  @media (orientation: landscape) and (max-height: 520px) {
+    body.touch { grid-template-rows: 1fr; }
+    body.touch #pad { position: fixed; inset: auto 0 0 0; pointer-events: none; padding: 0 10px 10px; }
+    body.touch #dpad, body.touch .btns { pointer-events: auto; opacity: 0.85; }
+    #holder { padding: 6px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .btn.on, #dpad i { transform: none !important; }
+  }
+</style>
+
+<div id="holder">
+  <div class="apron">
+    <canvas id="screen" tabindex="0" data-i18n-label="炸彈女僕 遊戲畫面，使用方向鍵移動、Z 放炸彈、X 使用特技" aria-label="炸彈女僕 遊戲畫面，使用方向鍵移動、Z 放炸彈、X 使用特技"></canvas>
+  </div>
+</div>
+
+<p class="keys">
+  <span><kbd data-i18n="方向鍵">方向鍵</kbd><span data-i18n="移動">移動</span></span>
+  <span><kbd>Z</kbd><span data-i18n="放炸彈 / 決定">放炸彈 / 決定</span></span>
+  <span><kbd>X</kbd><span data-i18n="特技 / 返回">特技 / 返回</span></span>
+  <span><kbd>Esc</kbd><span data-i18n="暫停">暫停</span></span>
+  <span data-i18n="房間裡可以直接用滑鼠點女僕和家具">房間裡可以直接用滑鼠點女僕和家具</span>
+  <span data-i18n="支援手把・雙人對決 1P WASD+F/G、2P 方向鍵+K/L">支援手把・雙人對決 1P WASD+F/G、2P 方向鍵+K/L</span>
+</p>
+
+<div id="pad" aria-hidden="true">
+  <div id="dpad"><i class="u"></i><i class="l"></i><i class="r"></i><i class="d"></i></div>
+  <div class="btns">
+    <button class="btn b" data-btn="b">B<small data-i18n="特技">特技</small></button>
+    <button class="btn a" data-btn="a">A<small data-i18n="炸彈">炸彈</small></button>
+    <button class="btn start" data-btn="start" data-i18n="暫停">暫停</button>
+  </div>
+</div>
+
+<script src="js/pixel.js"></script>
+<script src="js/art.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/data.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/lang-ui.js"></script>
+<script src="js/lang-data.js"></script>
+<script src="js/game.js"></script>
+<script src="js/scenes.js"></script>
+<script src="js/room.js"></script>
+<script src="js/main.js"></script>
+</html>
