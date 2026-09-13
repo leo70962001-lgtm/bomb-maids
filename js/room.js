@@ -118,6 +118,19 @@
       if (n > 0) E.text(line.slice(0, n), x, y + i * 14, { color });
     });
   }
+  // face crops of the character illustration: dialog portrait (square) and the room status bar (tight square)
+  const FACE_CROP = {
+    berry: [105, 45, 280, 280, 960, 1113],
+    yoru: [582, 40, 280, 280, 960, 1113],
+    honey: [125, 590, 280, 280, 960, 1113],
+    yukino: [578, 598, 280, 280, 960, 1113],
+  };
+  const HUD_CROP = {
+    berry: [135, 70, 220, 220, 960, 1113],
+    yoru: [612, 62, 220, 220, 960, 1113],
+    honey: [155, 615, 220, 220, 960, 1113],
+    yukino: [608, 622, 220, 220, 960, 1113],
+  };
   // head-and-shoulders crops of the character illustration for the growth diary
   const DIARY_CROP = {
     berry: [112, 20, 256, 354, 960, 1113],
@@ -1433,7 +1446,8 @@
       E.rect(0, 0, E.W, 36, C.plum);
       UI.lace(0, 36, E.W, C.plum);
       E.panel(3, 2, 32, 32, '#ffe0ea', D.color, {});
-      ctx.drawImage(E.spr.maids[k].faces[faceFor(k)], 0, 0, 16, 14, 5, 4, 28, 25);
+      // CG face (the diary covers this corner with its own portrait)
+      if (!(this.panel && this.panel.kind === 'diary')) E.art('hud-portrait', UI.CG_ART, 5, 4, 28, 28, HUD_CROP[k]);
       E.text(D.name, 40, 3, { color: C.white });
       const ai = affInfo(k);
       E.text('Lv' + (ai.lv + 1) + ' ' + ai.name, 40, 19, { color: C.pink });
@@ -1537,13 +1551,14 @@
       UI.lace(8, 168, 304, C.plum);
       let tx = 14;
       if (cur.who) {
+        // CG portrait; the expression shows as a little bubble beside the name plate
         E.panel(10, 176, 54, 54, '#ffe0ea', G.MAID_DATA[cur.who].color, {});
-        const face = E.spr.maids[cur.who].faces[cur.face || 'normal'] || E.spr.maids[cur.who].faces.normal;
-        ctx.drawImage(face, 0, 0, 16, 16, 13, 179, 48, 48);
-        const badge = { tired: 'sweat', angry: 'anger', blush: 'heart', surprise: 'exclaim', happy: 'note' }[cur.face];
-        if (badge) ctx.drawImage(E.spr.room.emotes[badge], 50, 174 + Math.round(Math.sin(this.t * 0.2)));
-        E.rect(66, 174, E.textWidth(G.MAID_DATA[cur.who].name) + 10, 15, G.MAID_DATA[cur.who].color);
+        E.art('dialog-portrait', UI.CG_ART, 12, 178, 50, 50, FACE_CROP[cur.who]);
+        const nameW = E.textWidth(G.MAID_DATA[cur.who].name);
+        E.rect(66, 174, nameW + 10, 15, G.MAID_DATA[cur.who].color);
         E.text(G.MAID_DATA[cur.who].name, 71, 175, { color: C.white });
+        const badge = { tired: 'sweat', angry: 'anger', blush: 'heart', surprise: 'exclaim', happy: 'note' }[cur.face];
+        if (badge) ctx.drawImage(E.spr.room.emotes[badge], 80 + nameW, 173 + Math.round(Math.sin(this.t * 0.2)));
         tx = 70;
       }
       typewriter(cur.text, d.chars, tx, cur.who ? 194 : 180, 312 - tx - 10, C.plum);
