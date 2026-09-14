@@ -21,16 +21,33 @@
     y: '#ffd23f', // gold
   };
 
+  // Maids follow the look of the original sprites: near-black outlines, pale-blue shading on white,
+  // a black dress with grey sheen, hair in four tones (H dark, h base, l light, L shine) and two-tone eyes (E over e).
+  const MAID_BASE = {
+    k: '#120d16', // outline
+    w: '#ffffff',
+    c: '#c4dbf2', // white shade
+    s: '#ffe6d6', // skin
+    t: '#f4b8a8', // skin shade
+    p: '#ff9fb0', // blush
+    m: '#b8324f', // mouth
+    d: '#25212b', // dress
+    D: '#5e5869', // dress sheen
+    b: '#ffffff', // stockings
+    B: '#c4dbf2',
+    x: '#ffffff', // hair ribbon
+    X: '#c4dbf2',
+  };
   const MAIDS = {
-    // colours follow the character illustration used on the select screen
-    berry: { h: '#f5889c', H: '#cf5874', l: '#ffc4cd', e: '#3d9ee8', E: '#1f5a9a', x: '#ffffff', b: '#e6e3f0' },
-    yoru: { h: '#3c3842', H: '#1d1a22', l: '#6f6a78', e: '#e59a3c', E: '#8c4c16', x: '#c0392b', r: '#2e2638', R: '#16121c' },
-    honey: { h: '#f7cf6a', H: '#d9973f', l: '#fff0a8', e: '#4cc05a', E: '#1d6e2e', x: '#f5a623', r: '#f5a623', R: '#c47a12', b: '#eeeaf6' },
-    yukino: { h: '#8fd8e8', H: '#4d9cc4', l: '#d6f6fb', e: '#4a8fe0', E: '#1f4a9a', x: '#f4feff', r: '#3d86f0', R: '#1f4a9a' },
+    // hair, eye and bow colours follow the character illustration used on the select screen
+    berry: { H: '#b8325a', h: '#fb5a7d', l: '#ffa3b8', L: '#fff0f3', E: '#12498a', e: '#35a0f0', r: '#e8304f', R: '#9e1b36' },
+    yoru: { H: '#16131b', h: '#2e2a35', l: '#5b5564', L: '#a39cb0', E: '#8a3a0a', e: '#f29a26', r: '#f29a26', R: '#16131b', x: '#d6333d', X: '#8c1c25' },
+    honey: { H: '#c27208', h: '#ffbe24', l: '#ffdf6e', L: '#fff6cc', E: '#136b26', e: '#3fc54e', r: '#ff9a1a', R: '#c0620a' },
+    yukino: { H: '#2a7ea8', h: '#5fcbe6', l: '#abebf7', L: '#effdff', E: '#17479a', e: '#4a9ff2', r: '#3a7ff0', R: '#1f4aa0' },
   };
 
   function pal(maid) {
-    return Object.assign({}, BASE, MAIDS[maid] || {});
+    return Object.assign({}, BASE, MAID_BASE, MAIDS[maid] || {});
   }
 
   const ROW_ERRORS = [];
@@ -52,389 +69,292 @@
   }
 
   // ---------------------------------------------------------------- maid bodies (rows 14..23)
+  // frames: standing, step A, step B
   const BODY = {
     down: [
-      [
-        '....kkwrrwkk....',
-        '...kdkwRRwkdk...',
-        '..kdDkwwwwkDdk..',
-        '..ksdkwccwkdsk..',
-        '..kkkdwwwwdkkk..',
-        '...kddwwwwddk...',
-        '..kdddwccwdddk..',
-        '..kcwcwcwcwcwk..',
-        '.....bb..bb.....',
-        '.....kk..kk.....',
-      ],
-      [
-        '....kkwrrwkk....',
-        '...kdkwRRwkdk...',
-        '..kdDkwwwwkDdk..',
-        '..kddkwccwkdsk..',
-        '..ksdkwwwwdkkk..',
-        '...kddwwwwddk...',
-        '..kdddwccwdddk..',
-        '..kcwcwcwcwcwk..',
-        '....bb....bb....',
-        '....kk..........',
-      ],
-      [
-        '....kkwrrwkk....',
-        '...kdkwRRwkdk...',
-        '..kdDkwwwwkDdk..',
-        '..ksdkwccwkddk..',
-        '..kkkdwwwwdksk..',
-        '...kddwwwwddk...',
-        '..kdddwccwdddk..',
-        '..kcwcwcwcwcwk..',
-        '....bb....bb....',
-        '..........kk....',
-      ],
+      ['...k|cwkr|rkwc|k...', '....|ksDR|RDsk|....', '....|ksdc|cdsk|....', '....|kdDw|wDdk|....', '...k|sddw|wdds|k...', '...k|dDdc|cdDd|k...', '...k|wcdw|wdcw|k...', '....|.kBk|kBk.|....', '....|.kbk|kbk.|....', '....|.kkk|kkk.|....'],
+      ['...k|cwkr|rkwc|k...', '....|ksDR|RDsk|....', '....|ksdc|cdsk|....', '....|kdDw|wDdk|....', '...k|sddw|wddd|k...', '...k|dDdc|cdDd|sk..', '...k|wcdw|wdcw|k...', '....|.kBk|kBk.|....', '....|.kbk|.kk.|....', '....|.kkk|....|....'],
+      ['...k|cwkr|rkwc|k...', '....|ksDR|RDsk|....', '....|ksdc|cdsk|....', '....|kdDw|wDdk|....', '...k|dddw|wdds|k...', '..ks|dDdc|cdDd|k...', '...k|wcdw|wdcw|k...', '....|.kBk|kBk.|....', '....|.kk.|kbk.|....', '....|....|kkk.|....'],
     ],
     up: [
-      [
-        '....kkddddkk....',
-        '...kdkddddkdk...',
-        '..kdDkddddkDdk..',
-        '..ksdkddddkdsk..',
-        '..kkkwwkkwwkkk..',
-        '...kddwwwwddk...',
-        '..kdddddddddk...',
-        '..kcwcwcwcwcwk..',
-        '.....bb..bb.....',
-        '.....kk..kk.....',
-      ],
-      [
-        '....kkddddkk....',
-        '...kdkddddkdk...',
-        '..kdDkddddkDdk..',
-        '..kddkddddkdsk..',
-        '..ksdwwkkwwkkk..',
-        '...kddwwwwddk...',
-        '..kdddddddddk...',
-        '..kcwcwcwcwcwk..',
-        '....bb....bb....',
-        '..........kk....',
-      ],
-      [
-        '....kkddddkk....',
-        '...kdkddddkdk...',
-        '..kdDkddddkDdk..',
-        '..ksdkddddkddk..',
-        '..kkkwwkkwwdsk..',
-        '...kddwwwwddk...',
-        '..kdddddddddk...',
-        '..kcwcwcwcwcwk..',
-        '....bb....bb....',
-        '....kk..........',
-      ],
+      ['...k|cddd|dddc|k...', '....|kdDd|dDdk|....', '....|ksdd|ddsk|....', '....|kwwk|kwwk|....', '...k|scwk|kwcs|k...', '...k|dDdw|wdDd|k...', '...k|wcdd|ddcw|k...', '....|.kBk|kBk.|....', '....|.kbk|kbk.|....', '....|.kkk|kkk.|....'],
+      ['...k|cddd|dddc|k...', '....|kdDd|dDdk|....', '....|ksdd|ddsk|....', '....|kwwk|kwwk|....', '...k|scwk|kwcd|k...', '...k|dDdw|wdDd|sk..', '...k|wcdd|ddcw|k...', '....|.kBk|kBk.|....', '....|.kbk|.kk.|....', '....|.kkk|....|....'],
+      ['...k|cddd|dddc|k...', '....|kdDd|dDdk|....', '....|ksdd|ddsk|....', '....|kwwk|kwwk|....', '...k|dcwk|kwcs|k...', '..ks|dDdw|wdDd|k...', '...k|wcdd|ddcw|k...', '....|.kBk|kBk.|....', '....|.kk.|kbk.|....', '....|....|kkk.|....'],
     ],
+    // facing left; right is the mirror image
     side: [
-      [
-        '.....kwrrk......',
-        '....kwRRddk.....',
-        '....kwwdDdk.....',
-        '....kwwdsdk.....',
-        '....kwwkkk......',
-        '...kwwwdddk.....',
-        '...kcwwddddk....',
-        '...kcwcwcwck....',
-        '......bb........',
-        '......kk........',
-      ],
-      [
-        '.....kwrrk......',
-        '....kwRRddk.....',
-        '....kwwdDdk.....',
-        '....kwsddk......',
-        '....kwwkkk......',
-        '...kwwwdddk.....',
-        '...kcwwddddk....',
-        '...kcwcwcwck....',
-        '....bb...bb.....',
-        '...kk....kk.....',
-      ],
-      [
-        '.....kwrrk......',
-        '....kwRRddk.....',
-        '....kwwdDdk.....',
-        '....kwwddsk.....',
-        '....kwwkkk......',
-        '...kwwwdddk.....',
-        '...kcwwddddk....',
-        '...kcwcwcwck....',
-        '.....bbbb.......',
-        '.....kkkk.......',
-      ],
+      ['....|kcrd|k...|....', '....|kRDd|dk..|....', '....|kcsd|Dk..|....', '....|kwsd|dk..|....', '....|kcdd|wk..|....', '...k|wdDd|dwk.|....', '...k|cwdd|cwk.|....', '....|kBk.|....|....', '....|kbk.|....|....', '...k|kkk.|....|....'],
+      ['....|kcrd|k...|....', '....|kRDd|dk..|....', '....|kcds|Dk..|....', '....|kwds|dk..|....', '....|kcdd|wk..|....', '...k|wdDd|dwk.|....', '...k|cwdd|cwk.|....', '...k|Bkk.|kBk.|....', '..kb|k...|kbk.|....', '.kkk|....|kkk.|....'],
+      ['....|kcrd|k...|....', '....|kRDd|dk..|....', '...k|scdd|Dk..|....', '...k|swdd|dk..|....', '....|kcdd|wk..|....', '...k|wdDd|dwk.|....', '...k|cwdd|cwk.|....', '....|.kBk|....|....', '....|.kbk|....|....', '....|kkkk|....|....'],
     ],
   };
 
-  // ---------------------------------------------------------------- maid heads (rows 0..13)
-  const HD = ['......|kkkk|......', '....|kk|wwww|kk|....', '...|k|ww|c|ww|c|ww|k|...', '..|kkkkkkkkkkkk|..'];
-  const HD_SIDE = ['.......|kkkk|.....', '.....|kk|wwww|kk|...', '....|k|ww|c|ww|c|ww|k|..', '...|kkkkkkkkkkkk|.'];
-  const FACE = [
-    '.k|Hs|kk|ssss|kk|sH|k.',
-    '.k|Hs|Ee|ssss|eE|sH|k.',
-    '.k|hs|we|ssss|ew|sh|k.',
-    '.k|Ht|p|ssssss|p|tH|k.',
-  ];
-  const FACE_SIDE = ['k|sss|kk|s|hhhhhh|H|k.', 'k|sss|Ee|s|hhhhh|H|h|k.', '.k|ps|we|s|t|hhh|HH|k..'];
-
-  // Each maid: head rows per direction, plus optional hair layers drawn under or over the body.
+  // ---------------------------------------------------------------- maid heads (rows 0..13) and hair layers
+  // head rows: lace headdress 0-2, hair 3-8, eyelids 9, eyes 10-11, cheeks 12, chin 13 (the side view's headdress is edge-on).
+  // under / over: hair drawn behind / in front of the body (24 rows).
   const MAID_PARTS = {
     berry: {
       down: {
-        head: HD.concat([
-          '.k|hhhhhhhh|l|hhh|k.',
-          '.k|xx|hhhhh|ll|h|xx|k.',
-          '.k|xx|hhhhhhhh|xx|k.',
-          '.k|hHhhhHhhhhHh|k.',
-          '.k|HhHhHhhhHhHH|k.',
-        ]).concat(FACE, ['..|kk|sss|tt|sss|kk|..']),
+        head: [
+          '....|.kkk|kkk.|....',
+          '....|kwww|wwwk|..k.',
+          '...c|wcww|wwcw|ckhk',
+          '..kc|HHHH|HHHH|ckhk',
+          '.kHH|Hhhh|hhhL|Hhk.',
+          '.cHH|hhhh|hhlL|hHk.',
+          'kHHh|Hhhh|Hhll|hhHk',
+          'kHHh|hhHh|hhhh|hHHk',
+          '.kHH|HhhH|hHhH|HHk.',
+          '..kH|skks|skks|Hk..',
+          '.sHs|kcEs|sEck|sHs.',
+          '.tHt|swes|sews|tHt.',
+          '..kH|tpss|sspt|Hk..',
+          '...k|Htts|sttH|k...',
+        ],
       },
       up: {
-        head: HD.concat([
-          '.k|hhhhhhhhhhhh|k.',
-          '.k|xx|h|l|hhhhhhhh|k.',
-          '.k|xx|ll|hhhhhhhh|k.',
-          '.k|hhhhhhhhhhhh|k.',
-          '.k|H|hhhhhhhhhh|H|k.',
-          '.k|H|hhHhhhhHhh|H|k.',
-          '.k|HH|hhHhhHhh|HH|k.',
-          '.kk|HH|hhhhhh|HH|kk.',
-          '..kk|HHHHHHHH|kk..',
-          '...|kkkkkkkkkk|...',
-        ]),
+        head: [
+          '....|.kkk|kkk.|....',
+          '.k..|kwww|wwwk|....',
+          'khkc|wcww|wwcw|c...',
+          'khkc|HHHH|HHHH|ck..',
+          '.khH|hhhh|hhhH|HHk.',
+          '.cHh|hhhh|hlLh|HHc.',
+          'kHhh|hhhh|hllh|hHHk',
+          'kHhh|Hhhh|hhhh|hHHk',
+          'kHhh|hhHh|hHhh|hHHk',
+          '.kHh|hhhH|Hhhh|HHk.',
+          '.kHH|hHHh|HHhH|HHk.',
+          '.tkH|HHHH|HHHH|Hkt.',
+          '..kk|HHHH|HHHH|kk..',
+          '....|kHkH|HkHk|....',
+        ],
       },
       side: {
-        head: HD_SIDE.concat([
-          '..k|hhhhhhhhhhh|k.',
-          '.k|hhhhhhhhh|l|hh|k.',
-          '.k|hhhhhhhh|ll|hh|k.',
-          '.k|hH|hhhhhhhhhh|k.',
-          '.k|HhHhH|hhhh|xx|h|k.',
-          '.k|hsHss|hhhh|xx|H|k.',
-        ]).concat(FACE_SIDE, ['..k|k|ss|t|kkkkkk|...']),
+        head: [
+          '....|..kk|....|....',
+          '....|.kwc|k...|....',
+          '...k|kHwc|Hkk.|....',
+          '..kH|Hhwc|hhHk|....',
+          '.kHh|hhkk|hhhH|k...',
+          '.kHh|lLhh|hhhh|Hk..',
+          'kHhh|llhh|hhhh|hHk.',
+          'kHhh|hhhh|hhhc|wHk.',
+          'kHhH|hhHh|hhhw|cHk.',
+          'kHHk|kHhh|HhhH|hHk.',
+          'ksEc|sHhh|hhHh|HHk.',
+          'ksew|stHh|hHhH|Hk..',
+          '.kps|stHH|HhHH|k...',
+          '..kt|tkkH|HHkk|....',
+        ],
       },
     },
     yoru: {
       down: {
-        head: HD.concat([
-          '.k|hhhh|l|hhhhh|xx|k.',
-          '.k|hhh|ll|hhhhh|xx|k.',
-          '.k|hhhhhhhhhhhh|k.',
-          '.k|H|hhhhhhhhhh|H|k.',
-          '.k|HHHHHHHHHHHH|k.',
-        ]).concat(FACE.slice(0, 2), ['.k|Hs|we|ssss|ew|sH|k.', '.k|Ht|p|ssssss|p|tH|k.', '.k|H|k|sss|tt|sss|k|H|k.']),
-        under: pad(12, [
-          'kHk|..........|kHk',
-          'kHHk|........|kHHk',
-          'kHhk|........|khHk',
-          'kHhHk|......|kHhHk',
-          'kHhHk|......|kHhHk',
-          'kHHhk|......|khHHk',
-          'kHHhk|......|khHHk',
-          '.kHHk|......|kHHk.',
-          '..kk|........|kk..',
-        ]),
-        over: pad(14, ['.k|H|k|........|k|H|k.', '.k|H|k|........|k|H|k.', '..|k|..........|k|..']),
+        head: [
+          '....|.kkk|kkk.|....',
+          '....|kwww|wwwk|.kk.',
+          '...c|wcww|wwcw|kxXk',
+          '..kc|hhhh|hhhh|cxxk',
+          '.kHh|hlhh|hhhh|hXk.',
+          '.kHh|lLlh|hhhh|hHk.',
+          '.kHh|hlhh|hhhh|hHk.',
+          'kHhh|hhhh|hhhh|hhHk',
+          'kHHH|HHHH|HHHH|HHHk',
+          '.kHh|skks|skks|hHk.',
+          '.kHh|kcEs|sEck|hHk.',
+          '.kHh|swes|sews|hHk.',
+          '.kHH|tpss|sspt|HHk.',
+          '.kHk|Htts|sttH|kHk.',
+        ],
+        over: pad(14, ['.kHk|....|....|kHk.', '.kHh|k...|...k|hHk.', 'kHhk|....|....|khHk', 'kHhk|....|....|khHk', '.kHk|....|....|kHk.', '.kHk|....|....|kHk.', '..k.|....|....|.k..']),
       },
       up: {
-        head: HD.concat([
-          '.k|hhhhhhhhhhhh|k.',
-          '.k|hhh|l|hhhhhhhh|k.',
-          '.k|hh|ll|hhhhhhhh|k.',
-          '.k|hhhhhhhhhhhh|k.',
-          '.k|H|hhhhhhhhhh|H|k.',
-          '.k|H|hhhhhhhhhh|H|k.',
-          '.k|H|hhHhhhhHhh|H|k.',
-          '.k|H|hhHhhhhHhh|H|k.',
-          '.k|HH|hHhhhhHh|HH|k.',
-          '.k|HH|hHhhhhHh|HH|k.',
-        ]),
-        over: pad(14, [
-          '.k|HH|hHhhhhHh|HH|k.',
-          '.k|HH|hHhhhhHh|HH|k.',
-          '.k|H|hhHhhhhHhh|H|k.',
-          '.k|HH|hHhhhhHh|HH|k.',
-          '..k|HH|HhhhhH|HH|k..',
-          '...|kkkkkkkkkk|...',
-        ]),
+        head: [
+          '....|.kkk|kkk.|....',
+          '.kk.|kwww|wwwk|....',
+          'kXxk|wcww|wwcw|c...',
+          'kxxc|hhhh|hhhh|ck..',
+          '.kXh|hhhh|hhlh|hHk.',
+          'kHhh|hhhh|hlLl|hhHk',
+          'kHhh|hhhh|hhlh|hhHk',
+          'kHhH|hhhh|hhhh|HhHk',
+          'kHhH|hhhH|hhhh|HhHk',
+          'kHhH|hhhH|hhhh|HhHk',
+          'kHhH|hhhH|hhhh|HhHk',
+          'kHhH|hhhh|Hhhh|HhHk',
+          'kHhH|hhhh|Hhhh|HhHk',
+          'kHhH|hhhh|Hhhh|HhHk',
+        ],
+        over: pad(14, ['kHhH|hhhh|Hhhh|HhHk', 'kHhH|hhhH|hhhh|HhHk', '.kHh|hhhH|hhhh|hHk.', '.kHh|hhhh|Hhhh|hHk.', '..kH|hhhh|Hhhh|Hk..', '...k|HkHH|kHHk|k...']),
       },
       side: {
-        head: HD_SIDE.concat([
-          '..k|hhhhhhhhhhh|k.',
-          '.k|hhhhhhhhh|l|hh|k.',
-          '.k|hhhhhhhh|ll|hh|k.',
-          '.k|H|hhhhhhhhhhh|k.',
-          '.k|HHHH|hhhhhhhh|k.',
-          '.k|sssH|hhhhhhhh|k.',
-        ]).concat(FACE_SIDE, ['..k|k|ss|t|k|hhhhh|k..']),
-        over: pad(14, [
-          '........|kHHhk|...',
-          '........|kHhHk|...',
-          '........|kHhHHk|..',
-          '........|kHhhHk|..',
-          '........|kHHhHk|..',
-          '.........|kHHHk|..',
-          '..........|kkk|...',
-        ]),
+        head: [
+          '....|..kk|....|....',
+          '....|.kwc|k...|....',
+          '...k|kHwc|Hkk.|....',
+          '..kH|Hhwc|hhHk|....',
+          '.kHh|hhkk|hhhH|k...',
+          '.kHh|lLhh|hhhh|Hk..',
+          'kHhh|llhh|hhhh|hHk.',
+          'kHhh|hhhh|hhhh|xXk.',
+          'kHHH|hhhh|hhhh|xxk.',
+          'kHHk|kHhh|hhhh|hHk.',
+          'ksEc|sHhh|hhhh|hHk.',
+          'ksew|stHh|hhhh|hHk.',
+          '.kps|stHh|hhhh|hHk.',
+          '..kt|tkHh|hhhh|hHk.',
+        ],
+        over: pad(14, ['....|..kH|hhhh|Hk..', '....|..kH|hhhh|Hk..', '....|...k|Hhhh|Hk..', '....|...k|Hhhh|k...', '....|...k|HhhH|k...', '....|....|kHHk|....', '....|....|.kk.|....']),
       },
     },
     honey: {
       down: {
-        head: HD.concat([
-          '.k|hhhhhh|l|hhhhh|k.',
-          '.k|xx|hhhh|ll|hhhh|k.',
-          '.k|xx|hhhhhhhhhh|k.',
-          '.k|hhhhhHHhhhhh|k.',
-          '.k|HhhhH|ss|HhhhH|k.',
-        ]).concat(FACE, ['..|kk|sss|tt|sss|kk|..']),
-        over: pad(9, [
-          'kxxk|........|kxxk',
-          'khhk|........|khhk',
-          'khlk|........|klhk',
-          'kHhhk|......|khhHk',
-          'khlhk|......|khlhk',
-          'kHhk|........|khHk',
-          'khhk|........|khhk',
-          '.kHhk|......|khHk.',
-          '..kHk|......|kHk..',
-          '...kk|......|kk...',
-        ]),
+        head: [
+          '....|.kkk|kkk.|....',
+          '....|kwww|wwwk|....',
+          '...c|wcww|wwcw|c...',
+          '..kc|HHHH|HHHH|ck..',
+          '.kHh|hhhh|hhhL|hHk.',
+          'kHhh|Hhhh|hhlL|hhHk',
+          'kHhH|hhhh|Hhll|hHhk',
+          'kHhh|hHhh|hhHh|hhHk',
+          '.kHh|HhHH|HHhH|hHk.',
+          '..kH|skks|skks|Hk..',
+          '.sHs|kcEs|sEck|sHs.',
+          '.tHt|swes|sews|tHt.',
+          '..kH|tpss|sspt|Hk..',
+          '...k|Htts|sttH|k...',
+        ],
+        over: pad(12, ['kk..|....|....|..kk', 'khk.|....|....|.khk', 'kHhk|....|....|khHk', 'klhH|k...|...k|Hhlk', 'kHlh|k...|...k|hlHk', '.khH|k...|...k|Hhk.', 'kHhk|....|....|khHk', 'khk.|....|....|.khk', '.k..|....|....|..k.']),
       },
       up: {
-        head: HD.concat([
-          '.k|hhhhhhhhhhhh|k.',
-          '.k|hhhhhhhh|ll|xx|k.',
-          '.k|hhhhhhhhhh|xx|k.',
-          '.k|hhhhhhhhhhhh|k.',
-          '.k|H|hhhhhhhhhh|H|k.',
-          '.k|H|hhHhhhhHhh|H|k.',
-          '.k|HH|hHhhhhHh|HH|k.',
-          '.kk|HH|hhhhhh|HH|kk.',
-          '..kk|HHHHHHHH|kk..',
-          '...|kkkkkkkkkk|...',
-        ]),
-        over: null, // filled below (same drills as front)
+        head: [
+          '....|.kkk|kkk.|....',
+          '....|kwww|wwwk|....',
+          '...c|wcww|wwcw|c...',
+          '..kc|HHHH|HHHH|ck..',
+          '.kHh|hhhh|hhhh|hHk.',
+          'kHhh|hhhh|hlLh|hhHk',
+          'kHhh|hhhh|hllh|hhHk',
+          'kHhh|Hhhh|hhhh|hhHk',
+          'kHhH|hhHh|hHhh|HhHk',
+          '.kHh|hhhH|Hhhh|hHk.',
+          '.kHH|hHHh|HHhH|HHk.',
+          '..kH|HHHH|HHHH|Hk..',
+          '..tk|kHHH|HHHk|kt..',
+          '....|kHkH|HkHk|....',
+        ],
+        over: pad(8, ['k...|....|....|...k', 'hk..|....|....|..kh', 'Hhk.|....|....|.khH', 'khHk|....|....|kHhk', 'kHlk|....|....|klHk', 'khHk|....|....|kHhk', 'klhH|k...|...k|Hhlk', 'kHlh|k...|...k|hlHk', '.khH|k...|...k|Hhk.', 'kHhk|....|....|khHk', 'khk.|....|....|.khk', '.k..|....|....|..k.']),
       },
       side: {
-        head: HD_SIDE.concat([
-          '..k|hhhhhhhhhhh|k.',
-          '.k|hhhhhhhhh|l|hh|k.',
-          '.k|hhhhhhhh|ll|xx|k.',
-          '.k|hH|hhhhhhhh|xx|k.',
-          '.k|HhH|hhhhhhhhh|k.',
-          '.k|hsHs|hhhhhhhh|k.',
-        ]).concat(FACE_SIDE, ['..k|k|ss|t|kkkkkk|...']),
-        over: pad(10, [
-          '.........|kxk|....',
-          '.........|khhk|...',
-          '.........|khlhk|..',
-          '.........|kHhhk|..',
-          '.........|khhk|...',
-          '.........|kHhk|...',
-          '..........|kHhk|..',
-          '..........|kHk|...',
-          '..........|kk|....',
-        ]),
+        head: [
+          '....|..kk|....|....',
+          '....|.kwc|k...|....',
+          '...k|kHwc|Hkk.|....',
+          '..kH|Hhwc|hhHk|....',
+          '.kHh|hhkk|hhhH|k...',
+          '.kHh|lLhh|hhhh|Hk..',
+          'kHhh|llhh|hhhh|hHk.',
+          'kHhh|hhhh|hhhc|wHk.',
+          'kHhH|hhHh|hhhw|cHk.',
+          'kHHk|kHhh|HhhH|hHk.',
+          'ksEc|sHhh|hhHh|HHk.',
+          'ksew|stHh|hHhH|Hk..',
+          '.kps|stHH|HhHH|k...',
+          '..kt|tkkH|HHkk|....',
+        ],
+        under: pad(4, ['....|....|...k|k...', '....|....|..kh|hk..', '....|....|..kh|lhk.', '....|....|...k|Hhk.', '....|....|...k|hHhk', '....|....|...k|Hlhk', '....|....|...k|hHhk', '....|....|...k|Hhk.', '....|....|..kh|Hk..', '....|....|..kH|hk..', '....|....|..kh|Hhk.', '....|....|...k|hHk.', '....|....|....|kk..']),
       },
     },
     yukino: {
       down: {
-        head: HD.concat([
-          '.k|hhhhhhhh|l|hhh|k.',
-          '.k|xx|hhhhh|ll|hhh|k.',
-          '.k|xx|hhhhhhhhhh|k.',
-          '.k|hhHhhhhhhHhh|k.',
-          '.k|HhhHhhhhHhhH|k.',
-        ]).concat(FACE, ['.k|h|k|sss|tt|sss|k|h|k.']),
-        under: pad(12, [
-          'kHk|..........|kHk',
-          'khHk|........|kHhk',
-          'kHhk|........|khHk',
-          'klhHk|......|kHhlk',
-          'kHhHk|......|kHhHk',
-          'khlHk|......|kHlhk',
-          'kHHhk|......|khHHk',
-          '.kHlk|......|klHk.',
-          '..kk|........|kk..',
-        ]),
-        over: pad(14, ['.k|h|k|........|k|h|k.', '.k|l|k|........|k|l|k.', '..|k|..........|k|..']),
+        head: [
+          '....|.kkk|kkk.|....',
+          '....|kwww|wwwk|....',
+          '...c|wcww|wwcw|c...',
+          '..kc|HHHH|HHHH|ck..',
+          '.kHh|hhhh|hhLl|hHk.',
+          'kHhh|hhHh|hhll|hhHk',
+          'kHhH|hhhh|Hhhh|HhHk',
+          'kHhh|HhhH|hhHh|hhHk',
+          'kHhH|HHhH|HhHH|HhHk',
+          'kHkH|skks|skks|HkHk',
+          'kHkH|kcEs|sEck|HkHk',
+          'kHkt|swes|sews|tkHk',
+          'kHhk|tpss|sspt|khHk',
+          'kHlk|Htts|sttH|klHk',
+        ],
+        over: pad(14, ['kHhk|....|....|khHk', '.kHl|k...|...k|lHk.', '.kHh|k...|...k|hHk.', 'kHlk|....|....|klHk', 'kHhk|....|....|khHk', '.kHh|k...|...k|hHk.', '.klH|k...|...k|Hlk.', '.kHk|....|....|kHk.', '..k.|....|....|.k..']),
       },
       up: {
-        head: HD.concat([
-          '.k|hhhhhhhhhhhh|k.',
-          '.k|hhh|l|hhhhh|xx|h|k.',
-          '.k|hh|ll|hhhhh|xx|h|k.',
-          '.k|hhhhhhhhhhhh|k.',
-          '.k|H|hhhhhhhhhh|H|k.',
-          '.k|H|hlhhhhhhlh|H|k.',
-          '.k|H|hhHhhhhHhh|H|k.',
-          '.k|H|lhHhhhhHhl|H|k.',
-          '.k|HH|hHhhhhHh|HH|k.',
-          '.k|HH|hHhlhhHh|HH|k.',
-        ]),
-        over: pad(14, [
-          '.k|HH|hHhhhhHh|HH|k.',
-          '.k|H|lhHhhhhHhl|H|k.',
-          '.k|H|hhHhlhhHhh|H|k.',
-          '.k|HH|hHhhhhHh|HH|k.',
-          '..k|HH|HhhhhH|HH|k..',
-          '...|kkkkkkkkkk|...',
-        ]),
+        head: [
+          '....|.kkk|kkk.|....',
+          '....|kwww|wwwk|....',
+          '...c|wcww|wwcw|c...',
+          '..kc|HHHH|HHHH|ck..',
+          '.kHh|hhhh|hhhh|hHk.',
+          'kHhh|hhhh|hLlh|hhHk',
+          'kHhh|hhhh|hllh|hhHk',
+          'kHhH|hhhh|hhhh|HhHk',
+          'kHhH|hHhh|hhHh|HhHk',
+          'kHlh|hhhH|Hhhh|hlHk',
+          'kHhH|hHHh|HHhH|HhHk',
+          'kHhk|HHHH|HHHH|khHk',
+          'kHhk|kHHH|HHHk|khHk',
+          'kHlk|kHkH|HkHk|klHk',
+        ],
+        over: pad(14, ['kHhk|....|....|khHk', '.kHl|k...|...k|lHk.', '.kHh|k...|...k|hHk.', 'kHlk|....|....|klHk', 'kHhk|....|....|khHk', '.kHh|k...|...k|hHk.', '.klH|k...|...k|Hlk.', '.kHk|....|....|kHk.', '..k.|....|....|.k..']),
       },
       side: {
-        head: HD_SIDE.concat([
-          '..k|hhhhhhhhhhh|k.',
-          '.k|hhhhhhhhh|l|hh|k.',
-          '.k|hhhhhhhh|ll|hh|k.',
-          '.k|hH|hhhhhh|xx|hh|k.',
-          '.k|HhHhH|hhhhh|xx|k.',
-          '.k|hsHss|hhhhhhh|k.',
-        ]).concat(FACE_SIDE, ['..k|k|ss|t|k|hhlhh|k..']),
-        over: pad(14, [
-          '........|kHlhk|...',
-          '........|kHhHk|...',
-          '........|kHhlHk|..',
-          '........|kHlhHk|..',
-          '........|kHHhHk|..',
-          '.........|kHlHk|..',
-          '..........|kkk|...',
-        ]),
+        head: [
+          '....|..kk|....|....',
+          '....|.kwc|k...|....',
+          '...k|kHwc|Hkk.|....',
+          '..kH|Hhwc|hhHk|....',
+          '.kHh|hhkk|hhhH|k...',
+          '.kHh|lLhh|hhhh|Hk..',
+          'kHhh|llhh|hhhh|hHk.',
+          'kHhh|hhhh|hhhc|wHk.',
+          'kHhH|hhHh|hhhw|cHk.',
+          'kHHk|kHhh|HhhH|hHk.',
+          'ksEc|sHhh|hhHh|HHk.',
+          'ksew|stHh|hHhH|Hk..',
+          '.kps|stHH|HhHH|k...',
+          '..kt|tkkH|HHkk|....',
+        ],
+        under: pad(6, ['....|....|....|kk..', '....|....|...k|hHk.', '....|....|...k|Hlk.', '....|....|...k|hHk.', '....|....|...k|Hhk.', '....|....|...k|hHk.', '....|....|...k|lHk.', '....|....|...k|hHk.', '....|....|...k|Hhk.', '....|....|...k|hHk.', '....|....|...k|Hlk.', '....|....|...k|hHk.', '....|....|...k|Hk..', '....|....|...k|hk..', '....|....|....|k...']),
       },
     },
   };
-  MAID_PARTS.honey.up.over = MAID_PARTS.honey.down.over;
 
-  // ---------------------------------------------------------------- outfits: body palette + what sits on the head (rows 0..3)
-  // yukata colours follow each maid's theme colour
+  // ---------------------------------------------------------------- outfits: body palette + what replaces the lace headdress
+  // (front and back rows 0-3, side rows 0-4); hair ribbons come off with the uniform
   const YUKATA = {
-    berry: { d: '#d9435f', D: '#f07d92', w: '#ffc9d4', c: '#f28aa0', r: '#ffd23f', R: '#c9920e' },
-    honey: { d: '#e38a1e', D: '#ffbd55', w: '#fff0b8', c: '#ffd57a', r: '#ec3d5f', R: '#a51f40' },
-    yukino: { d: '#3a86d0', D: '#78bdf2', w: '#e2f4ff', c: '#9fd3f5', r: '#ff8ea4', R: '#d65a78' },
-    yoru: { d: '#4a3f78', D: '#7466a8', w: '#dcd4f2', c: '#9b8fc8', r: '#ec3d5f', R: '#a51f40' },
+    berry: { 'd': '#d9435f', 'D': '#f07d92', 'w': '#ffc9d4', 'c': '#f28aa0', 'r': '#ffd23f', 'R': '#c9920e', 'b': '#f4c7b0', 'B': '#e0a896' },
+    honey: { 'd': '#e38a1e', 'D': '#ffbd55', 'w': '#fff0b8', 'c': '#ffd57a', 'r': '#ec3d5f', 'R': '#a51f40', 'b': '#f4c7b0', 'B': '#e0a896' },
+    yukino: { 'd': '#3a86d0', 'D': '#78bdf2', 'w': '#e2f4ff', 'c': '#9fd3f5', 'r': '#ff8ea4', 'R': '#d65a78', 'b': '#f4c7b0', 'B': '#e0a896' },
+    yoru: { 'd': '#4a3f78', 'D': '#7466a8', 'w': '#dcd4f2', 'c': '#9b8fc8', 'r': '#ec3d5f', 'R': '#a51f40', 'b': '#f4c7b0', 'B': '#e0a896' },
   };
   const OUTFIT_STYLE = {
     maid: { pal: () => ({}), head: null },
-    cat: { pal: () => ({ d: '#3b2f45', D: '#5f4f6e', w: '#ffd6e2', c: '#f2a6bf', r: '#ffd23f', R: '#c9920e', b: '#3b2f45' }), head: 'cat' },
-    yukata: { pal: (m) => Object.assign({ b: '#f4c7b0' }, YUKATA[m]), head: 'flower' },
-    princess: { pal: () => ({ d: '#ff82a8', D: '#ffbfd4', w: '#ffffff', c: '#ffe0ea', r: '#ffd23f', R: '#e0a014', b: '#ffffff' }), head: 'tiara' },
+    cat: { pal: () => ({ 'd': '#3b2f45', 'D': '#66557a', 'w': '#ffd6e2', 'c': '#f2a6bf', 'r': '#ffd23f', 'R': '#c9920e', 'b': '#3b2f45', 'B': '#241c2c' }), head: 'cat' },
+    yukata: { pal: (m) => Object.assign({}, YUKATA[m]), head: 'flower' },
+    princess: { pal: () => ({ 'd': '#ff82a8', 'D': '#ffc2d6', 'w': '#ffffff', 'c': '#ffe0ea', 'r': '#ffd23f', 'R': '#e0a014', 'b': '#ffffff', 'B': '#ffe0ea' }), head: 'tiara' },
   };
-  // front (down/up) and side rows replacing the lace headdress; row 3 becomes a rounded top of the hair
   const HEADWEAR = {
     cat: {
-      front: ['...k........k...', '..kdk......kdk..', '..kpdkkkkkkdpk..', '..kkhhhhhhhhkk..'],
-      side: ['......k.....k...', '.....kdk...kdk..', '.....kpdkkkdpk..', '...kkhhhhhhhhkk.'],
+      front: ['..k.|....|....|.k..', '.kdk|....|....|kdk.', '.kpd|kkkk|kkkk|dpk.', '.kpd|Hhhh|hhhH|dpk.'],
+      side: ['....|k...|k...|....', '...k|dk.k|dk..|....', '...k|pdkk|pdk.|....', '..kk|Hhhh|hhkk|....', '.kHh|hhhh|hhhH|k...'],
     },
     flower: {
-      front: ['..........krk...', '.........krykr..', '....kkkkkkkrk...', '..kkhhhhhhhhkk..'],
-      back: ['...krk..........', '..krykr.........', '...krkkkkkkk....', '..kkhhhhhhhhkk..'],
-      side: ['...........krk..', '..........krykr.', '.....kkkkkkkrk..', '...kkhhhhhhhhkk.'],
+      front: ['....|....|..kr|k...', '....|....|.kry|rk..', '...k|kkkk|kkkr|k...', '..kH|hhhh|hhhh|Hk..'],
+      back: ['...k|rk..|....|....', '..kr|yrk.|....|....', '...k|rkkk|kkkk|k...', '..kH|hhhh|hhhh|Hk..'],
+      side: ['....|....|..kr|k...', '....|....|.kry|rk..', '....|kkkk|kkkr|k...', '..kk|Hhhh|hhkk|....', '.kHh|hhhh|hhhH|k...'],
     },
     tiara: {
-      front: ['....y..yy..y....', '...kykkrrkkyk...', '...kyyyyyyyyk...', '..kkhhhhhhhhkk..'],
-      side: ['......y..y..y...', '.....kykkrkkyk..', '.....kyyyyyyyk..', '...kkhhhhhhhhkk.'],
+      front: ['....|.y.y|y.y.|....', '....|kyky|ykyk|....', '...k|yyyp|pyyy|k...', '..kH|hhhh|hhhh|Hk..'],
+      side: ['....|.y.y|....|....', '....|kyky|k...|....', '...k|yypy|kk..|....', '..kk|Hhhh|hhkk|....', '.kHh|hhhh|hhhH|k...'],
     },
   };
   G.OUTFIT_IDS = Object.keys(OUTFIT_STYLE);
@@ -442,15 +362,7 @@
     const hw = HEADWEAR[OUTFIT_STYLE[outfit].head];
     if (!hw) return rows;
     const top = dir === 'side' ? hw.side : dir === 'up' ? hw.back || hw.front : hw.front;
-    return top.concat(rows.slice(4));
-  }
-  const AHOGE = { berry: { down: [[12, 1], [13, 0], [14, 0]], up: [[3, 1], [2, 0], [1, 0]], side: [[13, 1], [13, 0], [14, 0]] } };
-  function withAhoge(rows, name, dir) {
-    const spots = AHOGE[name] && AHOGE[name][dir];
-    if (!spots) return rows;
-    const out = rows.map((r) => r.replace(/\|/g, ''));
-    for (const [x, y] of spots) if (out[y][x] === '.') out[y] = out[y].slice(0, x) + 'h' + out[y].slice(x + 1);
-    return out;
+    return top.concat(rows.slice(top.length)).map((r) => r.replace(/[xX]/g, 'h'));
   }
 
   // ---------------------------------------------------------------- compose maids
@@ -458,52 +370,46 @@
     outfit = outfit || 'maid';
     const P = Object.assign(pal(name), OUTFIT_STYLE[outfit].pal(name));
     const parts = MAID_PARTS[name];
+    const layer = (rows, label) => (rows ? fromRows(rows16(rows, label), P) : null);
     const out = { down: [], up: [], left: [], right: [] };
-    for (const dir of ['down', 'up', 'side']) {
+    const compose = (dir, headRows, f, bob) => {
       const part = parts[dir];
-      const head = fromRows(pad(0, rows16(withAhoge(withHeadwear(part.head, outfit, dir), name, dir), name + ' head ' + dir)), P);
-      const under = part.under ? fromRows(rows16(part.under, name + ' under ' + dir), P) : null;
-      const over = part.over ? fromRows(rows16(part.over, name + ' over ' + dir), P) : null;
+      const pix = new Pix(16, 24);
+      const under = layer(part.under, name + ' under ' + dir);
+      const over = layer(part.over, name + ' over ' + dir);
+      if (under) pix.blit(under, 0, bob);
+      pix.blit(fromRows(pad(14, rows16(BODY[dir][f], 'body ' + dir + f)), P), 0, 0);
+      pix.blit(fromRows(pad(0, rows16(headRows, name + ' head ' + dir)), P), 0, bob);
+      if (over) pix.blit(over, 0, bob);
+      return pix;
+    };
+    for (const dir of ['down', 'up', 'side']) {
+      const head = withHeadwear(parts[dir].head, outfit, dir);
       for (let f = 0; f < 3; f++) {
-        const body = fromRows(pad(14, rows16(BODY[dir][f], 'body ' + dir + f)), P);
-        const pix = new Pix(16, 24);
-        const bob = f === 0 ? 0 : 1;
-        if (under) pix.blit(under, 0, bob);
-        pix.blit(body, 0, 0);
-        if (over) pix.blit(over, 0, bob);
-        pix.blit(head, 0, bob);
+        const pix = compose(dir, head, f, f === 0 ? 0 : 1);
         if (dir === 'side') {
           out.left.push(pix);
           out.right.push(pix.flipped());
         } else out[dir].push(pix);
       }
     }
-    // facial expressions (front view, standing) for the room and dialogue portraits
-    const part = parts.down;
-    const under = part.under ? fromRows(rows16(part.under, name + ' under face'), P) : null;
-    const over = part.over ? fromRows(rows16(part.over, name + ' over face'), P) : null;
-    const body = fromRows(pad(14, rows16(BODY.down[0], 'body face')), P);
+    // facial expressions (front view, standing) for the room, the title screen and dialogue
     out.faces = { normal: out.down[0] };
-    for (const key of Object.keys(FACE_VARIANTS)) {
-      const rows = withAhoge(withHeadwear(part.head, outfit, 'down'), name, 'down').slice();
-      FACE_VARIANTS[key].forEach((r, i) => { if (r) rows[9 + i] = r; });
-      const head = fromRows(pad(0, rows16(rows, name + ' face ' + key)), P);
-      const pix = new Pix(16, 24);
-      if (under) pix.blit(under, 0, 0);
-      pix.blit(body, 0, 0);
-      if (over) pix.blit(over, 0, 0);
-      pix.blit(head, 0, 0);
-      out.faces[key] = pix;
+    for (const key of Object.keys(FACES)) {
+      const head = withHeadwear(parts.down.head, outfit, 'down').map((r) => r.replace(/\|/g, ''));
+      FACES[key].forEach((r, i) => { if (r) head[9 + i] = head[9 + i].slice(0, 4) + r + head[9 + i].slice(12); });
+      out.faces[key] = compose('down', head, 0, 0);
     }
     return out;
   }
-  const FACE_VARIANTS = {
-    happy: ['.k|Hs|ss|ssss|ss|sH|k.', '.k|H|sks|ssss|sks|H|k.', '.k|h|ksk|ssss|ksk|h|k.', '.k|Ht|p|ssmmss|p|tH|k.'],
-    blush: [null, null, null, '.k|H|pp|ssssss|pp|H|k.'],
-    angry: ['.k|H|kss|ssss|ssk|H|k.', '.k|H|sks|ssss|sks|H|k.', '.k|h|kss|ssss|ssk|h|k.', '.k|Ht|p|ssssss|pp|H|k.'],
-    tired: ['.k|Hs|ss|ssss|ss|sH|k.', '.k|Hs|kk|ssss|kk|sH|k.', '.k|hs|Ee|ssss|eE|sh|k.', null],
-    sleep: ['.k|Hs|ss|ssss|ss|sH|k.', '.k|Hs|ss|ssss|ss|sH|k.', '.k|hs|kk|ssss|kk|sh|k.', null],
-    surprise: [null, '.k|Hs|wE|ssss|Ew|sH|k.', '.k|hs|ww|ssss|ww|sh|k.', '.k|Ht|p|s|m|ssss|p|tH|k.'],
+  // expressions replace the eye block (columns 4-11) of head rows 9-12; null keeps the row
+  const FACES = {
+    happy: ['ssssssss', 'skksskks', 'ksskkssk', 'tpsmmspt'],
+    blush: [null, null, null, 'ppsssspp'],
+    angry: ['kksssskk', 'skEssEks', 'swessews', 'tpskkspt'],
+    tired: ['ssssssss', 'skksskks', 'sEessEes', null],
+    sleep: ['ssssssss', 'ssssssss', 'skksskks', 'tpsssspt'],
+    surprise: ['skksskks', 'kwEssEwk', 'swessews', 'tpsmmspt'],
   };
 
   // ---------------------------------------------------------------- painters
