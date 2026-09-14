@@ -163,6 +163,7 @@
       for (let i = 0; i < 64; i++) E.rect(160 - i, 128 - Math.floor(i / 2), 1, Math.floor(i / 2) + 1, '#2a1b30');
       for (let i = 0; i < 64; i++) E.rect(160 + i, 128 - Math.floor((63 - i) / 2) - 1, 1, Math.floor((63 - i) / 2) + 2, '#2a1b30');
       E.rect(0, 188, 320, 52, '#2a1b30');
+      UI.edgeBar({ y: 188, h: 52, color: '#2a1b30' });
       for (const [x, y, on] of [[112, 140, 0], [136, 140, 1], [176, 140, 0], [200, 140, 0], [148, 104, 0]]) {
         E.rect(x, y, 10, 12, on ? '#ffd23f' : '#3b2f52');
         if (on) E.rect(x + 1, y + 1, 8, 4, '#fff0a0');
@@ -1438,6 +1439,7 @@
       const D = G.MAID_DATA[k];
       // status bar in the original's style: emblem and bunny badge, her CG face strip, readings on the right
       UI.goldBar(0, 0, E.W, 38);
+      UI.edgeBar({ gold: true, y: 0, h: 38 });
       ctx.drawImage(E.spr.ui.emblem, 5, 5);
       ctx.drawImage(E.spr.ui.bunny, 6, 23);
       if (!(this.panel && this.panel.kind === 'diary')) E.art('hud-portrait', UI.CG_ART, 18, 3, 112, 32, UI.CG_CROP.face[k]);
@@ -1490,6 +1492,7 @@
       const hintW = E.W - CORNER_R;
       E.rect(0, E.H - 16, hintW, 16, '#000000');
       E.rect(0, E.H - 16, hintW, 1, '#f8b000');
+      UI.edgeBar({ y: E.H - 16, h: 16, rule: E.H - 16 });
       if (step) {
         const pulse = (this.t >> 5) % 2 === 0;
         E.text('★', 6, E.H - 13, { color: pulse ? C.gold : C.pink });

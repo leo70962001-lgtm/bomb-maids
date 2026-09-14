@@ -3,7 +3,9 @@
   'use strict';
 
   const W = 320, H = 240;
-  const E = (G.E = { W, H, frame: 0 });
+  // the screen is 16:9 — a 107px portrait panel down the left, then the 320x240 game (E.W x E.H) scenes draw into
+  const PANEL_W = 107;
+  const E = (G.E = { W, H, frame: 0, sideW: PANEL_W, SW: W + PANEL_W });
 
   // ------------------------------------------------------------------ utils
   E.clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -27,13 +29,22 @@
   // ------------------------------------------------------------------ screen
   E.init = function (canvas) {
     E.canvas = canvas;
-    canvas.width = W;
+    canvas.width = E.SW;
     canvas.height = H;
     E.ctx = canvas.getContext('2d');
     E.ctx.imageSmoothingEnabled = false;
     artLayer.el = document.getElementById('art');
     E.fit();
     window.addEventListener('resize', E.fit);
+  };
+  // show or fold away the portrait panel (the canvas widens to 16:9 or narrows to the 4:3 game)
+  E.setWide = function (on) {
+    const panel = on ? PANEL_W : 0;
+    if (panel === E.sideW && E.canvas.width === W + panel) return;
+    E.sideW = panel;
+    E.SW = W + panel;
+    E.canvas.width = E.SW;
+    E.ctx.imageSmoothingEnabled = false;
   };
 
   // ------------------------------------------------------------------ illustration layer
@@ -43,7 +54,8 @@
   // crop: [sx, sy, sw, sh, imageWidth, imageHeight] in source pixels; x/y/w/h in screen pixels.
   // Pictures are never stretched: a crop shaped differently from its box is trimmed to fit
   // (evenly from the sides, or more from the bottom than the top so faces stay in frame).
-  E.art = function (id, src, x, y, w, h, crop, filter) {
+  // screen: place the picture in screen coordinates (the portrait panel) instead of game coordinates
+  E.art = function (id, src, x, y, w, h, crop, filter, screen) {
     if (!artLayer.el || w <= 0 || h <= 0) return;
     let it = artLayer.items.get(id);
     if (!it) {
@@ -52,14 +64,15 @@
       artLayer.el.appendChild(it);
       artLayer.items.set(id, it);
     }
-    artLayer.used.set(id, { filter: filter || 'none', shade: 1 });
+    artLayer.used.set(id, { filter: filter || 'none', shade: 1, screen: !!screen });
     let [sx, sy, sw, sh] = crop;
     const iw = crop[4], ih = crop[5];
     if (sw / sh > w / h) { const nw = (sh * w) / h; sx += (sw - nw) / 2; sw = nw; }
     else if (sw / sh < w / h) { const nh = (sw * h) / w; sy += (sh - nh) / 3; sh = nh; }
     const css = {
-      left: (x / W) * 100 + '%', top: (y / H) * 100 + '%', width: (w / W) * 100 + '%', height: (h / H) * 100 + '%',
+      left: ((x + (screen ? 0 : E.sideW)) / E.SW) * 100 + '%', top: (y / H) * 100 + '%', width: (w / E.SW) * 100 + '%', height: (h / H) * 100 + '%',
       backgroundImage: 'url("' + src + '")',
+      zIndex: screen ? '2' : '1',
       backgroundSize: (iw / sw) * 100 + '% ' + (ih / sh) * 100 + '%',
       backgroundPosition: (iw > sw ? (sx / (iw - sw)) * 100 : 0) + '% ' + (ih > sh ? (sy / (ih - sh)) * 100 : 0) + '%',
     };
@@ -71,6 +84,8 @@
   E.artShade = function (v) { for (const u of artLayer.used.values()) u.shade = Math.min(u.shade, v); };
   function endArt() {
     if (!artLayer.el) return;
+    // game pictures fade with the diamond wipe between scenes; the portrait panel stays put
+    const o = fade.t > 0 ? String(Math.max(0, 1 - (fade.t / fade.dur) * 1.5).toFixed(2)) : '1';
     for (const [id, it] of artLayer.items) {
       const u = artLayer.used.get(id);
       const display = u && u.shade > 0 ? 'block' : 'none';
@@ -78,21 +93,22 @@
       if (display === 'none') continue;
       const filter = u.shade < 1 ? (u.filter === 'none' ? '' : u.filter + ' ') + 'brightness(' + u.shade + ')' : u.filter;
       if (it.style.filter !== filter) it.style.filter = filter;
+      const op = u.screen ? '1' : o;
+      if (it.style.opacity !== op) it.style.opacity = op;
     }
     artLayer.used.clear();
-    // pictures fade with the diamond wipe between scenes
-    const o = fade.t > 0 ? String(Math.max(0, 1 - (fade.t / fade.dur) * 1.5).toFixed(2)) : '1';
-    if (artLayer.el.style.opacity !== o) artLayer.el.style.opacity = o;
   }
   E.fit = function () {
     const c = E.canvas;
     const holder = E.holder || c.parentElement;
     const pad = E.holderPad || 0;
     const aw = holder.clientWidth - pad, ah = holder.clientHeight - pad;
-    let s = Math.min(aw / W, ah / H);
+    // phones held upright have no room beside the game, so the portrait panel folds away there
+    E.setWide(!(aw < ah && aw < 560));
+    let s = Math.min(aw / E.SW, ah / H);
     if (s >= 2) s = Math.floor(s); // whole-number scaling keeps pixels square when there is room
     s = Math.max(0.5, s);
-    c.style.width = Math.round(W * s) + 'px';
+    c.style.width = Math.round(E.SW * s) + 'px';
     c.style.height = Math.round(H * s) + 'px';
   };
 
@@ -402,7 +418,7 @@
   E.bindPointer = function (canvas) {
     const pos = (e) => {
       const r = canvas.getBoundingClientRect();
-      Pointer.x = ((e.clientX - r.left) * W) / r.width;
+      Pointer.x = ((e.clientX - r.left) * E.SW) / r.width - E.sideW;
       Pointer.y = ((e.clientY - r.top) * H) / r.height;
     };
     canvas.addEventListener('pointermove', (e) => { pos(e); Pointer.moved = true; Pointer.inside = true; });
@@ -696,14 +712,31 @@
   }
 
   // advance the simulation without requestAnimationFrame (used for automated checks)
-  E.step = function (n) {
-    for (let i = 0; i < (n || 1); i++) update();
+  // one frame: the portrait panel in screen coordinates, then the scene translated and clipped to the game area
+  function drawFrame() {
     const ctx = E.ctx;
+    E.draws = (E.draws || 0) + 1; // counts drawn frames (a fast screen can draw the same update twice)
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.imageSmoothingEnabled = false;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(E.sideW, 0, W, H);
+    ctx.clip();
+    ctx.translate(E.sideW, 0);
     if (E.scene && E.scene.draw) E.scene.draw(ctx);
     drawFade();
+    ctx.restore();
+    // the panel comes after the scene so it can carry on the wallpaper and bars the scene just drew
+    if (E.sideW > 0) {
+      ctx.fillStyle = '#2a1b30';
+      ctx.fillRect(0, 0, E.sideW, H);
+      if (E.sidePanel) E.sidePanel(ctx);
+    }
     endArt();
+  }
+  E.step = function (n) {
+    for (let i = 0; i < (n || 1); i++) update();
+    drawFrame();
   };
 
   E.run = function () {
@@ -717,12 +750,7 @@
       if (E.hold) acc = 0; // automated checks drive the simulation with E.step instead
       while (acc >= STEP && n < 5) { update(); acc -= STEP; n++; }
       if (n === 5) acc = 0;
-      const ctx = E.ctx;
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.imageSmoothingEnabled = false;
-      if (E.scene && E.scene.draw) E.scene.draw(ctx);
-      drawFade();
-      endArt();
+      drawFrame();
       requestAnimationFrame(loop);
     }
     requestAnimationFrame(loop);

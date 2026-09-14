@@ -10,50 +10,52 @@
   const SC = (G.SCENES = {});
   // the character illustration: the four maids in a 2x2 grid (Berry TL, Yoru TR, Honey BL, Yukino BR;
   // dividers at x 477-482 and y 557-562 of the 960x1113 image)
-  const CG_ART = 'img/maids-select.jpg';
-  // crops of it as [sx, sy, sw, sh, imageWidth, imageHeight] (see E.art), one set per frame shape
+  const CG_ART = 'img/maids-cg2.jpg';
+  // crops of it as [sx, sy, sw, sh, imageWidth, imageHeight] (see E.art), one set per frame shape.
+  // The illustration shows each maid's personality: Berry pumping her fists, Yoru carrying tea, Honey flustered with
+  // a wobbling cake, Yukino adjusting her glasses with a broom.
   const CG_CROP = {
     // head to waist: character select cards
     select: {
-      berry: [45, 8, 400, 500, 960, 1113],
-      yoru: [522, 8, 400, 500, 960, 1113],
-      honey: [62, 572, 400, 500, 960, 1113],
-      yukino: [520, 588, 400, 500, 960, 1113],
+      berry: [32, 10, 400, 500, 928, 1152],
+      yoru: [518, 0, 400, 500, 928, 1152],
+      honey: [55, 585, 400, 500, 928, 1152],
+      yukino: [490, 578, 400, 500, 928, 1152],
     },
     // head and shoulders, tall: growth diary
     diary: {
-      berry: [112, 20, 256, 354, 960, 1113],
-      yoru: [594, 28, 256, 354, 960, 1113],
-      honey: [138, 588, 256, 354, 960, 1113],
-      yukino: [588, 598, 256, 354, 960, 1113],
+      berry: [104, 35, 256, 354, 928, 1152],
+      yoru: [590, 20, 256, 354, 928, 1152],
+      honey: [127, 610, 256, 354, 928, 1152],
+      yukino: [562, 585, 256, 354, 928, 1152],
     },
     // head and shoulders: job results, café counter
     bust: {
-      berry: [95, 35, 300, 318, 960, 1113],
-      yoru: [572, 30, 300, 318, 960, 1113],
-      honey: [115, 580, 300, 318, 960, 1113],
-      yukino: [568, 588, 300, 318, 960, 1113],
+      berry: [82, 45, 300, 318, 928, 1152],
+      yoru: [568, 30, 300, 318, 928, 1152],
+      honey: [105, 620, 300, 318, 928, 1152],
+      yukino: [540, 595, 300, 318, 928, 1152],
     },
     // face, a little wide: maid-battle lineup
     lineup: {
-      berry: [92, 40, 306, 274, 960, 1113],
-      yoru: [570, 34, 306, 274, 960, 1113],
-      honey: [112, 590, 306, 274, 960, 1113],
-      yukino: [566, 594, 306, 274, 960, 1113],
+      berry: [79, 40, 306, 274, 928, 1152],
+      yoru: [565, 25, 306, 274, 928, 1152],
+      honey: [102, 615, 306, 274, 928, 1152],
+      yukino: [537, 590, 306, 274, 928, 1152],
     },
     // face: room dialog boxes
     face: {
-      berry: [105, 45, 280, 280, 960, 1113],
-      yoru: [582, 40, 280, 280, 960, 1113],
-      honey: [125, 590, 280, 280, 960, 1113],
-      yukino: [578, 598, 280, 280, 960, 1113],
+      berry: [92, 25, 280, 280, 928, 1152],
+      yoru: [578, 10, 280, 280, 928, 1152],
+      honey: [115, 600, 280, 280, 928, 1152],
+      yukino: [550, 578, 280, 280, 928, 1152],
     },
     // tight face: status panels and small badges
     head: {
-      berry: [135, 70, 220, 220, 960, 1113],
-      yoru: [612, 62, 220, 220, 960, 1113],
-      honey: [155, 615, 220, 220, 960, 1113],
-      yukino: [608, 622, 220, 220, 960, 1113],
+      berry: [122, 57, 220, 220, 928, 1152],
+      yoru: [608, 42, 220, 220, 928, 1152],
+      honey: [145, 632, 220, 220, 928, 1152],
+      yukino: [580, 607, 220, 220, 928, 1152],
     },
   };
   let SAVE = null;
@@ -81,11 +83,14 @@
   G.cycleLang = cycleLang;
 
   // ------------------------------------------------------------------ shared drawing
+  const lastBg = { frame: -1, off: 0, tint: null };
   function bg(t, tint) {
     const tile = E.spr.bgTile;
     const off = Math.floor(t * 0.25) % 32;
     for (let y = -32; y < E.H + 32; y += 32) for (let x = -32; x < E.W + 32; x += 32) E.ctx.drawImage(tile, x + off, y + off);
     if (tint) E.rect(0, 0, E.W, E.H, tint);
+    // the portrait panel carries the same wallpaper on across the screen
+    lastBg.frame = E.draws; lastBg.off = off; lastBg.tint = tint || null;
   }
   function lace(x, y, w, col) {
     const ctx = E.ctx;
@@ -113,13 +118,23 @@
     E.rect(x + 3, y + 3, w - 6, h - 6, '#fffaf0');
   }
   // bottom strip: black with a thin gold rule, like the original's soft-key bar
+  // Bars along the top or bottom of a scene run on across the portrait panel. Whatever draws one says so each frame:
+  // { y, h } a strip (colour, default black; rule: the row of its gold rule) or { gold: true, y, h } a gold bar that
+  // starts at the game's left edge.
+  const edgeBars = { frame: -1, list: [] };
+  function edgeBar(bar) {
+    if (edgeBars.frame !== E.draws) { edgeBars.frame = E.draws; edgeBars.list.length = 0; }
+    edgeBars.list.push(bar);
+  }
   function hint(text) {
     E.rect(0, E.H - 16, E.W, 16, '#000000');
     E.rect(0, E.H - 16, E.W, 1, '#f8b000');
+    edgeBar({ y: E.H - 16, h: 16, rule: E.H - 16 });
     E.text(text, E.W / 2, E.H - 13, { color: C.white, align: 'center' });
   }
   function header(title, right) {
     goldBar(0, 0, E.W, 20);
+    edgeBar({ gold: true, y: 0, h: 20 });
     E.text(title, 8, 4, { color: C.text });
     if (right) E.text(right, E.W - 8, 4, { color: C.red, align: 'right' });
   }
@@ -294,7 +309,92 @@
   G.outfitOf = (k) => (SAVE && SAVE.outfits && SAVE.outfits[k]) || 'maid';
   G.persist = persist;
   G.BOND = { getBond, affLevel, trainLevel, perks, maidStats, getRoom, roomHas, unlockPlan, syncUnlocks };
-  G.UI = { C, CG_ART, CG_CROP, goldBar, bg, lace, heartCursor, hint, header, coinLabel, maidImg, drawHead, isLocked, silhouette, maidName, rankColor, paper, darkPanel, statPips, wrapLines, marquee };
+  G.UI = { C, CG_ART, CG_CROP, goldBar, edgeBar, bg, lace, heartCursor, hint, header, coinLabel, maidImg, drawHead, isLocked, silhouette, maidName, rankColor, paper, darkPanel, statPips, wrapLines, marquee };
+
+  // ------------------------------------------------------------------ Portrait panel (16:9 screen, left of the game)
+  // The maid who matters on this screen stands beside the game with no frame and no caption: cut out of the
+  // illustration, on the scene's own wallpaper carried across, between the scene's top and bottom bars, which run on
+  // across the panel in front of her. Each moves in her own way (Berry bounces, Yoru breathes calmly, Honey fidgets,
+  // Yukino sways) and a newly shown maid rises up into place.
+  // cut-outs of the plain-background illustration: pixel size, her face centre in it (she is placed by her face) and
+  // the right-most pixel of her that shows on screen (the cake plate, a lock of hair), which decides how far she leans
+  const STAND = {
+    berry: { src: 'img/stand-berry.webp', w: 369, h: 560, face: [175, 163], right: 368 },
+    yoru: { src: 'img/stand-yoru.webp', w: 430, h: 550, face: [250, 138], right: 424 },
+    honey: { src: 'img/stand-honey.webp', w: 401, h: 549, face: [200, 147], right: 400 },
+    yukino: { src: 'img/stand-yukino.webp', w: 403, h: 552, face: [222, 125], right: 402 },
+  };
+  const STAND_SCALE = 0.33;
+  const STAND_TOP = 44; // where the top of her head sits, just under the tallest top bar (the room's status bar)
+  const STAND_LEAN = 6; // she may reach this far into the game area; past that she steps left and the screen edge crops her
+  // load them all up front so switching maids never shows an empty panel
+  if (typeof Image !== 'undefined') for (const k in STAND) new Image().src = STAND[k].src;
+  function portraitFor(sc) {
+    const hired = G.MAID_ORDER.filter((k) => SAVE && SAVE.hired[k]);
+    const home = (SAVE && SAVE.maid) || hired[0] || 'berry';
+    if (sc === SC.select && sc.sel != null) { const k = G.MAID_ORDER[sc.sel]; return { key: k, locked: isLocked(k) }; }
+    if (sc === SC.play && sc.world && sc.world.maids[0]) { const m = sc.world.maids[0]; return { key: m.maidKey, hurt: m.burnT > 0 || !m.alive }; }
+    if (sc === SC.battle && sc.lineup && sc.lineup[0]) return { key: sc.lineup[0].maid };
+    if (sc === SC.battleSetup && sc.cfg) return { key: sc.cfg.p1 || home };
+    if (sc === SC.title && hired.length) return { key: hired[Math.floor(E.frame / 360) % hired.length] };
+    return { key: home };
+  }
+  const MOTION = {
+    berry: (t) => [0, -Math.abs(Math.sin(t * 0.11)) * 7],
+    yoru: (t) => [0, Math.sin(t * 0.03) * 3],
+    honey: (t) => [(t % 140) < 24 ? Math.sin(t * 1.3) * 5 : 0, Math.sin(t * 0.06) * 3],
+    yukino: (t) => [Math.sin(t * 0.025) * 4, Math.sin(t * 0.05) * 2],
+  };
+  const shown = { key: null, since: 0 };
+  function drawSidePanel(ctx) {
+    const PW = E.sideW;
+    if (!SAVE || PW <= 0) return;
+    const p = portraitFor(E.scene);
+    const k = STAND[p.key] ? p.key : 'berry';
+    // the wallpaper, lined up with the scene's (same scroll, same tint); scenes without one get it dimmed
+    const drew = lastBg.frame === E.draws;
+    const off = drew ? lastBg.off : Math.floor(E.frame * 0.25) % 32;
+    const tile = E.spr.bgTile;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, PW, E.H);
+    ctx.clip();
+    for (let y = off - 32; y < E.H; y += 32) for (let x = PW + off - 32 * Math.ceil((PW + off) / 32); x < PW; x += 32) ctx.drawImage(tile, x, y);
+    if (!drew) E.rect(0, 0, PW, E.H, 'rgba(42,27,48,0.62)');
+    else if (lastBg.tint) E.rect(0, 0, PW, E.H, lastBg.tint);
+    ctx.restore();
+    // the scene's top and bottom bars, carried on across; a gold bar's run covers its own left end so the join is seamless
+    const bars = edgeBars.frame === E.draws ? edgeBars.list : [];
+    let top = 0, bottom = E.H;
+    for (const bar of bars) {
+      if (bar.gold) {
+        const x1 = PW + 3;
+        E.rect(0, bar.y, x1, bar.h, '#000000');
+        E.rect(1, bar.y + 1, x1 - 1, bar.h - 2, '#f8b000');
+        E.rect(1, bar.y + 1, x1 - 1, 1, '#ffe27a');
+        E.rect(3, bar.y + 3, x1 - 3, bar.h - 6, '#fffaf0');
+      } else {
+        E.rect(0, bar.y, PW, bar.h, bar.color || '#000000');
+        if (bar.rule != null) E.rect(0, bar.rule, PW, 1, '#f8b000');
+      }
+      if (bar.y + bar.h / 2 < E.H / 2) top = Math.max(top, bar.y + bar.h);
+      else bottom = Math.min(bottom, bar.y);
+    }
+    // her figure, shown only between the bars
+    if (shown.key !== k) { shown.key = k; shown.since = E.frame; }
+    const S = STAND[k];
+    const w = S.w * STAND_SCALE, h = S.h * STAND_SCALE;
+    const rise = Math.max(0, 1 - (E.frame - shown.since) / 16);
+    const [mx, my] = p.locked ? [0, 0] : (MOTION[k] || MOTION.yoru)(E.frame);
+    const faceX = Math.min(PW / 2, PW + STAND_LEAN - (S.right - S.face[0]) * STAND_SCALE);
+    const x = faceX - S.face[0] * STAND_SCALE + mx;
+    const y = STAND_TOP + my + rise * rise * 48; // the cut-outs fade out at the bottom, so she needs no bar to stand on
+    const y0 = Math.max(y, top), y1 = Math.min(y + h, bottom);
+    if (y1 - y0 < 1) return;
+    const filter = p.locked ? 'brightness(0) opacity(0.6)' : p.hurt ? 'sepia(0.6) brightness(0.55) contrast(1.2)' : null;
+    E.art('side-portrait', S.src, x, y0, w, y1 - y0, [0, (y0 - y) / STAND_SCALE, S.w, (y1 - y0) / STAND_SCALE, S.w, S.h], filter, true);
+  }
+  E.sidePanel = drawSidePanel;
 
   // ------------------------------------------------------------------ Title cast
   // The maids who have joined live on the title screen. Each one picks something to do: sweep up a dust bunny,
@@ -728,6 +828,7 @@
     },
     drawLangBar() {
       E.rect(0, 222, E.W, 18, 'rgba(42,27,48,0.85)');
+      edgeBar({ y: 222, h: 18, color: 'rgba(42,27,48,0.85)' });
       E.text('◀', 58, 226, { color: C.pink });
       E.text('▶', 258, 226, { color: C.pink });
       G.LANGS.forEach((l, i) => {
@@ -1499,6 +1600,7 @@
       w.draw(E.ctx);
       // banner
       E.rect(0, 0, 240, 16, '#000000'); E.rect(0, 15, 240, 1, '#f8b000');
+      edgeBar({ y: 0, h: 16, rule: 15 });
       const idW = E.text(this.def.id, 6, 5, { color: C.pink });
       E.text(this.def.title, 12 + idW, 2, { color: C.white });
       const tl = Math.max(0, Math.ceil(w.timeLeft / 60));
@@ -1506,6 +1608,7 @@
       E.text(mm + ':' + ss, 234, 5, { color: tl <= 30 && (E.frame >> 4) % 2 ? C.red : C.gold, align: 'right' });
       // bottom strip
       E.rect(0, 224, 240, 16, '#000000'); E.rect(0, 224, 240, 1, '#f8b000');
+      edgeBar({ y: 224, h: 16, rule: 224 });
       if (w.boss && w.boss.alive) {
         const nameW = E.text(this.def.title, 6, 226, { color: C.gold, fit: 80 });
         E.bar(12 + nameW, 228, 222 - nameW, 8, w.boss.hp / w.boss.maxHp, w.boss.hitT > 0 && (E.frame >> 2) % 2 ? C.white : C.red);
@@ -1965,11 +2068,13 @@
       E.rect(0, 0, E.W, E.H, C.plum);
       w.draw(E.ctx);
       E.rect(0, 0, 240, 16, '#000000'); E.rect(0, 15, 240, 1, '#f8b000');
+      edgeBar({ y: 0, h: 16, rule: 15 });
       E.text('ROUND ' + this.round, 6, 5, { color: C.pink });
       const tl = Math.max(0, Math.ceil(w.timeLeft / 60));
       E.text(Math.floor(tl / 60) + ':' + String(tl % 60).padStart(2, '0'), 234, 5, { color: tl <= 45 && (E.frame >> 4) % 2 ? C.red : C.gold, align: 'right' });
       E.text(G.t('先贏 {n} 局的女僕獲勝', { n: this.cfg.wins }), 120, 2, { color: C.gray, align: 'center' });
       E.rect(0, 224, 240, 16, '#000000'); E.rect(0, 224, 240, 1, '#f8b000');
+      edgeBar({ y: 224, h: 16, rule: 224 });
       E.text(G.t(w.sudden ? '外圈開始封鎖！往中間移動！' : '最後站著的女僕就是贏家'), 120, 226, { color: w.sudden ? C.pink : C.gray, align: 'center' });
       // side panel
       goldBar(240, 0, 80, 240);
