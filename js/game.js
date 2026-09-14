@@ -17,6 +17,17 @@
   const sfx = (n) => E.audio.sfx(n);
 
   function speedPx(lv) { return 1.0 + lv * 0.2; }
+  // a crisp one-pixel circle (midpoint algorithm) for skill rings, so effects stay on the pixel grid
+  function pixelRing(cx, cy, rad, col) {
+    let x = Math.round(rad), y = 0, err = 1 - x;
+    const X = Math.round(cx), Y = Math.round(cy);
+    while (x >= y) {
+      for (const [px, py] of [[x, y], [y, x], [-y, x], [-x, y], [-x, -y], [-y, -x], [y, -x], [x, -y]]) E.rect(X + px, Y + py, 1, 1, col);
+      y++;
+      if (err < 0) err += 2 * y + 1;
+      else { x--; err += 2 * (y - x) + 1; }
+    }
+  }
 
   class World {
     constructor(cfg) {
@@ -184,11 +195,20 @@
         x: start[0] * T, y: start[1] * T, dir: 'down', moving: false, walkT: 0, dirStack: [],
         speedLv: st.speed, bombs: st.bombs, fire: st.fire, maxHearts: st.hearts, hearts: p.hearts || st.hearts,
         sp: p.sp || 0, active: 0, inv: 90, star: 0, burnT: 0, stun: 0, alive: true, deadT: 0,
+        // passives: Berry kicks bombs she walks into, Yoru's flames pierce crates, Honey carries a sugar shield,
+        // Yukino's blasts chill whatever stands next to them (and her fuses run long for remote play)
         kick: p.maid === 'berry', remote: p.maid === 'yukino', fuse: p.maid === 'yukino' ? 190 : 150,
-        cool: 0, slashT: 0, magicT: 0, skillCost: D.cost, name: D.name, color: D.color,
+        pierce: p.maid === 'yoru' ? G.SKILL.pierce : 0, frost: p.maid === 'yukino',
+        shield: 0, shieldCD: 0, chill: 0,
+        cool: 0, slashT: 0, magicT: 0, kickT: 0, remoteT: 0, skillCost: D.cost, name: D.name, color: D.color,
         perks: p.perks || {},
       };
       m.skillCost = Math.round(D.cost * (m.perks.skillCostMul || 1));
+      // Honey starts with her shield up (in battle rounds only if the tuning says so, otherwise it grows in first)
+      if (p.maid === 'honey') {
+        if (this.mode !== 'battle' || G.SKILL.shieldStartBattle) m.shield = 1;
+        else m.shieldCD = G.SKILL.shieldRechargeBattle;
+      }
       m.guard = !!m.perks.guard;
       if (!m.human) m.ai = new BomberAI(this, m, p.level || 1);
       this.maids.push(m);
@@ -270,7 +290,7 @@
 
     // Grid movement with corner assist. Invariant: a maid is off-grid on at most one axis.
     moveMaid(m, dir) {
-      const speed = speedPx(m.speedLv);
+      const speed = speedPx(m.speedLv) * (m.chill > 0 ? G.SKILL.chillSpeed : 1);
       const [dx, dy] = DV[dir];
       const horiz = dx !== 0;
       const perp = horiz ? m.y : m.x;
@@ -336,6 +356,8 @@
       if (!this.canSlideInto(b, b.c + dx, b.r + dy)) return false;
       b.slide = dir;
       b.passers.clear();
+      // Berry's skill kick flies faster and blows up on whatever it hits
+      if (fromSkill) { b.impact = true; b.kicker = m; }
       sfx('kick');
       this.dust(b.x + 8, b.y + 12, 3);
       return true;
@@ -358,13 +380,22 @@
         for (const a of b.passers) if (!a.alive || !this.overlapsTile(a, b.c, b.r)) b.passers.delete(a);
         if (b.slide) {
           const [dx, dy] = DV[b.slide];
-          let remain = 3;
+          let remain = b.impact ? G.SKILL.kickSpeed : 3;
+          // an impact bomb streaks and bursts as soon as it meets something (the boss has no tile, so check it here)
+          if (b.impact) {
+            if (b.anim % 2 === 0) this.particles.push({ kind: 'streak', x: b.x + 8 - dx * 6, y: b.y + 8 - dy * 6, dx, dy, t: 0, life: 10 });
+            if (this.boss && this.boss.alive && Math.hypot(this.boss.x - b.x - 8, this.boss.y - b.y - 8) < 18) { b.slide = null; b.timer = Math.min(b.timer, 1); }
+          }
           while (remain > 0.001 && b.slide) {
             const aligned = Math.abs(b.x - b.c * T) < 0.01 && Math.abs(b.y - b.r * T) < 0.01;
             let goalX, goalY;
             if (aligned) {
               b.x = b.c * T; b.y = b.r * T;
-              if (!this.canSlideInto(b, b.c + dx, b.r + dy)) { b.slide = null; break; }
+              if (!this.canSlideInto(b, b.c + dx, b.r + dy)) {
+                b.slide = null;
+                if (b.impact) { b.timer = Math.min(b.timer, 1); this.particles.push({ kind: 'ring', x: b.x + 8, y: b.y + 8, r0: 3, r1: 11, col: '#ffffff', t: 0, life: 8 }); }
+                break;
+              }
               goalX = (b.c + dx) * T; goalY = (b.r + dy) * T;
             } else {
               goalX = dx > 0 ? Math.ceil(b.x / T) * T : dx < 0 ? Math.floor(b.x / T) * T : b.x;
@@ -397,33 +428,62 @@
       if (this.bombAt[idx(b.c, b.r)] === b) this.bombAt[idx(b.c, b.r)] = null;
       if (b.owner && b.owner.active > 0) b.owner.active--;
       const owner = b.owner;
+      const range = b.fire + (b.boost || 0);
+      const pierce = (owner && owner.pierce) || 0;
       let centerMask = 0;
+      const blasted = [[b.c, b.r]];
       for (const d of DIRS) {
         const [dx, dy] = DV[d];
         const tiles = [];
-        for (let n = 1; n <= b.fire; n++) {
+        let cut = 0;
+        for (let n = 1; n <= range; n++) {
           const c = b.c + dx * n, r = b.r + dy * n;
           if (!inb(c, r)) break;
           const k = idx(c, r), cell = this.grid[k];
           if (cell === HARD || cell === WALL || cell === DECOR || cell === BURN) break;
-          if (cell === SOFT) { this.burnSoft(c, r, owner); break; }
+          if (cell === SOFT) {
+            this.burnSoft(c, r, owner);
+            // Yoru's flames cut through the crate and keep going
+            if (cut < pierce) { cut++; this.particles.push({ kind: 'streak', x: c * T + 8, y: r * T + 8, dx, dy, t: 0, life: 12, col: '#e8e0ff' }); continue; }
+            break;
+          }
           tiles.push([c, r]);
           const ob = this.bombAt[k];
           if (ob && !ob.dead) { ob.timer = Math.min(ob.timer, 6); break; }
         }
-        tiles.forEach(([c, r], j) => this.addFlame(c, r, BIT[OPP[d]] | (j < tiles.length - 1 ? BIT[d] : 0), owner));
+        tiles.forEach(([c, r], j) => this.addFlame(c, r, BIT[OPP[d]] | (j < tiles.length - 1 ? BIT[d] : 0), owner, b.impact));
         if (tiles.length) centerMask |= BIT[d];
+        blasted.push(...tiles);
       }
-      this.addFlame(b.c, b.r, centerMask, owner);
+      this.addFlame(b.c, b.r, centerMask, owner, b.impact);
+      if (owner && owner.frost) this.frostAround(blasted, owner);
+      if (b.boost) this.particles.push({ kind: 'ring', x: b.c * T + 8, y: b.r * T + 8, r0: 6, r1: 22, col: '#9ff3ff', t: 0, life: 14 });
       this.shake = Math.max(this.shake, 6);
       sfx('boom');
     }
 
-    addFlame(c, r, mask, owner) {
+    // Yukino's passive: the cold of her blast freezes monsters and slows rivals standing just outside the flames
+    frostAround(tiles, owner) {
+      const inBlast = new Set(tiles.map(([c, r]) => idx(c, r)));
+      const edge = new Set();
+      for (const [c, r] of tiles) for (const d of DIRS) {
+        const nc = c + DV[d][0], nr = r + DV[d][1];
+        if (inb(nc, nr) && !inBlast.has(idx(nc, nr)) && this.grid[idx(nc, nr)] === FLOOR) edge.add(idx(nc, nr));
+      }
+      for (const k of edge) {
+        const c = k % COLS, r = (k / COLS) | 0;
+        if (Math.random() < 0.5) this.particles.push({ kind: 'frost', x: c * T + 8 + E.rand(-4, 4), y: r * T + 8 + E.rand(-4, 4), vx: 0, vy: -0.15, t: 0, life: 30 });
+        for (const e of this.enemies) if (e.alive && this.overlapsTile(e, c, r)) e.frozen = Math.max(e.frozen || 0, G.SKILL.frostEnemy);
+        for (const m of this.maids) if (m !== owner && m.alive && m.star <= 0 && this.overlapsTile(m, c, r)) m.chill = Math.max(m.chill, G.SKILL.frostMaid);
+      }
+    }
+
+    // impact: flames from Berry's skill kick, which never burn Berry herself
+    addFlame(c, r, mask, owner, impact) {
       const k = idx(c, r);
       const f = this.flames[k];
-      if (f) { f.mask |= mask; if (f.t > 6) f.t = 6; f.owner = owner; }
-      else this.flames[k] = { mask, t: 0, owner };
+      if (f) { f.mask |= mask; if (f.t > 6) f.t = 6; f.impact = !!impact && (f.owner === owner || f.impact); f.owner = owner; }
+      else this.flames[k] = { mask, t: 0, owner, impact: !!impact };
       const it = this.items[k];
       if (it && it.age > 24) {
         this.items[k] = null;
@@ -487,6 +547,15 @@
       if (m.cool > 0) m.cool--;
       if (m.slashT > 0) m.slashT--;
       if (m.magicT > 0) m.magicT--;
+      if (m.kickT > 0) m.kickT--;
+      if (m.remoteT > 0) m.remoteT--;
+      if (m.chill > 0) m.chill--;
+      // Honey's sugar shield grows back a while after it breaks
+      if (m.maidKey === 'honey' && !m.shield && m.shieldCD > 0 && --m.shieldCD === 0) {
+        m.shield = 1;
+        this.particles.push({ kind: 'ring', x: m.x + 8, y: m.y + 4, r0: 14, r1: 9, col: '#ffc8e0', t: 0, life: 12 });
+        sfx('heal');
+      }
       m.sp = Math.min(100, m.sp + (this.mode === 'battle' ? 0.08 : 0.06) * (m.perks.lowMood ? 0.7 : 1));
 
       let ctrl;
@@ -516,8 +585,9 @@
       const it = this.items[k];
       if (it && (it.type === 'dust' || it.age > 6)) { this.items[k] = null; this.collect(m, it.type, c, r); }
 
-      // flames
-      if (this.hotAt(c, r)) this.hurtMaid(m);
+      // flames (her own skill-kick blast spares Berry when the tuning says so)
+      const hot = this.hotAt(c, r);
+      if (hot && !(G.SKILL.kickSelfSafe && hot.impact && hot.owner === m)) this.hurtMaid(m);
     }
 
     collect(m, type, c, r) {
@@ -549,6 +619,17 @@
     hurtMaid(m, force) {
       if (!m.alive || this.state !== 'play') return;
       if (!force && (m.inv > 0 || m.star > 0)) return;
+      // the sugar shield takes the hit instead
+      if (!force && m.shield > 0) {
+        m.shield = 0;
+        m.shieldCD = this.mode === 'battle' ? G.SKILL.shieldRechargeBattle : G.SKILL.shieldRecharge;
+        m.inv = 90;
+        this.floaters.push({ x: m.x + 8, y: m.y - 6, text: G.t('護盾破了！'), col: '#ffc8e0', t: 0 });
+        for (let n = 0; n < 10; n++) this.particles.push({ kind: 'debris', x: m.x + 8, y: m.y + 2, vx: Math.cos(n * 0.63) * 1.8, vy: Math.sin(n * 0.63) * 1.8 - 1, t: 0, life: 24, col: n % 2 ? '#ffc8e0' : '#ffffff' });
+        this.shake = Math.max(this.shake, 6);
+        sfx('hurt');
+        return;
+      }
       m.hearts--;
       m.inv = 150 + (m.perks.invBonus || 0);
       m.burnT = 48;
@@ -574,62 +655,94 @@
       if (m.cool > 0) return;
       const [c, r] = cellOf(m);
       const [dx, dy] = DV[m.dir];
+      const S = G.SKILL;
+      const pay = () => {
+        if (m.sp < m.skillCost) { sfx('denied'); m.cool = 10; return false; }
+        m.sp -= m.skillCost;
+        return true;
+      };
       switch (m.maidKey) {
+        // 爆裂飛踢: kick the bomb in front (or drop one and kick it) so it streaks off and bursts on impact
         case 'berry': {
-          m.cool = 10;
-          if (!this.tryKick(m, m.dir, true)) sfx('denied');
+          let b = this.bombAt[idx(c + dx, r + dy)] || this.bombAt[idx(c, r)];
+          if (b && (b.slide || b.dead)) b = null;
+          const canDrop = !b && m.active < m.bombs && this.grid[idx(c, r)] === FLOOR && !this.bombAt[idx(c, r)];
+          const target = b || (canDrop ? { c, r } : null);
+          if (!target || !this.canSlideInto(target, target.c + dx, target.r + dy)) { sfx('denied'); m.cool = 10; return; }
+          if (!pay()) return;
+          if (!b) { this.placeBomb(m); b = this.bombAt[idx(c, r)]; }
+          m.cool = 18;
+          m.kickT = 12;
+          if (b && this.tryKick(m, m.dir, true)) {
+            for (let n = 0; n < 6; n++) this.particles.push({ kind: 'star', x: b.x + 8, y: b.y + 8, vx: -dx * E.rand(0.5, 1.6) + E.rand(-0.8, 0.8), vy: -dy * E.rand(0.5, 1.6) + E.rand(-0.8, 0.8), t: 0, life: 20 });
+            this.particles.push({ kind: 'ring', x: b.x + 8, y: b.y + 8, r0: 4, r1: 13, col: '#ffe14d', t: 0, life: 10 });
+            this.floaters.push({ x: m.x + 8, y: m.y - 8, text: G.t('爆裂飛踢！'), col: '#ff9fb4', t: 0 });
+          }
           break;
         }
+        // 居合斬: one stroke through the next tiles — crates split, bombs defused, monsters cut, rivals knocked dizzy
         case 'yoru': {
-          if (m.sp < m.skillCost) { sfx('denied'); m.cool = 10; return; }
-          m.sp -= m.skillCost;
+          if (!pay()) return;
           m.cool = 22;
           m.slashT = 14;
           sfx('slash');
-          const tc = c + dx, tr = r + dy;
-          if (!inb(tc, tr)) break;
-          const k = idx(tc, tr);
-          if (this.grid[k] === SOFT) this.burnSoft(tc, tr, m);
-          const b = this.bombAt[k];
-          if (b && !b.dead) {
-            b.dead = true;
-            this.bombs.splice(this.bombs.indexOf(b), 1);
-            this.bombAt[k] = null;
-            if (b.owner.active > 0) b.owner.active--;
-            this.puff(tc * T + 8, tr * T + 8);
-            this.floaters.push({ x: tc * T + 8, y: tr * T, text: G.t('拆除！'), col: '#d8dcea', t: 0 });
+          for (let n = 1; n <= S.slashReach; n++) {
+            const tc = c + dx * n, tr = r + dy * n;
+            if (!inb(tc, tr)) break;
+            const k = idx(tc, tr), cell = this.grid[k];
+            if (cell === HARD || cell === WALL || cell === DECOR) break;
+            for (let s = 0; s < 3; s++) this.particles.push({ kind: 'spark', x: tc * T + 8 + E.rand(-5, 5), y: tr * T + 8 + E.rand(-5, 5), vx: dx * 0.6, vy: dy * 0.6, t: 0, life: 16 });
+            const b = this.bombAt[k];
+            if (b && !b.dead) {
+              b.dead = true;
+              this.bombs.splice(this.bombs.indexOf(b), 1);
+              this.bombAt[k] = null;
+              if (b.owner.active > 0) b.owner.active--;
+              this.puff(tc * T + 8, tr * T + 8);
+              this.floaters.push({ x: tc * T + 8, y: tr * T, text: G.t('拆除！'), col: '#d8dcea', t: 0 });
+            }
+            for (const e of this.enemies) if (e.alive && Math.abs(e.x - tc * T) < 12 && Math.abs(e.y - tr * T) < 12) this.hitEnemy(e, m);
+            // against other maids the slash only knocks them dizzy
+            for (const o of this.maids) if (o !== m && o.alive && o.star <= 0 && Math.abs(o.x - tc * T) < 12 && Math.abs(o.y - tr * T) < 12) o.stun = Math.max(o.stun, 45);
+            if (this.boss && this.boss.alive && Math.hypot(this.boss.x - (tc * T + 8), this.boss.y - (tr * T + 8)) < 22) this.hitBoss();
+            if (cell === SOFT) { this.burnSoft(tc, tr, m); break; }
           }
-          for (const e of this.enemies) if (e.alive && Math.abs(e.x - tc * T) < 12 && Math.abs(e.y - tr * T) < 12) this.hitEnemy(e, m);
-          // against other maids the slash only knocks them dizzy
-          for (const o of this.maids) if (o !== m && o.alive && o.star <= 0 && Math.abs(o.x - tc * T) < 12 && Math.abs(o.y - tr * T) < 12) o.stun = Math.max(o.stun, 45);
-          if (this.boss && this.boss.alive && Math.hypot(this.boss.x - (tc * T + 8), this.boss.y - (tr * T + 8)) < 22) this.hitBoss();
           break;
         }
+        // 甜心魔法: heal, rebuild the sugar shield, and daze everything nearby
         case 'honey': {
-          if (m.sp < m.skillCost) { sfx('denied'); m.cool = 10; return; }
-          m.sp -= m.skillCost;
+          if (!pay()) return;
           m.cool = 30;
           m.magicT = 40;
           sfx('magic');
           if (m.hearts < m.maxHearts && this.mode === 'story') m.hearts++;
+          if (this.mode !== 'battle' || S.magicShieldBattle) { m.shield = 1; m.shieldCD = 0; }
           for (let n = 0; n < 12; n++) {
             const a = (n / 12) * Math.PI * 2;
             this.particles.push({ kind: 'heart', x: m.x + 8, y: m.y + 4, vx: Math.cos(a) * 1.6, vy: Math.sin(a) * 1.6, t: 0, life: 40 });
           }
-          for (const e of this.enemies) if (e.alive && Math.hypot(e.x - m.x, e.y - m.y) < 4.5 * T) { e.charm = 270; }
-          for (const o of this.maids) if (o !== m && o.alive && o.star <= 0 && Math.hypot(o.x - m.x, o.y - m.y) < 2.5 * T) { o.stun = Math.max(o.stun, 40); }
-          if (this.boss && this.boss.alive && Math.hypot(this.boss.x - m.x - 8, this.boss.y - m.y - 8) < 4.5 * T) this.boss.charm = 150;
+          this.particles.push({ kind: 'ring', x: m.x + 8, y: m.y + 6, r0: 6, r1: S.charmRadius * T, col: '#ff9fbb', t: 0, life: 22 });
+          this.particles.push({ kind: 'ring', x: m.x + 8, y: m.y + 6, r0: 2, r1: S.stunRadius * T, col: '#ffe0ec', t: 0, life: 18 });
+          for (const e of this.enemies) if (e.alive && Math.hypot(e.x - m.x, e.y - m.y) < S.charmRadius * T) { e.charm = S.charmFrames; }
+          for (const o of this.maids) if (o !== m && o.alive && o.star <= 0 && Math.hypot(o.x - m.x, o.y - m.y) < S.stunRadius * T) { o.stun = Math.max(o.stun, S.stunFrames); }
+          if (this.boss && this.boss.alive && Math.hypot(this.boss.x - m.x - 8, this.boss.y - m.y - 8) < S.charmRadius * T) this.boss.charm = S.bossCharm;
           break;
         }
+        // 遙控引爆: set all her bombs off in a quick sequence, each blast one tile longer
         case 'yukino': {
           const mine = this.bombs.filter((b) => b.owner === m && !b.dead);
           if (!mine.length) { sfx('denied'); m.cool = 10; return; }
-          if (m.sp < m.skillCost) { sfx('denied'); m.cool = 10; return; }
-          m.sp -= m.skillCost;
+          if (!pay()) return;
           m.cool = 20;
+          m.remoteT = 24;
           sfx('remote');
+          this.particles.push({ kind: 'ring', x: m.x + 8, y: m.y + 2, r0: 3, r1: 20, col: '#9ff3ff', t: 0, life: 16 });
           // short, visible countdown so opponents can still react
-          mine.forEach((b, i) => { b.timer = Math.min(b.timer, (this.mode === 'battle' ? 16 : 4) + i * 3); });
+          mine.forEach((b, i) => {
+            b.timer = Math.min(b.timer, (this.mode === 'battle' ? S.remoteDelayBattle : S.remoteDelay) + i * 3);
+            b.boost = S.remoteBoost;
+            this.particles.push({ kind: 'ring', x: b.x + 8, y: b.y + 8, r0: 12, r1: 3, col: '#9ff3ff', t: 0, life: 10 });
+          });
           break;
         }
       }
@@ -652,12 +765,13 @@
       if (this.hotAt(c, r) && e.hitT <= 0) this.hitEnemy(e, this.hotAt(c, r).owner);
       if (!e.alive) return;
       if (e.charm > 0) e.charm--;
+      if (e.frozen > 0) e.frozen--;
       if (this.state === 'play') {
         for (const m of this.maids) {
-          if (m.alive && e.charm <= 0 && Math.abs(e.x - m.x) < 9 && Math.abs(e.y - m.y) < 9) this.hurtMaid(m);
+          if (m.alive && e.charm <= 0 && !(e.frozen > 0) && Math.abs(e.x - m.x) < 9 && Math.abs(e.y - m.y) < 9) this.hurtMaid(m);
         }
       }
-      if (this.freezeT > 0 || e.charm > 0 || this.state !== 'play') return;
+      if (this.freezeT > 0 || e.charm > 0 || e.frozen > 0 || this.state !== 'play') return;
       if (e.wait > 0) { e.wait--; return; }
 
       const atTarget = Math.abs(e.x - e.tx * T) < 0.01 && Math.abs(e.y - e.ty * T) < 0.01;
@@ -1123,15 +1237,18 @@
           map[idx(c, r)] = Math.min(map[idx(c, r)], (j * 9) + 10);
         }
       }
-      const list = this.bombs.filter((b) => !b.dead).map((b) => ({ c: b.c, r: b.r, fire: b.fire, t: b.timer }));
+      // skill-aware: remote-boosted range, crate-piercing flames, and impact bombs that go off the moment they stop
+      const list = this.bombs.filter((b) => !b.dead).map((b) => ({ c: b.c, r: b.r, fire: b.fire + (b.boost || 0), pierce: b.owner ? b.owner.pierce || 0 : 0, t: b.impact && b.slide ? Math.min(b.timer, 10) : b.timer }));
       if (extraBomb) list.push(extraBomb);
       const blast = (b) => {
         const out = [idx(b.c, b.r)];
         for (const d of DIRS) {
+          let cut = 0;
           for (let n = 1; n <= b.fire; n++) {
             const c = b.c + DV[d][0] * n, r = b.r + DV[d][1] * n;
             if (!inb(c, r)) break;
             const cell = this.grid[idx(c, r)];
+            if (cell === SOFT && cut < (b.pierce || 0)) { cut++; continue; }
             if (cell !== FLOOR) break;
             out.push(idx(c, r));
             if (list.some((o) => o.c === c && o.r === r)) break;
@@ -1384,6 +1501,25 @@
           case 'spark': ctx.drawImage(S.fx.sparkle[(p.t >> 3) % 3], Math.round(x - 2), Math.round(y - 2)); break;
           case 'heart': ctx.drawImage(S.fx.heart, Math.round(x - 2), Math.round(y - 2)); break;
           case 'star': ctx.drawImage(S.fx.star[(p.t >> 3) % 2], Math.round(x - 2), Math.round(y - 2)); break;
+          // skill effects: an expanding (or closing) pixel ring, a speed streak, a drifting frost crystal
+          case 'ring': {
+            const t = p.t / p.life;
+            if (t > 0.7 && p.t % 2) break;
+            pixelRing(x, y, p.r0 + (p.r1 - p.r0) * E.ease.outCubic(t), p.col);
+            break;
+          }
+          case 'streak': {
+            const len = Math.max(1, 6 - (p.t >> 1));
+            for (let i = 0; i < len; i++) E.rect(Math.round(x - p.dx * i * 2), Math.round(y - p.dy * i * 2), 1, 1, i < 2 ? '#ffffff' : p.col || '#ffe14d');
+            break;
+          }
+          case 'frost': {
+            if (p.t > p.life - 8 && p.t % 2) break;
+            const fx = Math.round(x), fy = Math.round(y);
+            E.rect(fx - 1, fy, 3, 1, '#9ff3ff'); E.rect(fx, fy - 1, 1, 3, '#9ff3ff'); E.rect(fx, fy, 1, 1, '#ffffff');
+            if ((p.t >> 3) % 2) { E.rect(fx - 2, fy - 2, 1, 1, '#d8fbff'); E.rect(fx + 2, fy + 2, 1, 1, '#d8fbff'); }
+            break;
+          }
           case 'coinfly': {
             const t = E.ease.inOut(p.t / p.life);
             ctx.drawImage(S.items.coin[(p.t >> 2) % 4], Math.round(ox + E.lerp(p.x, p.tx, t)), Math.round(oy + E.lerp(p.y, p.ty, t) - Math.sin(t * Math.PI) * 20));
@@ -1473,13 +1609,39 @@
         }
       }
       if (m.slashT > 0) {
-        const sl = E.spr.fx.slash[Math.min(2, (14 - m.slashT) >> 2)];
+        // the stroke crosses both tiles in front, the far arc a beat behind the near one
         const [dx, dy] = DV[m.dir];
-        ctx.save();
-        ctx.translate(x + 8 + dx * 14, y + 6 + dy * 14);
-        ctx.rotate(Math.atan2(dy, dx));
-        ctx.drawImage(sl, -12, -12);
-        ctx.restore();
+        for (let n = 1; n <= G.SKILL.slashReach; n++) {
+          const age = 14 - m.slashT - (n - 1) * 3;
+          if (age < 0) continue;
+          const sl = E.spr.fx.slash[Math.min(2, age >> 2)];
+          ctx.save();
+          ctx.translate(x + 8 + dx * 14 * n, y + 6 + dy * 14 * n);
+          ctx.rotate(Math.atan2(dy, dx));
+          ctx.drawImage(sl, -12, -12);
+          ctx.restore();
+        }
+        if (m.slashT > 8) for (let i = 1; i < 16 * G.SKILL.slashReach; i += 3) E.rect(x + 8 + dx * i - (dy ? 3 : 0), y + 6 + dy * i - (dx ? 3 : 0), dy ? 7 : 2, dx ? 7 : 2, i % 2 ? '#ffffff' : '#d8d0f0');
+      }
+      // Berry's kick: an impact star at her foot
+      if (m.kickT > 0) {
+        const [dx, dy] = DV[m.dir];
+        ctx.drawImage(E.spr.fx.star[(m.kickT >> 2) % 2], x + 6 + dx * 9, y + 6 + dy * 9);
+      }
+      // Yukino's remote: signal arcs blinking over her head
+      if (m.remoteT > 0 && (m.remoteT >> 2) % 2) {
+        for (let i = -2; i <= 2; i++) { E.rect(x + 8 + i, y - 16 - (Math.abs(i) === 2 ? 0 : 1), 1, 1, '#9ff3ff'); E.rect(x + 8 + i * 2, y - 19 + (Math.abs(i) < 2 ? -1 : 1), 1, 1, '#d8fbff'); }
+      }
+      // Honey's sugar shield: a shimmering pink bubble
+      if (m.shield > 0) {
+        const col = (this.frame >> 3) % 3 === 0 ? '#ffffff' : '#ffb0d0';
+        pixelRing(x + 8, y + 3, 11, col);
+        if ((this.frame >> 4) % 4 === 0) E.rect(x + 1, y - 5, 2, 2, '#ffffff');
+      }
+      // chilled by Yukino's frost: icy glints round the feet
+      if (m.chill > 0 && (m.chill >> 2) % 2) {
+        E.rect(x + 2, y + 13, 12, 1, '#9ff3ff');
+        E.rect(x + 1 + ((m.chill * 3) % 13), y + 4 + ((m.chill * 5) % 8), 1, 1, '#ffffff');
       }
       if (this.mode === 'battle') {
         E.rect(x + 6, y - 14, 4, 2, m.color);
@@ -1504,6 +1666,12 @@
       // sprites stand on the tile's bottom edge whatever their height
       const top = y + 16 - img.height;
       ctx.drawImage(img, x, top);
+      // frozen by Yukino's blast: iced over with a pale sheen and a glint
+      if (e.frozen > 0) {
+        ctx.save(); ctx.globalAlpha = 0.45; ctx.drawImage(S.white[0], x, y + 16 - S.white[0].height); ctx.restore();
+        E.rect(x + 2, y + 15, 12, 1, '#9ff3ff');
+        if ((e.frozen >> 3) % 2) { E.rect(x + 11, top + 3, 1, 3, '#ffffff'); E.rect(x + 10, top + 4, 3, 1, '#ffffff'); }
+      }
       if (e.charm > 0) ctx.drawImage(E.spr.fx.heart, x + 6 + Math.round(Math.sin(this.frame * 0.2) * 3), top - 6 - ((this.frame >> 2) % 4));
       if (frozen) ctx.drawImage(E.spr.fx.sparkle[(this.frame >> 4) % 3], x + 11, top - 1);
     }
@@ -1616,14 +1784,30 @@
         const [oc, or] = cellOf(o);
         if (oc === c && or === r) { hits++; continue; }
         for (const d of DIRS) {
+          let cut = 0;
           for (let n = 1; n <= fire; n++) {
             const cc = c + DV[d][0] * n, rr = r + DV[d][1] * n;
-            if (!inb(cc, rr) || this.w.grid[idx(cc, rr)] !== FLOOR) break;
+            if (!inb(cc, rr)) break;
+            const cell = this.w.grid[idx(cc, rr)];
+            if (cell === SOFT && cut < (this.m.pierce || 0)) { cut++; continue; }
+            if (cell !== FLOOR) break;
             if (cc === oc && rr === or) hits++;
           }
         }
       }
       return hits;
+    }
+    // first rival straight ahead within n clear floor tiles
+    rivalAhead(c, r, dir, n) {
+      const [dx, dy] = DV[dir];
+      for (let i = 1; i <= n; i++) {
+        const cc = c + dx * i, rr = r + dy * i;
+        if (!inb(cc, rr) || this.w.grid[idx(cc, rr)] !== FLOOR) return null;
+        if (i > 1 && this.w.bombAt[idx(cc, rr)]) return null;
+        const o = this.w.maids.find((x) => x !== this.m && x.alive && cellOf(x)[0] === cc && cellOf(x)[1] === rr);
+        if (o) return { o, dist: i };
+      }
+      return null;
     }
     softsInBlast(c, r, fire) {
       let n = 0;
@@ -1640,7 +1824,7 @@
     }
 
     canEscapeAfterBomb(c, r) {
-      const extra = { c, r, fire: this.m.fire, t: this.m.fuse };
+      const extra = { c, r, fire: this.m.fire, pierce: this.m.pierce || 0, t: this.m.fuse };
       const danger = this.w.dangerMap(extra);
       const fpt = this.framesPerTile();
       const path = this.w.bfsPath(c, r, (k) => danger[k] === Infinity, (cc, rr, steps) => {
@@ -1789,35 +1973,50 @@
       const w = this.w, m = this.m;
       const [dx, dy] = DV[m.dir];
       const opps = w.maids.filter((o) => o !== m && o.alive);
+      const S = G.SKILL;
+      if (m.sp < m.skillCost) return false;
+      const danger = w.dangerMap();
       switch (m.maidKey) {
+        // turn to face a rival in a clear line and send an impact bomb at them
         case 'berry': {
-          const b = w.bombAt[idx(c + dx, r + dy)];
-          if (!b) return false;
-          for (const o of opps) {
-            const [oc, or] = cellOf(o);
-            if ((dx && or === r && Math.sign(oc - c) === dx) || (dy && oc === c && Math.sign(or - r) === dy)) return true;
+          if (danger[idx(c, r)] !== Infinity) return false;
+          for (const d of DIRS) {
+            const hit = this.rivalAhead(c, r, d, 8);
+            // far enough that the burst can't reach back to her
+            if (!hit || (!S.kickSelfSafe && hit.dist < m.fire + 2) || hit.dist < 2) continue;
+            const [ddx, ddy] = DV[d];
+            const ahead = w.bombAt[idx(c + ddx, r + ddy)];
+            if (ahead || (m.active < m.bombs && !w.bombAt[idx(c, r)] && Math.random() < 0.5)) { m.dir = d; return true; }
           }
           return false;
         }
+        // cut down a rival or an incoming bomb within reach; now and then clear a crate ahead
         case 'yoru': {
-          if (m.sp < m.skillCost) return false;
-          const tk = idx(c + dx, r + dy);
-          if (w.grid[tk] === SOFT && Math.random() < 0.3) return true;
-          return opps.some((o) => { const [oc, or] = cellOf(o); return oc === c + dx && or === r + dy; });
+          for (const d of DIRS) {
+            const hit = this.rivalAhead(c, r, d, S.slashReach);
+            if (hit) { m.dir = d; return true; }
+          }
+          for (let n = 1; n <= S.slashReach; n++) {
+            const b = w.bombAt[idx(c + dx * n, r + dy * n)];
+            if (b && b.owner !== m && danger[idx(c, r)] !== Infinity) return true;
+          }
+          return w.grid[idx(c + dx, r + dy)] === SOFT && Math.random() < 0.2;
         }
+        // daze rivals who come close, or rebuild a broken shield when the gauge is full
         case 'honey': {
-          if (m.sp < m.skillCost) return false;
-          return opps.some((o) => Math.hypot(o.x - m.x, o.y - m.y) < 2.5 * T);
+          if (opps.some((o) => Math.hypot(o.x - m.x, o.y - m.y) < (S.stunRadius - 0.5) * T)) return true;
+          return !m.shield && m.sp >= 99 && Math.random() < 0.3;
         }
+        // set her bombs off when a rival stands in a (boosted) blast line and she is clear of it
         case 'yukino': {
-          const mine = w.bombs.filter((b) => b.owner === m);
-          if (!mine.length || m.sp < m.skillCost) return false;
-          const selfDanger = w.dangerMap();
-          if (selfDanger[idx(c, r)] !== Infinity) return false;
+          const mine = w.bombs.filter((b) => b.owner === m && !b.dead);
+          if (!mine.length || danger[idx(c, r)] !== Infinity) return false;
           for (const b of mine) {
+            const reach = b.fire + S.remoteBoost;
+            if (Math.abs(c - b.c) + Math.abs(r - b.r) <= reach && (c === b.c || r === b.r)) return false;
             for (const o of opps) {
               const [oc, or] = cellOf(o);
-              if ((oc === b.c && Math.abs(or - b.r) <= b.fire) || (or === b.r && Math.abs(oc - b.c) <= b.fire)) return true;
+              if ((oc === b.c && Math.abs(or - b.r) <= reach) || (or === b.r && Math.abs(oc - b.c) <= reach)) return true;
             }
           }
           return false;
@@ -1828,5 +2027,6 @@
   }
 
   G.World = World;
+  G.pixelRing = pixelRing;
   G.GAME = { T, COLS, ROWS, FX, FY, speedPx };
 })(window);

@@ -13,6 +13,8 @@
     '打掃+1': ['おそうじ+1', 'Clean +1'],
     '愛的守護！': ['愛のまもり！', 'Love Shield!'],
     '拆除！': ['解体！', 'Defused!'],
+    '護盾破了！': ['シールドが割れた！', 'Shield broke!'],
+    '爆裂飛踢！': ['バクレツキック！', 'Blast Kick!'],
     '緊急清場！': ['緊急そうじ！', 'Sudden Death!'],
 
     // ---- title
@@ -289,6 +291,14 @@
     '體力 -{n}': ['体力 -{n}', 'STA -{n}'],
     '早安！大家的體力都恢復了。': ['おはよう！みんなの体力が回復した。', "Good morning! Everyone's stamina is back."],
     '{name}的成長日記': ['{name}の成長日記', "{name}'s Growth Diary"],
+    '{name}的特技': ['{name}の特技', "{name}'s Skills"],
+    '被動特性': ['パッシブ', 'Passive'],
+    '主動特技': ['アクティブ特技', 'Skill'],
+    '消耗 SP {n}': ['SP消費 {n}', 'SP cost {n}'],
+    '對戰小技巧': ['バトルのコツ', 'Battle tip'],
+    '▲▼ 翻頁': ['▲▼ ページ', '▲▼ Page'],
+    '成長': ['成長', 'Growth'],
+    '愛心': ['ハート', 'Hearts'],
     '第 {day} 天　出任務 {jobs} 次': ['{day}日目　依頼 {jobs}回', 'Day {day}  Jobs {jobs}'],
     '好感度 Lv{lv}「{name}」': ['好感度 Lv{lv}「{name}」', 'Affection Lv{lv} {name}'],
     '出任務時　炸彈{b}　火力{f}　速度{s}　愛心{h}　SP消耗{sp}': ['依頼時　ボム{b}　火力{f}　速さ{s}　ハート{h}　SP{sp}', 'On jobs  Bomb{b} Fire{f} Spd{s} Heart{h} SP{sp}'],

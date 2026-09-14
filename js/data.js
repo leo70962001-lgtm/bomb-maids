@@ -3,32 +3,53 @@
   'use strict';
 
   // ------------------------------------------------------------------ maids
-  // stats: speed level (0-5), bombs, fire, hearts
+  // stats: speed level (0-5), bombs, fire, hearts. Each maid has a role, an always-on passive and an SP skill.
   G.MAID_DATA = {
     berry: {
       name: '莓果', en: 'BERRY', color: '#ec4a62', age: 17, hobby: '空手道', like: '草莓大福',
-      skill: '飛踢炸彈', skillDesc: ['走向炸彈就能把它踢飛，', '按特技鍵也能踢出面前的炸彈。'],
-      cost: 0, stats: { speed: 2, bombs: 1, fire: 2, hearts: 3 },
+      role: '突擊型', passive: '踢飛炸彈', passiveDesc: ['走向炸彈就能把它踢飛。'],
+      skill: '爆裂飛踢', skillDesc: ['把面前的炸彈用力踢出（沒有就先放一顆），', '撞到東西就立刻爆炸。'],
+      cost: 25, stats: { speed: 2, bombs: 1, fire: 2, hearts: 3 },
+      tip: '踢出的炸彈撞到東西就爆炸，別站在它的火線上！',
       line: '今天也要元氣滿滿地打掃！',
     },
     yoru: {
       name: '夜子', en: 'YORU', color: '#6b5a8e', age: 18, hobby: '劍道', like: '抹茶',
-      skill: '居合斬', skillDesc: ['斬開面前一格的障礙物或怪物，', '還能把炸彈斬成兩半拆除。'],
-      cost: 35, stats: { speed: 1, bombs: 1, fire: 3, hearts: 3 },
+      role: '斬擊型', passive: '一刀兩斷', passiveDesc: ['她的爆炸火焰能貫穿一個木箱繼續延伸。'],
+      skill: '居合斬', skillDesc: ['斬開面前兩格的木箱與怪物，', '連炸彈也能一刀拆除。'],
+      cost: 36, stats: { speed: 1, bombs: 1, fire: 3, hearts: 3 },
+      tip: '腳步慢但火力強，居合斬能拆掉滑過來的炸彈。',
       line: '主人，請退後。灰塵由我來斬。',
     },
     honey: {
       name: '蜜糖', en: 'HONEY', color: '#e0a014', age: 16, hobby: '烤點心', like: '蜂蜜蛋糕',
-      skill: '甜心魔法', skillDesc: ['回復 1 顆愛心，', '並讓附近的怪物暈頭轉向。'],
-      cost: 70, stats: { speed: 1, bombs: 2, fire: 1, hearts: 4 },
+      role: '支援型', passive: '糖霜護盾', passiveDesc: ['護盾能擋下一次傷害，', '破掉後過一陣子會重新長出來。'],
+      skill: '甜心魔法', skillDesc: ['回復 1 顆愛心並立刻補好護盾，', '附近的怪物和對手會暈頭轉向。'],
+      cost: 65, stats: { speed: 1, bombs: 2, fire: 1, hearts: 4 },
+      tip: '用魔法暈住對手，靠護盾爭取反擊時間。對戰中護盾長得慢。',
       line: '點心烤好了～怪物們也乖乖的喔♪',
     },
     yukino: {
       name: '雪乃', en: 'YUKINO', color: '#27a7b8', age: 17, hobby: '讀書', like: '冰淇淋',
-      skill: '遙控引爆', skillDesc: ['立刻引爆自己放下的所有炸彈。', '她的炸彈引信比較長。'],
-      cost: 30, stats: { speed: 1, bombs: 2, fire: 2, hearts: 3 },
+      role: '戰術型', passive: '冰晶爆破', passiveDesc: ['爆炸旁邊的怪物會被凍住，', '對手則會被寒氣拖慢腳步。'],
+      skill: '遙控引爆', skillDesc: ['立刻引爆自己放下的所有炸彈，', '遙控引爆時火力 +1。'],
+      cost: 35, stats: { speed: 1, bombs: 2, fire: 2, hearts: 3 },
+      tip: '先放炸彈，等對手靠近再遙控引爆，寒氣會拖住逃跑的人。',
       line: '計算完畢。爆破時機，完美。',
     },
+  };
+  // numbers behind the skills and passives. Tuned with CPU-vs-CPU battles (4-maid free-for-all and every 1v1 pairing,
+  // both CPU levels): each maid wins about a quarter of free-for-alls and 44-56% of duels.
+  G.SKILL = {
+    kickSpeed: 4.5, kickSelfSafe: false, // Berry's skill kick slides this fast and bursts on impact (it can still catch her)
+    slashReach: 2, // tiles Yoru's slash reaches
+    pierce: 1, // crates Yoru's flames burn through before stopping
+    shieldRecharge: 25 * 60, // frames until Honey's shield grows back
+    shieldRechargeBattle: 60 * 60, shieldStartBattle: false, magicShieldBattle: false, // battle rounds are one heart each, so the shield is slower there
+    charmRadius: 4, charmFrames: 270, bossCharm: 180, // Honey's magic on monsters
+    stunRadius: 2.5, stunFrames: 25, // and on rival maids
+    frostEnemy: 120, frostMaid: 35, chillSpeed: 0.7, // Yukino's frost: monsters freeze, rivals slow down
+    remoteBoost: 1, remoteDelay: 4, remoteDelayBattle: 16, // Yukino's remote blast
   };
   // Berry starts in your room; each boss defeated brings the next maid
   G.MAID_ORDER = ['berry', 'honey', 'yukino', 'yoru'];

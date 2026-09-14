@@ -872,7 +872,7 @@
     },
     openDiary(k) {
       const hired = G.MAID_ORDER.filter((x) => save().hired[x]);
-      this.panel = { kind: 'diary', list: hired, i: Math.max(0, hired.indexOf(k || maidKey())), t: 0 };
+      this.panel = { kind: 'diary', list: hired, i: Math.max(0, hired.indexOf(k || maidKey())), t: 0, page: 0 };
       this.mode = 'panel';
       A.sfx('confirm');
     },
@@ -883,6 +883,8 @@
         const d = E.menuDir();
         if (d === 'left') { p.i = (p.i + p.list.length - 1) % p.list.length; A.sfx('select'); }
         if (d === 'right') { p.i = (p.i + 1) % p.list.length; A.sfx('select'); }
+        // up/down turns between her growth page and her skills page
+        if (d === 'up' || d === 'down') { p.page = 1 - (p.page || 0); p.demoT = 0; A.sfx('select'); }
       }
       if (p.t > 20 && (E.menuPressed('a') || E.menuPressed('b') || E.menuPressed('start') || E.pointer.pressed)) {
         this.panel = null;
@@ -1377,7 +1379,7 @@
       const broom = maidKey() === 'berry' ? E.spr.room.vacuum : E.spr.room.broom;
       const by = maidKey() === 'berry' ? ms.y - 6 - hop : ms.y - 2 - hop + ((this.t >> 3) % 2);
       if (maidKey() === 'honey' && m.state !== 'sleep') {
-        const side = m.dir === 'left' ? 14 : -12;
+        const side = m.dir === 'left' ? 15 : -9;
         const air = Math.round(Math.abs(Math.sin(this.t * 0.1)) * 3);
         const bunny = E.spr.room.bunny[air > 1 ? 1 : 0];
         ctx.drawImage(bunny, ms.x + side, ms.y + 16 - bunny.height - air);
@@ -1592,6 +1594,7 @@
       }
     },
     drawDiary(p) {
+      if (p.page === 1) return this.drawDiarySkills(p);
       const k = p.list[p.i];
       const b = bond(k);
       const D = G.MAID_DATA[k];
@@ -1603,6 +1606,7 @@
       E.text(G.t('{name}的成長日記', { name: D.name }), 74, 10, { color: C.red, size: 14, fit: 170 });
       E.text(G.t('第 {day} 天　出任務 {jobs} 次', { day: save().day, jobs: b.jobs }), 74, 28, { color: C.ink });
       if (p.list.length > 1) E.text('◀ ' + (p.i + 1) + '/' + p.list.length + ' ▶', 306, 10, { color: C.dim, align: 'right' });
+      this.drawDiaryTabs(p);
       const ai = affInfo(k);
       E.ctx.drawImage(E.spr.ui.heart, 74, 47);
       E.text(G.t('好感度 Lv{lv}「{name}」', { lv: ai.lv + 1, name: ai.name }), 84, 44, { color: C.plum, fit: 124 });
@@ -1634,6 +1638,136 @@
       const pk = B.perks(k);
       E.rect(12, 220, 296, 13, C.plum);
       E.text(G.t('出任務時　炸彈{b}　火力{f}　速度{s}　愛心{h}　SP消耗{sp}', { b: st.bombs, f: st.fire, s: st.speed, h: st.hearts + pk.heartBonus, sp: Math.round(G.MAID_DATA[k].cost * pk.skillCostMul) }), 160, 221, { color: C.paper, align: 'center' });
+    },
+    // growth / skills tabs under the page counter, so players find the skills page
+    drawDiaryTabs(p) {
+      const tabs = [G.t('成長'), G.t('特技')];
+      let x = 306;
+      for (let i = tabs.length - 1; i >= 0; i--) {
+        const w = E.textWidth(tabs[i]) + 8;
+        x -= w;
+        const on = (p.page || 0) === i;
+        E.panel(x, 24, w, 15, on ? C.red : '#fff4f7', on ? '#8e1f3a' : C.pink, { outline: '#000000' });
+        E.text(tabs[i], x + w / 2, 26, { color: on ? C.white : C.dim, align: 'center' });
+        x -= 3;
+      }
+    },
+    // her skills page: role, SP skill and cost, passive, a looping demo of the skill, and a battle tip
+    drawDiarySkills(p) {
+      const k = p.list[p.i];
+      const D = G.MAID_DATA[k];
+      p.demoT = (p.demoT || 0) + 1;
+      UI.paper(6, 4, 308, 232);
+      E.panel(12, 8, 56, 76, '#ffe0ea', D.color, {});
+      E.art('diary-portrait', UI.CG_ART, 14, 10, 52, 72, UI.CG_CROP.diary[k]);
+      E.text(G.t('{name}的特技', { name: D.name }), 74, 10, { color: C.red, size: 14, fit: 130 });
+      if (p.list.length > 1) E.text('◀ ' + (p.i + 1) + '/' + p.list.length + ' ▶', 306, 10, { color: C.dim, align: 'right' });
+      this.drawDiaryTabs(p);
+      // role badge and her stats as pips
+      const rw = E.textWidth(D.role) + 16;
+      E.panel(74, 28, rw, 15, D.color, '#000000', {});
+      E.text(D.role, 74 + rw / 2, 30, { color: C.white, align: 'center' });
+      const st = B.maidStats(k);
+      [['bomb', st.bombs, C.red], ['fire', st.fire, '#ff8a2e'], ['speed', st.speed, '#3d86f0']].forEach(([icon, n, col], i) => {
+        const y = 48 + i * 12;
+        E.ctx.drawImage(E.spr.ui[icon], 74, y);
+        for (let j = 0; j < 6; j++) E.rect(86 + j * 6, y + 2, 5, 5, j < n ? col : '#e8d8e0');
+      });
+      // looping demo of the skill
+      this.drawSkillDemo(k, 128, 44, p.demoT);
+      // active skill
+      E.rect(12, 88, 296, 1, C.pink);
+      E.text(G.t('主動特技') + '「' + D.skill + '」', 16, 92, { color: C.plum, fit: 200 });
+      E.text(G.t('消耗 SP {n}', { n: Math.round(D.cost * B.perks(k).skillCostMul) }), 306, 92, { color: C.red, align: 'right' });
+      UI.wrapLines([G.joinLines(D.skillDesc)], 16, 107, C.ink, 13, 290);
+      // passive
+      E.rect(12, 138, 296, 1, C.pink);
+      E.text(G.t('被動特性') + '「' + D.passive + '」', 16, 142, { color: C.plum, fit: 290 });
+      UI.wrapLines([G.joinLines(D.passiveDesc)], 16, 157, C.ink, 13, 290);
+      // battle tip
+      E.rect(12, 186, 296, 1, C.pink);
+      E.text(G.t('對戰小技巧') + '　' + G.t('▲▼ 翻頁'), 16, 190, { color: C.plum });
+      UI.wrapLines([D.tip], 16, 205, C.dim, 13, 290);
+    },
+    // a tiny looping scene of each maid's skill, built from the game's own sprites
+    drawSkillDemo(k, x0, y0, t) {
+      const ctx = E.ctx;
+      const W = 178, Hh = 40;
+      E.rect(x0, y0, W, Hh, '#000000');
+      E.rect(x0 + 1, y0 + 1, W - 2, Hh - 2, '#f4e8d8');
+      // keep rings and sparks inside the little stage
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x0 + 1, y0 + 1, W - 2, Hh - 2);
+      ctx.clip();
+      for (let c = 0; c < 11; c++) E.rect(x0 + 1 + c * 16, y0 + 34, 16, 5, c % 2 ? '#e0cbb0' : '#ead8c0');
+      const S = E.spr;
+      const ground = y0 + 34;
+      const maidX = x0 + 6;
+      const crate = S.themes.cafe.soft[0];
+      const cyc = t % 150;
+      const drawMaid = (dir, f) => ctx.drawImage(S.maids[k][dir][f || 0], maidX, ground - 24);
+      const ring = (x, y, rad, col) => G.pixelRing(x, y, rad, col);
+      if (k === 'berry') {
+        // she kicks a bomb; it streaks along and bursts against a crate
+        const kickAt = 30, crateX = x0 + 150;
+        drawMaid('right', cyc > kickAt && cyc < kickAt + 10 ? 1 : 0);
+        if (cyc < 96) ctx.drawImage(crate, crateX, ground - 20);
+        if (cyc < kickAt) ctx.drawImage(S.bomb[(t >> 4) % 3], maidX + 17, ground - 16);
+        else if (cyc < 84) {
+          const bx = Math.min(crateX - 16, maidX + 17 + (cyc - kickAt) * 3.2);
+          ctx.drawImage(S.bomb[0], Math.round(bx), ground - 16);
+          for (let i = 1; i < 4; i++) E.rect(Math.round(bx - i * 5), ground - 8, 3, 1, i < 2 ? '#ffffff' : '#ffe14d');
+          if (cyc < kickAt + 8) ctx.drawImage(S.fx.star[(t >> 2) % 2], maidX + 16, ground - 14);
+        } else if (cyc < 100) {
+          const st = cyc < 87 ? 1 : cyc < 94 ? 2 : 3;
+          for (const dx of [-16, 0, 16]) ctx.drawImage(S.flame[0][st], crateX - 16 + dx, ground - 16);
+        }
+      } else if (k === 'yoru') {
+        // one stroke splits the two crates in front of her
+        const cut = 40;
+        drawMaid('right', 0);
+        if (cyc < cut + 6) { ctx.drawImage(crate, x0 + 24, ground - 20); ctx.drawImage(crate, x0 + 40, ground - 20); }
+        else if (cyc < cut + 30) {
+          ctx.save(); ctx.globalAlpha = 1 - (cyc - cut - 6) / 24;
+          ctx.drawImage(crate, x0 + 22, ground - 18); ctx.drawImage(crate, x0 + 42, ground - 22);
+          ctx.restore();
+        }
+        if (cyc >= cut && cyc < cut + 14) {
+          for (let n = 0; n < 2; n++) {
+            const age = cyc - cut - n * 3;
+            if (age >= 0) ctx.drawImage(S.fx.slash[Math.min(2, age >> 2)], x0 + 20 + n * 16, ground - 24);
+          }
+          for (let i = 0; i < 36; i += 3) E.rect(x0 + 22 + i, ground - 10, 2, 1, '#ffffff');
+        }
+      } else if (k === 'honey') {
+        // a monster wanders up; her magic rings out and leaves it dizzy, her shield shimmering
+        const magic = 70;
+        drawMaid('down', 0);
+        ring(maidX + 8, ground - 21, 11, (t >> 3) % 3 === 0 ? '#ffffff' : '#ffb0d0');
+        const cat = S.monsters.dustcat.frames[(t >> 5) % 2];
+        const catX = x0 + 44 + (cyc < magic ? Math.max(0, 60 - cyc) : 0);
+        ctx.drawImage(cat, Math.round(catX), ground - cat.height);
+        if (cyc >= magic && cyc < magic + 22) ring(maidX + 8, ground - 18, 4 + (cyc - magic) * 2.2, '#ff9fbb');
+        if (cyc >= magic + 8) for (let i = 0; i < 3; i++) { const a = t * 0.15 + (i * Math.PI * 2) / 3; ctx.drawImage(S.fx.star[(t >> 3) % 2], Math.round(catX + 5 + Math.cos(a) * 6), Math.round(ground - cat.height - 4 + Math.sin(a) * 2)); }
+        if (cyc >= magic && cyc < magic + 30) ctx.drawImage(S.fx.heart, maidX + 6, ground - 34 - ((cyc - magic) >> 2));
+      } else if (k === 'yukino') {
+        // two bombs wait; her remote signal sets them off together, frost glinting at the edges
+        const go = 60;
+        const bombs = [x0 + 52, x0 + 116];
+        drawMaid('right', 0);
+        if (cyc < go + 16) bombs.forEach((bx) => ctx.drawImage(S.bomb[(t >> 4) % 3], bx, ground - 16));
+        if (cyc >= go && cyc < go + 16 && (cyc >> 2) % 2) {
+          for (let i = -2; i <= 2; i++) E.rect(maidX + 8 + i, ground - 34, 1, 1, '#9ff3ff');
+          bombs.forEach((bx) => ring(bx + 8, ground - 8, 9 - (cyc - go) * 0.4, '#9ff3ff'));
+        }
+        if (cyc >= go + 16 && cyc < go + 40) {
+          const st = cyc < go + 20 ? 1 : cyc < go + 34 ? 2 : 3;
+          bombs.forEach((bx) => { for (const dx of [-16, 0, 16]) ctx.drawImage(S.flame[0][st], bx + dx, ground - 16); });
+          for (const fx of [x0 + 30, x0 + 150]) { E.rect(fx, ground - 8, 3, 1, '#9ff3ff'); E.rect(fx + 1, ground - 9, 1, 3, '#9ff3ff'); E.rect(fx + 1, ground - 8, 1, 1, '#ffffff'); }
+        }
+      }
+      ctx.restore();
     },
     drawDecor() {
       const dc = this.decor;

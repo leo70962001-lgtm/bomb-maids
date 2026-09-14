@@ -878,10 +878,11 @@
         if (id) wrapLines([G.t('打倒 {id} 就會加入。', { id })], 16, 176, C.paper, 13, 290);
         E.text(this.msg || G.t('「{line}」', { line: '……' }), 16, 205, { color: this.msg ? C.mint : C.gray, fit: 290 });
       } else {
-        E.text(G.t('特技「{skill}」', { skill: D.skill }), 16, 161, { color: C.gold });
-        E.text(G.t('愛心 {n}', { n: this.mode === 'first' ? D.stats.hearts : maidStats(key).hearts }), 304, 161, { color: C.pink, align: 'right' });
+        // role, SP skill and its cost, then the skill in two lines and her passive underneath
+        E.text('【' + D.role + '】' + G.t('特技「{skill}」', { skill: D.skill }), 16, 161, { color: C.gold, fit: 196 });
+        E.text('SP ' + D.cost + '　' + G.t('愛心 {n}', { n: this.mode === 'first' ? D.stats.hearts : maidStats(key).hearts }), 304, 161, { color: C.pink, align: 'right' });
         wrapLines([G.joinLines(D.skillDesc)], 16, 176, C.paper, 13, 290);
-        E.text(this.msg || G.t('「{line}」', { line: D.line }), 16, 205, { color: this.msg ? C.mint : C.gray, fit: 290 });
+        E.text(this.msg || '◆' + D.passive + '：' + G.joinLines(D.passiveDesc), 16, 205, { color: C.mint, fit: 290 });
       }
       hint(G.t(this.mode === 'first' ? '←→ 選擇　Z 決定　X 返回' : '←→ 選擇　Z 值班　X 返回'));
     },
@@ -1559,6 +1560,19 @@
     E.rect(x0 + 3, 33, 74, 1, '#f8b000');
     // hearts
     for (let i = 0; i < m.maxHearts; i++) ctx.drawImage(i < m.hearts ? E.spr.ui.heart : E.spr.ui.heartEmpty, x0 + 6 + (i % 8) * 9, 37 + ((i / 8) | 0) * 9);
+    // Honey's sugar shield: a pink bubble when it is up, an outline filling back in while it regrows
+    if (m.maidKey === 'honey') {
+      const sx = x0 + 6 + Math.min(m.maxHearts, 7) * 9, sy = 37;
+      const up = m.shield > 0;
+      E.rect(sx + 1, sy, 5, 7, '#000000'); E.rect(sx, sy + 1, 7, 5, '#000000');
+      E.rect(sx + 1, sy + 1, 5, 5, up ? '#ff9fbb' : '#5a4a60');
+      if (up) E.rect(sx + 2, sy + 2, 2, 1, '#ffffff');
+      else if (m.shieldCD > 0) {
+        const full = G.SKILL.shieldRecharge;
+        const h = Math.round(5 * (1 - Math.min(1, m.shieldCD / full)));
+        E.rect(sx + 1, sy + 6 - h, 5, h, '#c86a90');
+      }
+    }
     // special: SP gauge and the skill's name
     const ready = m.sp >= m.skillCost;
     E.text('SP', x0 + 5, 51, { color: C.red });

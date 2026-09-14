@@ -2103,14 +2103,12 @@
     stamp(p, EMOTES[key], 2, 1, { k: K, r: '#ec3d5f', b: '#3d86f0', w: '#ffffff', y: '#ffc53a' });
     return p;
   }
-  // Honey's pet bunny, in the style of the original's white rabbit: black outline, white fur shaded pale blue, red eyes,
-  // pink inner ears and a red bow on one ear. Frame 0 sits; frame 1 is mid-hop, stretched with the ears swept back.
+  // Honey's little pet bunny (9x12), in the style of the original's white rabbit: black outline, white fur shaded pale
+  // blue, red eyes, pink inner ears and a red bow between the ears. Frame 0 sits; frame 1 is mid-hop, stretched with the ears swept back.
   const BUNNY_PAL = { k: K, W: '#ffffff', l: '#d8e8f8', m: '#a8bcd8', n: '#ffb0c4', p: '#ffc8d8', R: '#c0102a', r: '#ff4a6a', b: '#e8203c', B: '#9a1020' };
   const BUNNY = [
-    ['..kk.....kk..', '.kWnk...knWk.', '.kWnk..bknWk.', '.kWnk.bBbnWk.', '..kWnk.bnWk..', '..kWWkkkWWk..', '.kWWWWWWWWlk.', 'kWWWWWWWWWWlk', 'kWWRWWWWWRWlk',
-      'kWpRWWrWWRplk', 'kWWWWkrkWWllk', '.klWWWWWWllk.', '..kkWWWWlkk..', '.kWWWlllllmk.', '.kWWllllllmk.', '.kWlkmmmklmk.', '..kkk...kkk..'],
-    ['.kk.......kk.', 'kWnk.....knWk', '.kWnk..bknWk.', '..kWnkbBbnk..', '..kWWkkbkWk..', '.kWWWWWWWWlk.', 'kWWWWWWWWWWlk', 'kWWRWWWWWRWlk', 'kWpRWWrWWRplk',
-      'kWWWWkrkWWllk', '.klWWWWWWllk.', '..kkWWWWlkk..', '.kWWWlllllmk.', '.kWWllllllmk.', '..kWlmmmlmk..', '...kk...kk...', '.............'],
+    ['.kk...kk.', 'kWnk.knWk', 'kWnkbknWk', '.kWkBkWk.', '.kWWWWWk.', 'kWWWWWWlk', 'kWRWWWRlk', 'kpWWrWWpk', '.klWWWlk.', '.kWWllmk.', '.kWlkmmk.', '..kk.kk..'],
+    ['kk.....kk', 'kWnk.knWk', '.kWnbnWk.', '..kkBkk..', '.kWWWWWk.', 'kWWWWWWlk', 'kWRWWWRlk', 'kpWWrWWpk', '.klWWWlk.', '.kWWllmk.', '..kWlmk..', '...k.k...'],
   ];
   function buildProp(kind) {
     if (kind === 'broom') {
@@ -2467,7 +2465,7 @@
       gifts: {},
       window: buildWindow(),
       broom: buildProp('broom'), vacuum: buildProp('vacuum'), cushion: buildProp('cushion'), book: buildProp('book'), cup: buildProp('cup'), mat: buildProp('mat'),
-      bunny: BUNNY.map((rows) => fromRows(rows, BUNNY_PAL, 13)),
+      bunny: BUNNY.map((rows) => fromRows(rows, BUNNY_PAL, 9)),
     };
     for (const k of Object.keys(EMOTES)) art.room.emotes[k] = buildEmote(k);
     for (const k of ['bed', 'princess', 'desk', 'wardrobe', 'teatable', 'bookshelf', 'plant', 'plush', 'rug', 'piano', 'lamp', 'fishbowl', 'dresser', 'sofa', 'gramophone']) art.room.furniture[k] = buildFurniture(k);
