@@ -1518,17 +1518,19 @@
       let img = S.frames[(this.frame >> rate) % 2];
       if ((B.hitT > 0 && (B.hitT >> 2) % 2) || (!B.alive && (B.deadT >> 2) % 2)) img = S.hurt;
       const jitter = B.state === 'drillAim' ? ((this.frame >> 1) % 2 ? 1 : -1) : 0;
-      const x = Math.round(ox + B.x - 20 + jitter), y = Math.round(oy + B.y - 34 + hover);
+      // each boss sprite has its own size: centre it on the boss and stand it on the same ground line
+      const cx = Math.round(ox + B.x + jitter);
+      const x = cx - (img.width >> 1), y = Math.round(oy + B.y + 10 - img.height + hover);
       const warn = B.state === 'dashAim' || B.state === 'fireAim';
       if (warn && (this.frame >> 2) % 2) ctx.drawImage(S.hurt, x, y);
       else ctx.drawImage(img, x, y);
       if (B.state === 'stuck') {
         for (let i = 0; i < 3; i++) {
           const a = this.frame * 0.12 + (i * Math.PI * 2) / 3;
-          ctx.drawImage(E.spr.fx.star[0], Math.round(x + 16 + Math.cos(a) * 13), Math.round(y + 2 + Math.sin(a) * 4));
+          ctx.drawImage(E.spr.fx.star[0], Math.round(cx - 4 + Math.cos(a) * 13), Math.round(y + 2 + Math.sin(a) * 4));
         }
       }
-      if (B.charm > 0) ctx.drawImage(E.spr.fx.heart, x + 18, y - 8);
+      if (B.charm > 0) ctx.drawImage(E.spr.fx.heart, cx - 2, y - 8);
     }
   }
 

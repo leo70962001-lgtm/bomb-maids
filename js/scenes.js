@@ -159,6 +159,12 @@
     ctx.drawImage(maidImg(key, 'down', f), Math.round(x), Math.round(y), 16 * s, 24 * s);
     if (!locked && key === 'berry') ctx.drawImage(E.spr.room.vacuum, Math.round(x + 11 * s), Math.round(y + 7 * s), 12 * ps, 22 * ps);
   }
+  // draw a sprite as large as fits a box, keeping its shape, standing on the box's bottom edge
+  function fitImage(img, x, y, w, h) {
+    const s = Math.min(w / img.width, h / img.height);
+    const dw = Math.round(img.width * s), dh = Math.round(img.height * s);
+    E.ctx.drawImage(img, Math.round(x + (w - dw) / 2), Math.round(y + h - dh), dw, dh);
+  }
   function drawHead(key, x, y, scale) {
     const img = maidImg(key, 'down', 0);
     E.ctx.drawImage(img, 0, 0, 16, 16, x, y, 16 * scale, 16 * scale);
@@ -943,7 +949,7 @@
         let ex = 152;
         const types = s.boss ? [] : Object.keys(s.enemies);
         for (const k of types) { E.ctx.drawImage(E.spr.monsters[k].frames[(this.t >> 5) % 2], ex, 163); ex += 20; }
-        if (s.boss) E.ctx.drawImage((E.spr.bosses[s.boss] || E.spr.boss).frames[0], 0, 0, 40, 44, 152, 160, 30, 33);
+        if (s.boss) fitImage((E.spr.bosses[s.boss] || E.spr.boss).frames[0], 152, 160, 30, 33);
         const best = SAVE.cleared[s.id];
         const joiner = G.MAID_ORDER.find((k) => unlockPlan()[k] === s.id && !SAVE.hired[k]);
         if (!best && joiner) {
@@ -1307,7 +1313,7 @@
     } else if (card.kind === 'boss') {
       const img = ((E.spr.bosses && E.spr.bosses[card.ref]) || E.spr.boss).frames[0];
       const s = big ? 1.5 : w < 50 ? 0.5 : 1;
-      ctx.drawImage(img, Math.round(cx - 20 * s), Math.round(cy - 22 * s), 40 * s, 44 * s);
+      fitImage(img, Math.round(cx - 20 * s), Math.round(cy - 22 * s), 40 * s, 44 * s);
     } else {
       const s = big ? 4 : w < 50 ? 1 : 2;
       ctx.drawImage(E.spr.bomb[(E.frame >> 4) % 3], Math.round(cx - 8 * s), Math.round(cy - 8 * s), 16 * s, 16 * s);

@@ -446,282 +446,249 @@
   }
 
   // ---------------------------------------------------------------- monsters (16x18, facing down; flip for left/right)
-  const MON_PAL = {
-    k: K, w: '#ffffff', y: '#ffe14d', p: '#ff9fb4', r: '#ec3d5f', R: '#a51f40', o: '#ff9a2e', g: '#4cb84c', b: '#3d86f0', B: '#1f3b8f', n: '#8a5a3c',
-  };
-
-  const MONSTERS = {
-    // 塵塵貓 — a dust ball with cat ears, lives under school desks
-    dustcat(f) {
-      const p = new Pix(16, 18), b = f;
-      const L = '#e4e0f0', M = '#a9a2c2', D = '#736c8f';
-      tri(p, 2, 1 + b, 5, 5, M); tri(p, 9, 1 + b, 5, 5, M);
-      p.set(4, 3 + b, '#ff9fb4'); p.set(11, 3 + b, '#ff9fb4');
-      ball(p, 1, 4 + b, 14, 12 - b, L, M, D);
-      for (let i = 0; i < 9; i++) {
-        const a = (i / 9) * Math.PI * 2 + f * 0.3;
-        const px = Math.round(7.5 + Math.cos(a) * 7.6), py = Math.round(10 + b / 2 + Math.sin(a) * (6.3 - b / 2));
-        p.set(px, py, Math.sin(a) > 0.3 ? D : M);
-      }
-      stamp(p, ['kk..', 'wyk.', 'wkk.'], 3, 8 + b, MON_PAL);
-      stamp(p, ['..kk', '.kyw', '.kkw'], 9, 8 + b, MON_PAL);
-      stamp(p, ['kwk'], 6, 12 + b, MON_PAL);
-      const out = p.outlined(K);
-      out.rect(4 - (f ? 1 : 0), 16, 3, 2, D); out.rect(9 + (f ? 1 : 0), 16, 3, 2, D);
-      return out.outlined(K);
+  // Drawn after the original game's roster: black outlines and bright ramps. Rows of 8 are the left half and get
+  // mirrored; the second frame bobs everything above the feet down a pixel.
+  const MON_BASE = { k: '#000000', w: '#ffffff' };
+  const MON_ART = {
+    // gray sleepy cat
+    dustcat: {
+      pal: { G: '#4a4a56', g: '#7c7c8a', l: '#b4b4c2', d: '#26262e', n: '#ff8aa0' },
+      rows: [
+        '........', '..k.....', '.kGk....', '.kgGk...', '.kggGkkk', 'kGgggggg',
+        'kGgllggg', 'kGgkkkgg', 'kGgggggg', 'kGgggkkn', '.kGggggg', '..kGGggg',
+        '..kddGGG', '.kddgddd', '.kdggddd', '.kdddddd', '..kddk..', '...kk...',
+      ],
     },
-    // 貪吃豬 — eats the pantry, pink and round
-    piggy(f) {
-      const p = new Pix(16, 18), b = f;
-      const L = '#ffe3ea', M = '#ff9fbb', D = '#d86690';
-      tri(p, 2, 3 + b, 4, 4, D); tri(p, 10, 3 + b, 4, 4, D);
-      ball(p, 1, 4 + b, 14, 12 - b, L, M, D);
-      ball(p, 5, 9 + b, 6, 4, null, '#ffc6d6', null);
-      p.set(6, 10 + b, '#b23a58'); p.set(9, 10 + b, '#b23a58');
-      stamp(p, ['wk', 'kk'], 3, 7 + b, MON_PAL);
-      stamp(p, ['kw', 'kk'], 11, 7 + b, MON_PAL);
-      p.set(4, 12 + b, '#ff7aa0'); p.set(11, 12 + b, '#ff7aa0');
-      const out = p.outlined(K);
-      out.rect(4, 16 - (f ? 1 : 0), 2, 2, D); out.rect(10, 16 - (f ? 0 : 1), 2, 2, D);
-      return out.outlined(K);
+    // round orange hamster-pig
+    piggy: {
+      pal: { B: '#9a4418', b: '#e07a36', c: '#ffd6ae', n: '#ff8aa0', N: '#c8506e' },
+      rows: [
+        '........', '........', '..kk....', '.kbBk...', '.kBbbkkk', '.kbbbbbb',
+        'kbbccbbb', 'kbckkcbb', 'kbccccnn', 'kbBccnNn', 'kbBcccnn', '.kbBcccc',
+        '.kbbBccc', 'kbbbbccc', 'kbBbbBcc', '.kbbbbbb', '..knnk..', '...kk...',
+      ],
     },
-    // 暴走熊 — a runaway stuffed bear from the rose garden
-    teddy(f) {
-      const p = new Pix(16, 18), b = f;
-      const L = '#ffc98a', M = '#e38d42', D = '#a85c24';
-      ball(p, 1, 1 + b, 5, 5, null, M, D); ball(p, 10, 1 + b, 5, 5, null, M, D);
-      p.set(3, 3 + b, '#ffd9b0'); p.set(12, 3 + b, '#ffd9b0');
-      ball(p, 3, 11, 10, 6, L, M, D);
-      ball(p, 2, 2 + b, 12, 10, L, M, D);
-      ball(p, 5, 7 + b, 6, 4, null, '#ffe2bd', null);
-      p.set(7, 7 + b, K); p.set(8, 7 + b, K);
-      p.set(7, 9 + b, '#b23a58'); p.set(8, 9 + b, '#b23a58');
-      stamp(p, ['k.', 'kw', 'kk'], 4, 4 + b, MON_PAL);
-      stamp(p, ['.k', 'wk', 'kk'], 10, 4 + b, MON_PAL);
-      ball(p, 6, 12, 4, 3, null, '#ffe2bd', null);
-      const out = p.outlined(K);
-      out.rect(3 + (f ? 1 : 0), 16, 3, 2, D); out.rect(10 - (f ? 1 : 0), 16, 3, 2, D);
-      return out.outlined(K);
+    // angry brown bear with a flame on its head
+    teddy: {
+      pal: { B: '#4a220c', b: '#8c4418', o: '#e0862a', r: '#e8203c', y: '#ffd23f' },
+      rows: [
+        '.......r', '......rr', '.....kry', '..kk.kyy', '.kobkbbb', 'kbBobbbb',
+        'kBbkkobb', 'kbbwkbbb', 'kBbbbbbb', 'kbowwkwk', '.kbkwkwk', '.kBbbbbb',
+        'kbBoBbbo', 'kbbbBobb', 'kBobbbBo', '.kbbbbbb', '.kBBk.kB', '..kk...k',
+      ],
     },
-    // 果凍怪 — wobbly jelly that slips through furniture
-    jelly(f) {
-      const p = new Pix(16, 18);
-      const L = '#e3f9ff', M = '#5cc8f4', D = '#2a82c8';
-      const w = f ? 16 : 14, h = f ? 10 : 12, x = f ? 0 : 1, y = f ? 7 : 5;
-      ball(p, x, y, w, h, L, M, D, 0.2);
-      tri(p, 5, f ? 3 : 0, 6, f ? 6 : 7, M);
-      p.set(7, f ? 5 : 2, L); p.set(6, f ? 6 : 3, L);
-      p.set(3, y + 3, '#ffffff'); p.set(4, y + 2, '#ffffff');
-      stamp(p, ['k', 'k'], 5, y + 4, MON_PAL);
-      stamp(p, ['k', 'k'], 10, y + 4, MON_PAL);
-      stamp(p, ['k..k', '.kk.'], 6, y + 7, MON_PAL);
-      return p.outlined(K);
+    // blue droplet slime
+    jelly: {
+      pal: { b: '#3aa0f2', l: '#9ad6ff', B: '#1a5ec4' },
+      rows: [
+        '........', '......kk', '.....klw', '......kk', '.....kbb', '....kbbl',
+        '...kbbll', '..kbbblw', '..kbbbbb', '.kbkwbbb', '.kbkkbbb', 'kbbbbbbb',
+        'kbllbbbb', 'kblwbbbb', 'kbbbbBBb', 'kBbbbbBB', '.kBBBBBB', '..kkkkkk',
+      ],
     },
-    // 企鵝紳士 — a very fast penguin butler
-    penguin(f) {
-      const p = new Pix(16, 18);
-      const L = '#5a5f84', M = '#2d3050', D = '#1a1c30';
-      ball(p, 2, 2, 12, 15, L, M, D);
-      ball(p, 4, 7, 8, 9, null, '#ffffff', '#d4dcf0');
-      ball(p, 4, 3, 8, 5, null, '#ffffff', null);
-      p.set(5, 5, K); p.set(10, 5, K);
-      stamp(p, ['oo', 'oo'], 7, 6, MON_PAL);
-      stamp(p, ['rr.rr', 'rrRrr', 'rr.rr'], 5, 9, MON_PAL);
-      if (f) { p.rect(0, 9, 2, 4, M); p.rect(14, 7, 2, 4, M); } else { p.rect(0, 7, 2, 4, M); p.rect(14, 9, 2, 4, M); }
-      const out = p.outlined(K);
-      out.rect(4, 16, 3, 2, '#ffb238'); out.rect(9, 16, 3, 2, '#ffb238');
-      return out.outlined(K);
+    // penguin with an orange beak
+    penguin: {
+      pal: { d: '#1c1c24', G: '#5a5a6a', o: '#ff9a1a', O: '#c86400' },
+      rows: [
+        '........', '....kkkk', '...kddGd', '..kdddGG', '..kddddd', '.kddwwdd',
+        '.kdwkwdd', '.kddwddo', 'kdddwwoo', 'kddwwwOO', 'kdwwwwww', 'kdwwwwww',
+        'kdwwwwww', 'kddwwwww', '.kddwwww', '..kddddd', '..kook..', '..kkk...',
+      ],
     },
-    // 雪寶寶 — a snow child with a blue scarf
-    snowkid(f) {
-      const p = new Pix(16, 18), b = f;
-      ball(p, 2, 7, 12, 10, '#ffffff', '#eef4ff', '#b8cdeb');
-      ball(p, 3, 0 + b, 10, 9, '#ffffff', '#f4f8ff', '#c3d5ef');
-      p.rect(3, 8 + b, 10, 2, '#3d86f0'); p.rect(10, 10 + b, 2, 3, '#1f3b8f');
-      p.set(5, 4 + b, K); p.set(10, 4 + b, K);
-      p.set(7, 5 + b, '#ff8c2e'); p.set(8, 5 + b, '#ff8c2e'); p.set(8, 6 + b, '#ff8c2e');
-      p.set(7, 12, '#6d7a99'); p.set(7, 14, '#6d7a99');
-      const out = p.outlined(K);
-      const arm = f ? 1 : 0;
-      out.set(1, 9 - arm, '#8a5a3c'); out.set(0, 8 - arm, '#8a5a3c');
-      out.set(14, 9 + arm, '#8a5a3c'); out.set(15, 8 + arm, '#8a5a3c');
-      return out;
+    // white snow bunny with a red flower
+    snowkid: {
+      pal: { c: '#b8c6dc', r: '#e8203c', y: '#ffd23f', g: '#3cb44a' },
+      rows: [
+        '........', '......r.', '.kk...ry', 'kwck...g', 'kwwck.kg', 'kcwwkkww',
+        '.kwwwwww', 'kcwwwwww', 'kwwrwwww', 'kwwwwwwr', 'kcwwwwww', '.kcwwwww',
+        '..kccwww', '..kwwwww', '..kcwwww', '..kccccc', '...kwk..', '....k...',
+      ],
     },
-    // 杯子蛋糕怪 — a cupcake with a temper (takes 2 hits)
-    cupcake(f) {
-      const p = new Pix(16, 18), b = f;
-      // cup
-      for (let j = 0; j < 7; j++) {
-        const inset = Math.floor(j / 3);
-        for (let i = 2 + inset; i < 14 - inset; i++) p.set(i, 10 + j, (i + j) % 3 === 0 ? '#6e3f26' : i < 6 ? '#c98a5a' : '#9c5f3a');
-      }
-      // frosting
-      ball(p, 1, 4 + b, 14, 8, '#fff4f8', '#ffb3cf', '#e27aa6');
-      ball(p, 3, 1 + b, 10, 6, '#fff4f8', '#ffc4da', '#e27aa6');
-      ball(p, 6, -1 + b, 4, 4, '#ff9aae', '#ec3d5f', '#a51f40');
-      p.set(8, -1 + b, '#4cb84c'); p.set(9, 0 + b, '#4cb84c');
-      stamp(p, ['kk.', 'wkk'], 3, 7 + b, MON_PAL);
-      stamp(p, ['.kk', 'kkw'], 10, 7 + b, MON_PAL);
-      stamp(p, ['kwwk'], 6, 11, MON_PAL);
-      return p.outlined(K);
+    // cherry cream cake
+    cupcake: {
+      pal: { r: '#e8203c', R: '#8c1022', c: '#b8c6dc', d: '#3a2418', o: '#ff9a1a', G: '#8a8a96' },
+      rows: [
+        '........', '........', '.....kkk', '....krRr', '....krwr', '...kkrrr',
+        '..kwwkkk', '.kwwwwww', 'kwwcwwww', 'kwcccwww', 'kwcccccw', 'kccccccc',
+        'kkokkkok', 'kdddwkdd', 'kddddddd', '.kGGGGGG', '..kokk..', '...kk...',
+      ],
     },
-    // 糖果龍 — a small candy dragon with a lemon crest
-    dragon(f) {
-      const p = new Pix(16, 18), b = f;
-      const L = '#bff59a', M = '#62c64c', D = '#2f7f36';
-      tri(p, 4, 0 + b, 3, 3, '#ffd23f'); tri(p, 7, -1 + b, 3, 4, '#ffd23f'); tri(p, 10, 0 + b, 3, 3, '#ffd23f');
-      ball(p, 3, 10, 10, 7, L, M, D);
-      ball(p, 2, 2 + b, 12, 10, L, M, D);
-      ball(p, 6, 12, 4, 4, null, '#fff3b0', null);
-      stamp(p, ['kkk', 'wwk', 'wkk'], 3, 5 + b, MON_PAL);
-      stamp(p, ['kkk', 'kww', 'kkw'], 10, 5 + b, MON_PAL);
-      p.set(6, 9 + b, D); p.set(9, 9 + b, D);
-      stamp(p, ['w..w'], 6, 10 + b, MON_PAL);
-      if (f) p.rect(13, 13, 3, 2, M); else p.rect(13, 12, 3, 2, M);
-      return p.outlined(K);
+    // green crocodile with a golden crest and shades
+    dragon: {
+      pal: { g: '#5cb42c', G: '#2e7a18', y: '#ffd23f', Y: '#c88a00', d: '#303848', b: '#a8c8f0' },
+      rows: [
+        '.......y', '......yY', '.....kYy', '....kyYY', '...kkgGg', '..kgggGg',
+        '.kgGgggg', '.kkkkkkk', '.kgkdwdk', '.kgkkkkk', '..kgggGg', '..kwkwkw',
+        '...kGggg', '..kbwbwb', '..kgwbwb', '..kggGgg', '...kGk.k', '....k...',
+      ],
     },
-    // 鼓鼓兔 — a toy bunny that marches after you banging its drum
-    drumbun(f) {
-      const p = new Pix(16, 18), b = f;
-      const L = '#ffffff', M = '#eceef8', D = '#b3b8d4';
-      p.rect(4, 0 + b, 3, 6, M); p.rect(9, 0 + b, 3, 6, M);
-      p.vline(5, 1 + b, 4, '#ffb8c8'); p.vline(10, 1 + b, 4, '#ffb8c8');
-      ball(p, 2, 4 + b, 12, 9, L, M, D);
-      stamp(p, ['kw', 'kk'], 4, 7 + b, MON_PAL);
-      stamp(p, ['wk', 'kk'], 10, 7 + b, MON_PAL);
-      p.set(7, 10 + b, '#ff7aa0'); p.set(8, 10 + b, '#ff7aa0');
-      p.rect(4, 12, 8, 5, '#ec3d5f'); p.hline(4, 12, 8, '#ffffff'); p.hline(4, 16, 8, '#ffffff');
-      p.set(6, 14, '#ffd23f'); p.set(9, 14, '#ffd23f');
-      const up = f ? [2, 9] : [13, 9], down = f ? [13, 12] : [2, 12];
-      for (const [x, y] of [up, down]) { p.rect(x, y + 1, 1, 3, '#c98a5a'); p.set(x, y, '#ffd23f'); }
-      const out = p.outlined(K);
-      out.rect(5 - (f ? 1 : 0), 17, 2, 1, D); out.rect(9 + (f ? 1 : 0), 17, 2, 1, D);
-      return out;
+    // rabbit in a red robot helmet
+    drumbun: {
+      pal: { r: '#e8203c', R: '#9a1024', b: '#3a7ff0', p: '#ff9aae', d: '#1c1c24', y: '#ffd23f' },
+      rows: [
+        '.....bkb', '......kb', '....kkkk', '...krrrR', '..krrwrr', '..kRrrrr',
+        '.kwkRRRR', '.kwwkwww', '.kwkkwww', '.kwpwwww', '..kwwwkw', '...kkkkk',
+        '..kwkddd', '..kwdyyy', '..kwdddd', '...kdddw', '...kwk..', '....k...',
+      ],
     },
-    // 寶石騎士 — a tiny armoured knight guarding the jewel palace (takes two hits)
-    gemknight(f) {
-      const p = new Pix(16, 18), b = f;
-      const L = '#f4f6fb', M = '#b9bfd3', D = '#6f7690';
-      tri(p, 6, 0 + b, 4, 4, '#3d86f0');
-      ball(p, 3, 11, 10, 6, L, M, D);
-      ball(p, 2, 2 + b, 12, 11, L, M, D);
-      p.rect(4, 7 + b, 8, 2, '#2a2b40');
-      p.set(6, 7 + b, '#ffe14d'); p.set(9, 7 + b, '#ffe14d');
-      stamp(p, ['rwr', 'rrR', '.R.'], 7, 3 + b, MON_PAL);
-      p.rect(0, 10 + (f ? 1 : 0), 5, 6, '#3d86f0'); p.hline(0, 10 + (f ? 1 : 0), 5, '#8fd3ff'); p.set(2, 12 + (f ? 1 : 0), '#ffd23f');
-      const out = p.outlined(K);
-      out.rect(4 + (f ? 1 : 0), 16, 3, 2, D); out.rect(9 - (f ? 1 : 0), 16, 3, 2, D);
-      return out.outlined(K);
+    // golden ring robot with a pink visor
+    gemknight: {
+      pal: { y: '#ffd23f', Y: '#c88a00', p: '#ff6a8a', c: '#b8c6dc', b: '#3a7ff0' },
+      rows: [
+        '.......k', '......kw', '....kkyy', '...kyYyy', '..kyykkk', '.kyykppp',
+        '.kykpwpp', '.kykpppp', '.kyykkkk', '..kyyyyy', '...kkwww', '..kwcwkw',
+        '..kwckbk', '..kwwckb', '...kcwwk', '...kyyyy', '....kyk.', '.....k..',
+      ],
     },
   };
-
-  // 金熊機甲 — boss, 40x44
-  function buildBoss(f, hurt) {
-    const p = new Pix(40, 44);
-    const GL = '#fff0a0', GM = '#ffc53a', GD = '#c47f16';
-    const SL = '#dfe3f0', SM = '#8d93ad', SD = '#565b75';
-    // treads
-    for (let i = 0; i < 34; i++) {
-      p.rect(3 + i, 36, 1, 7, (i + f * 2) % 4 < 2 ? SD : SM);
-    }
-    p.rect(3, 36, 34, 1, SL);
-    // body
-    ball(p, 6, 18, 28, 20, GL, GM, GD);
-    p.rect(14, 24, 12, 8, SD); p.rect(15, 25, 10, 6, '#2a2b40');
-    p.rect(17, 27, 2, 2, f % 2 ? '#ec3d5f' : '#ff9aae'); p.rect(21, 27, 2, 2, f % 2 ? '#ffd23f' : '#fff0a0');
-    // arms (cannons)
-    ball(p, 0, 20, 9, 14, SL, SM, SD); ball(p, 31, 20, 9, 14, SL, SM, SD);
-    p.rect(2, 31, 5, 4, '#2a2b40'); p.rect(33, 31, 5, 4, '#2a2b40');
-    // head: ears
-    ball(p, 5, 0, 11, 11, GL, GM, GD); ball(p, 24, 0, 11, 11, GL, GM, GD);
-    ball(p, 8, 3, 5, 5, null, '#ffe0a0', null); ball(p, 27, 3, 5, 5, null, '#ffe0a0', null);
-    // head: dome
-    ball(p, 8, 3, 24, 19, GL, GM, GD);
-    ball(p, 12, 5, 16, 11, '#e6fbff', '#7fd8f2', '#3a8fc0', 0.2);
-    // pilot silhouette in the dome
-    ball(p, 16, 6, 3, 3, null, '#2e4a6e', null); ball(p, 21, 6, 3, 3, null, '#2e4a6e', null); ball(p, 16, 8, 8, 7, null, '#2e4a6e', null); p.set(18, 11, '#7fd8f2'); p.set(21, 11, '#7fd8f2'); p.set(14, 7, '#ffffff'); p.set(13, 8, '#ffffff');
-    // visor eyes
-    const eye = hurt ? '#ffffff' : '#ec3d5f';
-    p.rect(10, 16, 7, 3, '#2a2b40'); p.rect(23, 16, 7, 3, '#2a2b40');
-    p.rect(12, 17, 3, 1, eye); p.rect(25, 17, 3, 1, eye);
-    let out = p.outlined(K);
-    if (hurt) out = out.map((c) => [Math.min(255, c[0] + 110), Math.min(255, c[1] + 110), Math.min(255, c[2] + 110), 255]);
-    return out;
+  function monsterFrame(key, f) {
+    const m = MON_ART[key];
+    const rows = m.rows.map((r) => (r.length === 8 ? r + r.split('').reverse().join('') : r));
+    const P = Object.assign({}, MON_BASE, m.pal);
+    if (!f) return fromRows(rows, P);
+    const p = new Pix(16, 18);
+    p.blit(fromRows(rows.slice(0, 16), P), 0, 1);
+    p.blit(fromRows(rows.slice(16), P), 0, 16);
+    return p;
   }
+  const MONSTERS = {};
+  for (const key of Object.keys(MON_ART)) MONSTERS[key] = (f) => monsterFrame(key, f);
 
+  // ---------------------------------------------------------------- bosses (sized like the originals; drawn centred on their feet)
   function brighten(pix) {
     return pix.map((c) => [Math.min(255, c[0] + 110), Math.min(255, c[1] + 110), Math.min(255, c[2] + 110), 255]);
   }
-  // 2px-wide segment for spindly legs
-  function seg(p, x0, y0, x1, y1, col) {
+  // segment for spindly legs (w pixels thick)
+  function seg(p, x0, y0, x1, y1, col, wdt) {
     const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1);
     for (let i = 0; i <= n; i++) {
       const x = Math.round(x0 + ((x1 - x0) * i) / n), y = Math.round(y0 + ((y1 - y0) * i) / n);
-      p.rect(x, y, 2, 2, col);
+      p.rect(x, y, wdt || 2, wdt || 2, col);
     }
   }
 
-  // BOSS 1 — drill bot: a school cleaning robot with a spinning drill on its head (40x44)
+  // BOSS 1 — drill robot: a silver egg with a drill on top, gold trim, skull-like eye sockets (32x48)
   function buildDrill(f, hurt) {
-    const p = new Pix(40, 44);
-    const SL = '#f4f6fb', SM = '#b9bfd3', SD = '#6f7690', SX = '#474c63';
-    for (let i = 0; i < 26; i++) p.rect(7 + i, 37, 1, 6, (i + f * 2) % 4 < 2 ? SX : SD);
-    p.rect(7, 37, 26, 1, SM);
-    ball(p, 0, 21, 9, 12, SL, SM, SD); ball(p, 31, 21, 9, 12, SL, SM, SD);
-    p.rect(1, 31, 4, 3, '#ec3d5f'); p.rect(35, 31, 4, 3, '#ec3d5f');
-    ball(p, 6, 12, 28, 27, SL, SM, SD, 0.12);
-    p.rect(8, 31, 24, 3, '#ec3d5f'); p.hline(8, 31, 24, '#ff8aa0');
-    p.set(12, 32, '#ffd23f'); p.set(20, 32, '#ffd23f'); p.set(27, 32, '#ffd23f');
-    ball(p, 11, 17, 18, 11, null, '#2a2b40', null);
-    const eye = hurt ? '#ffffff' : f % 2 ? '#8ff6ff' : '#45d2e2';
-    p.rect(14, 21, 4, 3, eye); p.rect(22, 21, 4, 3, eye);
-    p.set(14, 21, '#ffffff'); p.set(22, 21, '#ffffff');
-    p.rect(17, 26, 6, 1, '#45d2e2');
-    // the drill: spiral bands shift each frame so it looks like it spins
-    for (let j = 0; j < 14; j++) {
-      const half = Math.max(1, Math.round(((j + 1) * 7) / 14));
-      for (let i = -half; i < half; i++) p.set(20 + i, j, ((j + i + f * 2) & 3) < 2 ? '#fff0a0' : '#d9961a');
+    const p = new Pix(32, 48);
+    const SL = '#ffffff', SM = '#c4d2f0', SS = '#94a6d0', SD = '#5c6c9c';
+    const GL = '#fff2a8', GM = '#ffbe1a', GD = '#c07406';
+    // base: silver foot plate under a gold ring
+    ball(p, 6, 42, 20, 6, SL, SM, SD);
+    ball(p, 5, 38, 22, 7, GL, GM, GD);
+    p.rect(8, 40, 16, 2, SD);
+    // egg body with a bright centre stripe
+    ball(p, 2, 15, 28, 27, SL, SM, SS, 0.08);
+    ball(p, 6, 9, 20, 18, SL, SM, SS, 0.1);
+    for (let y = 14; y < 38; y++) p.set(15, y, SL), p.set(16, y, y % 3 ? SM : SL);
+    for (let y = 16; y < 40; y++) { p.set(3, y, SD); p.set(28, y, SD); }
+    // gold ear knobs
+    ball(p, 0, 16, 6, 11, GL, GM, GD); ball(p, 26, 16, 6, 11, GL, GM, GD);
+    // gold zigzag trim around the lower body
+    for (let x = 4; x < 28; x++) { const y = 32 + (((x + 1) >> 2) % 2); p.set(x, y, GM); p.set(x, y + 1, GD); }
+    // eye sockets with angry brows
+    ball(p, 5, 19, 9, 8, null, '#2a3048', null); ball(p, 18, 19, 9, 8, null, '#2a3048', null);
+    const pupil = hurt ? '#ff3a3a' : f % 2 ? '#ffffff' : '#e8f0ff';
+    p.rect(9, 22, 2, 3, pupil); p.rect(21, 22, 2, 3, pupil);
+    for (let i = 0; i < 7; i++) { p.set(5 + i, 16 + (i >> 1), GD); p.set(26 - i, 16 + (i >> 1), GD); }
+    // round mouth with a gold rim
+    ball(p, 12, 24, 8, 8, GL, GM, GD); ball(p, 13, 25, 6, 6, null, '#141420', null);
+    // drill with spiral bands that shift every frame
+    for (let j = 0; j < 13; j++) {
+      const half = Math.max(1, Math.round(((j + 1) * 5) / 13));
+      for (let i = -half; i < half; i++) p.set(16 + i, j, ((j + i + f * 2) & 3) < 2 ? SL : SS);
     }
-    p.rect(12, 13, 16, 3, SD); p.hline(12, 13, 16, SM);
-    const out = p.outlined(K);
+    p.rect(10, 11, 12, 3, GM); p.hline(10, 11, 12, GL); p.hline(10, 13, 12, GD);
+    const out = p.outlined('#000000');
     return hurt ? brighten(out) : out;
   }
 
-  // BOSS 2 — flame spider: a red mechanical spider with a fire crest (40x44)
+  // BOSS 2 — flame spider: a fire head on a blue collar, a segmented red body with a fanged face, orange legs, red feet (48x50)
   function buildSpider(f, hurt) {
-    const p = new Pix(40, 44);
-    const RL = '#ff9f8f', RM = '#d8323f', RD = '#8e1a2a', LEG = '#6a2a38', JOINT = '#ffd23f';
+    const p = new Pix(48, 50);
+    const RL = '#ff9a8a', RM = '#e0202c', RD = '#8e1018';
+    const OL = '#ffb24a', OM = '#d8741c', OD = '#8a4008';
     const s = f % 2 ? 1 : -1;
     for (const side of [-1, 1]) {
-      const bx = 19 + side * 8;
+      const cx = 23.5;
       const legs = [
-        [bx, 23, 19 + side * 16, 16, 19 + side * 19, 29 + s * side],
-        [bx, 27, 19 + side * 15, 25, 19 + side * 18, 37 - s * side],
-        [bx, 30, 19 + side * 11, 34, 19 + side * 13, 41 + s * side],
+        [cx + side * 8, 21, cx + side * 16, 8, cx + side * 21, 20 + s * side],
+        [cx + side * 10, 26, cx + side * 19, 22, cx + side * 23, 34 - s * side],
+        [cx + side * 9, 31, cx + side * 16, 34, cx + side * 19, 42 + s * side],
       ];
       for (const [x0, y0, x1, y1, x2, y2] of legs) {
-        seg(p, x0, y0, x1, y1, LEG);
-        seg(p, x1, y1, x2, y2, LEG);
-        p.rect(x1, y1, 2, 2, JOINT);
+        seg(p, Math.round(x0), y0, Math.round(x1), y1, OM, 3);
+        seg(p, Math.round(x1), y1, Math.round(x2), y2, OD, 2);
+        p.rect(Math.round(x1), y1, 3, 1, OL);
+        p.rect(Math.round(x2), y2 + 1, 2, 2, '#000000');
       }
     }
-    ball(p, 7, 15, 26, 22, RL, RM, RD);
-    for (const x of [11, 19, 27]) p.set(x, 17, JOINT);
-    p.hline(10, 33, 20, RD); p.set(14, 34, JOINT); p.set(25, 34, JOINT);
-    p.rect(12, 20, 6, 5, '#ffffff'); p.rect(22, 20, 6, 5, '#ffffff');
-    const pupil = hurt ? '#ffffff' : '#2a1b30';
-    p.rect(14, 22, 3, 3, pupil); p.rect(23, 22, 3, 3, pupil);
-    p.hline(11, 19, 7, K); p.hline(22, 19, 7, K);
-    // grinning mouth with two fangs
-    p.rect(14, 28, 12, 2, '#4a0e1c');
-    p.rect(15, 30, 2, 1, '#ffffff'); p.set(15, 31, '#ffffff');
-    p.rect(23, 30, 2, 1, '#ffffff'); p.set(24, 31, '#ffffff');
-    // fire crest flickers between frames
+    ball(p, 9, 40, 12, 10, RL, RM, RD); ball(p, 27, 40, 12, 10, RL, RM, RD);
+    p.hline(11, 46, 8, RD); p.hline(29, 46, 8, RD);
+    // body: an orange upper segment and a red face segment
+    ball(p, 13, 18, 22, 13, OL, OM, OD);
+    for (const x of [16, 20, 24, 28, 31]) p.vline(x, 21, 7, OD);
+    ball(p, 14, 27, 20, 15, RL, RM, RD);
+    p.rect(17, 30, 5, 4, '#ffffff'); p.rect(26, 30, 5, 4, '#ffffff');
+    const pupil = hurt ? '#ffffff' : '#1a0a0e';
+    p.rect(19, 31, 2, 3, pupil); p.rect(27, 31, 2, 3, pupil);
+    p.hline(16, 29, 7, '#000000'); p.hline(25, 29, 7, '#000000');
+    p.rect(18, 36, 12, 3, '#3a0810');
+    for (const x of [19, 22, 25, 28]) { p.rect(x, 39, 1, 2, '#ffffff'); p.set(x, 36, '#ffffff'); }
+    // blue collar
+    p.rect(14, 15, 20, 4, '#2f6fe0'); p.hline(14, 15, 20, '#9ad0ff'); p.hline(14, 18, 20, '#16389a');
+    for (const x of [17, 21, 26, 30]) p.set(x, 16, '#ffd23f');
+    // fire head: a round flame with licking tips and a hot core
     const fl = f % 2;
-    tri(p, 11, 1 + fl, 18, 16 - fl, '#ff8a2e');
-    tri(p, 14, 4 - fl, 12, 13 + fl, '#ffd23f');
-    tri(p, 17, 9, 6, 8, '#fff6cc');
-    const out = p.outlined(K);
+    ball(p, 15, 3, 18, 14, '#ff9a4a', RM, RD);
+    tri(p, 15, 0 + fl, 6, 8, RM); tri(p, 21, 0, 6, 6 + fl, RM); tri(p, 27, 1 - fl, 6, 8, RM);
+    ball(p, 19, 6, 10, 9, null, '#ff7a1a', null);
+    ball(p, 21, 8, 6, 6, '#fff6cc', '#ffd23f', '#ffa21a');
+    p.vline(24, 0, 3, '#ffffff');
+    const out = p.outlined('#000000');
+    return hurt ? brighten(out) : out;
+  }
+
+  // BOSS 3 — gold bear mech: a glass dome with the pilot inside, round ears, goggle eyes, arms and treads (36x58)
+  function buildBoss(f, hurt) {
+    const p = new Pix(36, 58);
+    const GL = '#fff2a8', GM = '#ffbe1a', GD = '#c07406', GX = '#7a3c04';
+    const SL = '#eef2f8', SM = '#a4aabb', SD = '#626878';
+    // treads
+    for (const x of [6, 20]) {
+      p.rect(x, 48, 10, 9, SD);
+      for (let i = 0; i < 10; i++) p.rect(x + i, 49, 1, 7, (i + f * 2) % 4 < 2 ? SM : SD);
+      p.hline(x, 48, 10, SL);
+    }
+    p.rect(15, 50, 6, 5, GX);
+    // arms
+    for (const x of [1, 27]) {
+      p.rect(x, 34, 8, 16, GM);
+      p.rect(x, 34, 8, 2, GL);
+      p.rect(x + 1, 40, 6, 2, GX); p.rect(x + 1, 46, 6, 2, GX);
+      p.rect(x + (x < 10 ? 6 : 0), 36, 2, 13, GD);
+    }
+    // torso with a dark chest panel
+    p.rect(9, 33, 18, 16, GM);
+    p.rect(9, 33, 18, 2, GL);
+    p.rect(12, 36, 12, 10, GX);
+    for (let x = 13; x < 23; x += 3) p.rect(x, 37, 2, 8, GD);
+    p.rect(15, 46, 6, 2, SM);
+    // head: ears, face and goggles
+    ball(p, 0, 0, 10, 10, GL, GM, GD); ball(p, 26, 0, 10, 10, GL, GM, GD);
+    p.rect(3, 3, 2, 2, '#ffffff'); p.rect(29, 3, 2, 2, '#ffffff');
+    ball(p, 1, 14, 34, 21, GL, GM, GD, 0.05);
+    for (let x = 4; x < 32; x += 4) p.set(x, 30, GD);
+    const eye = hurt ? '#ff5a5a' : f % 2 ? '#ffffff' : '#dfe8ff';
+    ball(p, 5, 19, 9, 9, SL, SM, SD); ball(p, 22, 19, 9, 9, SL, SM, SD);
+    p.rect(8, 21, 2, 2, eye); p.rect(25, 21, 2, 2, eye);
+    p.rect(16, 25, 4, 3, GX); p.hline(14, 30, 8, GX);
+    // glass dome with the bear pilot inside
+    ball(p, 3, 2, 30, 18, '#d8f0ff', '#6aa8e0', '#3a6aa8', 0.16);
+    ball(p, 12, 6, 12, 12, null, '#7aa890', '#4a7860');
+    p.rect(14, 5, 3, 3, '#7aa890'); p.rect(20, 5, 3, 3, '#7aa890');
+    p.set(15, 11, '#1a2a20'); p.set(20, 11, '#1a2a20'); p.rect(17, 13, 2, 1, '#c86a8a');
+    p.rect(7, 4, 2, 4, '#ffffff'); p.set(9, 3, '#ffffff');
+    const out = p.outlined('#000000');
     return hurt ? brighten(out) : out;
   }
 
