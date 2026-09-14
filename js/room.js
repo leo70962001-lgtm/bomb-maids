@@ -1373,13 +1373,14 @@
         img = S[m.dir][[1, 0, 2, 0][(m.walkT >> 3) % 4]];
       } else if (face && face !== 'normal' && (m.dir === 'down')) img = S.faces[face];
       else img = S[m.dir][0];
-      // Berry cleans with her vacuum cleaner instead of a broom; Honey's pet slime follows her around
+      // Berry cleans with her vacuum cleaner instead of a broom; Honey's pet bunny hops around after her
       const broom = maidKey() === 'berry' ? E.spr.room.vacuum : E.spr.room.broom;
       const by = maidKey() === 'berry' ? ms.y - 6 - hop : ms.y - 2 - hop + ((this.t >> 3) % 2);
       if (maidKey() === 'honey' && m.state !== 'sleep') {
         const side = m.dir === 'left' ? 14 : -12;
-        const slime = E.spr.monsters.jelly.frames[(this.t >> 5) % 2];
-        ctx.drawImage(slime, ms.x + side, ms.y + 16 - slime.height - Math.round(Math.abs(Math.sin(this.t * 0.1)) * 2));
+        const air = Math.round(Math.abs(Math.sin(this.t * 0.1)) * 3);
+        const bunny = E.spr.room.bunny[air > 1 ? 1 : 0];
+        ctx.drawImage(bunny, ms.x + side, ms.y + 16 - bunny.height - air);
       }
       if (m.prop === 'broom' && m.dir !== 'right') ctx.drawImage(broom, ms.x + 12, by);
       ctx.drawImage(img, ms.x, ms.y - 8 - hop);

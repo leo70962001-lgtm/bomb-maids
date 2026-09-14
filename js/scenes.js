@@ -159,15 +159,14 @@
   }
   const maidName = (key) => (isLocked(key) ? '？？？' : G.MAID_DATA[key].name);
   // a standing maid at scale s with the signature prop from her design sheet:
-  // Berry carries her giant vacuum cleaner, Honey sits on her pet slime
+  // Berry carries her giant vacuum cleaner, Honey's pet bunny peeks out from behind her
   function drawMaidFigure(key, x, y, s, f) {
     const ctx = E.ctx;
     const locked = isLocked(key);
     const ps = Math.max(1, s - 1);
     if (!locked && key === 'honey') {
-      const slime = E.spr.monsters.jelly.frames[(E.frame >> 5) % 2];
-      ctx.drawImage(slime, Math.round(x + 8 * s - 8 * ps), Math.round(y + 24 * s + 3 * ps - slime.height * ps), 16 * ps, slime.height * ps);
-      y -= (s >= 3 ? 2 : 5) * s;
+      const bunny = E.spr.room.bunny[(E.frame >> 5) % 8 === 7 ? 1 : 0];
+      ctx.drawImage(bunny, Math.round(x + 7 * s), Math.round(y + 24 * s - bunny.height * s), bunny.width * s, bunny.height * s);
     }
     ctx.drawImage(maidImg(key, 'down', f), Math.round(x), Math.round(y), 16 * s, 24 * s);
     if (!locked && key === 'berry') ctx.drawImage(E.spr.room.vacuum, Math.round(x + 11 * s), Math.round(y + 7 * s), 12 * ps, 22 * ps);
@@ -299,7 +298,7 @@
 
   // ------------------------------------------------------------------ Title cast
   // The maids who have joined live on the title screen. Each one picks something to do: sweep up a dust bunny,
-  // sip tea, nap on a cushion, nibble her favourite sweet, dance, read, pet the slime, wave at you, or pair up
+  // sip tea, nap on a cushion, nibble her favourite sweet, dance, read, pet the bunny, wave at you, or pair up
   // with another maid to chat or hold a little tea party. A maid who joined since the last visit walks in and
   // the others greet her.
   const CAST_TOP = 146, CAST_BOTTOM = 178; // the band their feet move in
@@ -328,7 +327,7 @@
       this.dustT = 90;
       for (const m of this.members) {
         if (m.state === 'idle') { const [sx, sy] = this.openSpot(m, 40, E.W - 40); m.x = sx; m.y = sy; }
-        m.petX = m.x - 18; m.petY = m.y;
+        m.petX = m.x - 28; m.petY = m.y;
       }
     },
     say(m, emote, time) { m.emote = emote; m.emoteT = time || 50; },
@@ -393,9 +392,9 @@
             if (Math.abs(dx) < 30 && Math.abs(dy) < 12) m.x = E.clamp(m.x + (dx === 0 ? 0.5 : Math.sign(dx) * 0.5), 16, E.W - 16);
           }
         }
-        // Honey's pet slime trails behind her (and holds still to be petted)
-        if (m.state !== 'petSlime') {
-          const want = m.dir === 'left' ? m.x + 18 : m.x - 18;
+        // Honey's pet bunny hops along behind her (and sits still to be petted)
+        if (m.state !== 'petBunny') {
+          const want = m.dir === 'left' ? m.x + 28 : m.x - 28;
           m.petX += (want - m.petX) * 0.06;
           m.petY += (m.y - m.petY) * 0.06;
         }
@@ -518,9 +517,9 @@
           if (m.t === 120) this.say(m, 'dots', 50);
           if (m.t > 220) this.idle(m);
           return;
-        case 'petSlime':
+        case 'petBunny':
           m.dir = m.petX < m.x ? 'left' : 'right';
-          if (m.t % 26 === 0) { m.petJig = 10; this.fx.push({ kind: 'heart', x: m.petX, y: m.petY - 18, t: 0 }); }
+          if (m.t % 26 === 0) { m.petJig = 10; this.fx.push({ kind: 'heart', x: m.petX, y: m.petY - 38, t: 0 }); }
           if (m.t === 140) this.say(m, 'heart', 50);
           if (m.t >= 180) this.idle(m, 60, 160);
           return;
@@ -541,7 +540,7 @@
       if (free.length) options.push(['clean', 30]);
       if (others.length) options.push(['chat', 16], ['party', 12]);
       if (m.key === 'yukino') options.push(['read', 8]);
-      if (m.key === 'honey') options.push(['petSlime', 9]);
+      if (m.key === 'honey') options.push(['petBunny', 9]);
       let roll = Math.random() * options.reduce((s, o) => s + o[1], 0);
       let pick = options[0][0];
       for (const [name, w] of options) { if ((roll -= w) < 0) { pick = name; break; } }
@@ -570,7 +569,7 @@
         case 'snack': m.state = 'snack'; m.t = 0; this.say(m, 'exclaim', 30); return;
         case 'dance': m.state = 'dance'; m.t = 0; this.say(m, 'note', 60); return;
         case 'read': m.state = 'read'; m.t = 0; return;
-        case 'petSlime': m.state = 'petSlime'; m.t = 0; return;
+        case 'petBunny': m.state = 'petBunny'; m.t = 0; return;
         case 'greet': m.state = 'wave'; m.t = 0; m.dir = 'down'; this.say(m, 'heart', 60); return;
         default: {
           const [wx, wy] = this.openSpot(m);
@@ -624,9 +623,12 @@
       ctx.fillRect(Math.round(m.x - 10), Math.round(m.y - 3), 20, 4);
       if (m.key === 'honey') {
         const jig = m.petJig > 0 ? Math.round(Math.sin(m.petJig) * 2) : 0;
-        const slime = E.spr.monsters.jelly.frames[(t >> 5) % 2];
-        const px = Math.round(m.petX - 8), py = Math.round(m.petY - slime.height - Math.abs(Math.sin(t * 0.12)) * 2 - Math.abs(jig));
-        ctx.drawImage(slime, px, py);
+        // the bunny (drawn at the maids' 2x scale) hops while it follows her and sits still for petting
+        const moving = m.state !== 'petBunny' && Math.abs(m.petX - (m.dir === 'left' ? m.x + 28 : m.x - 28)) > 3;
+        const air = moving ? Math.abs(Math.sin(t * 0.2)) * 6 : 0;
+        const bunny = E.spr.room.bunny[air > 2 ? 1 : 0];
+        const px = Math.round(m.petX - bunny.width), py = Math.round(m.petY - bunny.height * 2 - air - Math.abs(jig));
+        ctx.drawImage(bunny, px, py, bunny.width * 2, bunny.height * 2);
       }
       const cleaning = m.state === 'clean';
       const sway = cleaning ? Math.round(Math.sin(m.t * 0.35) * 3) : 0;

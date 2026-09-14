@@ -637,21 +637,24 @@
   const LIGHT = (() => { const l = [-0.3, -0.52, 0.8], n = Math.hypot(...l); return l.map((v) => v / n); })();
   // shade a surface of revolution (rows y0..y1, half width hw(y)) as a lit 3D form: light from the upper left and front,
   // a sharp specular glint, and a sliver of reflected light along the lower shadow edge (no banding along the outline)
+  // o.odd: centred on column cx (odd widths, 2*hw+1 wide) instead of the line between cx-1 and cx; o.light: light vector
   function bossSolid(p, cx, y0, y1, hw, ramp, o) {
     o = o || {};
     const spec = o.spec == null ? 0.93 : o.spec;
+    const lv = o.light || LIGHT;
     for (let y = y0; y <= y1; y++) {
       const h = hw(y);
       if (h <= 0) continue;
-      const slope = (hw(Math.min(y1, y + 1)) - hw(Math.max(y0, y - 1))) / 2;
+      const win = o.win || 1;
+      const slope = (hw(Math.min(y1, y + win)) - hw(Math.max(y0, y - win))) / (Math.min(y1, y + win) - Math.max(y0, y - win) || 1);
       const n = Math.ceil(h);
-      for (let i = -n; i < n; i++) {
-        const u = (i + 0.5) / h;
+      for (let i = -n; i < (o.odd ? n + 1 : n); i++) {
+        const u = o.odd ? i / Math.max(h, 0.5) : (i + 0.5) / h;
         if (Math.abs(u) > 1) continue;
         const nz = Math.sqrt(Math.max(0, 1 - u * u));
         let nx = u, ny = -slope * 0.8 * nz + (o.tilt || 0), len = Math.hypot(nx, ny, nz);
         nx /= len; ny /= len;
-        const d = nx * LIGHT[0] + ny * LIGHT[1] + (nz / len) * LIGHT[2];
+        const d = nx * lv[0] + ny * lv[1] + (nz / len) * lv[2];
         let t = d > spec ? 0 : d > 0.84 ? 1 : d > 0.56 ? 2 : d > 0.2 ? 3 : 4;
         // reflected light: the far lower rim picks up a little bounce
         if (t === 4 && u > 0.82 && y > y0 + (y1 - y0) * 0.45) t = 3;
@@ -660,126 +663,229 @@
     }
   }
 
-  // ------------------------------------------------------------ BOSS 1 — drill robot: an onion-shaped silver dome (32x48)
-  function buildDrill(f, hurt) {
-    const W = 32, H = 48, cx = 16;
+  const unit = (v) => { const n = Math.hypot(...v); return v.map((c) => c / n); };
+  // a sprite canvas with helpers: put() stamps template rows, layer() draws a part on its own layer and lays it down
+  // outlined in ink (so parts are separated like the original), mirror() copies a layer's left half onto the right
+  function bossKit(W, H, pal) {
     const p = new Pix(W, H);
-    const S = RAMP.silver, Au = RAMP.gold;
-    const GOLD = { k: BK, Y: Au[0], y: Au[1], o: Au[2], d: Au[3], D: Au[4], w: '#ffffff', G: '#6a6a8c' };
-    // pedestal: a lit grey plate wrapped in a gold rim with a pale band underneath
-    bossSolid(p, cx, 40, 47, curve([[40, 8], [42, 9.5], [47, 10]]), RAMP.grey, { spec: 0.98 });
-    for (let x = 6; x < 26; x++) { p.set(x, 45, Au[2]); p.set(x, 46, x < 12 ? Au[0] : Au[1]); p.set(x, 47, Au[3]); }
-    bossPair(p, ['oy', 'oo', 'oy', 'dd', 'oD'], 6, 41, GOLD, cx);
-    // onion body as a lit form: warm glint upper left, cool purple shadow lower right, bounce light on the far rim
-    bossSolid(p, cx, 7, 40, curve([[7, 2.5], [10, 5], [13, 8], [16, 10.5], [19, 12.5], [22, 14], [25, 15.5], [33, 15.5], [36, 14], [38, 11.5], [40, 8]]), S, { spec: 0.955 });
-    // second, smaller specular lower on the belly (round metal shows two)
-    p.set(10, 30, '#ffffff'); p.set(11, 31, S[1]);
-    // drill tip: spiral bands in the silver ramp, shifting every frame
-    for (let y = 0; y < 8; y++) {
-      const h = Math.max(1, Math.round(0.6 + y * 0.35));
-      for (let i = -h; i < h; i++) {
-        const band = ((y + i + f * 2) & 3) < 2;
-        const col = i === -h ? S[1] : i === h - 1 ? S[4] : band ? (i < 0 ? S[0] : S[2]) : (i < 0 ? S[1] : S[3]);
-        p.set(cx + i, y, col);
-      }
-    }
-    for (let x = 13; x < 19; x++) { p.set(x, 5, x < 16 ? Au[1] : Au[2]); p.set(x, 6, x < 16 ? Au[2] : Au[3]); }
-    // gold collar ring round the upper dome, lit from the upper left
-    for (let x = 7; x < 25; x++) {
-      const lit = x < 14;
-      p.set(x, 11, x === 9 || x === 10 ? Au[0] : lit ? Au[1] : Au[2]);
-      p.set(x, 12, lit ? Au[2] : Au[3]);
-      p.set(x, 13, (x % 3) === 1 ? Au[4] : Au[3]);
-    }
-    // gold ear knobs, upper and lower
-    bossPair(p, ['..kkk', '.kyYYk', 'koyYyk', 'koyyok', 'kooyok', 'kdooDk', 'kddDDk', '.kDDk.', '..kk..'], 0, 14, GOLD, cx);
-    bossPair(p, ['.kk.', 'kyYk', 'koyk', 'kdDk', '.kk.'], 1, 30, GOLD, cx);
-    // brow stripes over the eye sockets
-    bossPair(p, ['...kkkk', '..kwwww', '.kwccck', 'kwck...'], 4, 18, { k: BK, w: '#ffffff', c: S[2] }, cx);
-    // mouth: a black slot inside a gold ring (lit rim on the upper left)
-    stamp(p, ['..kkkk..', '.kYyyok.', 'kyokkodk', 'kokGGkdk', 'kokkkkdk', 'kokkkkDk', 'kdokkoDk', '.kddDDk.', '..kkkk..'], 12, 15, GOLD);
-    // wide eye sockets in a cool near-black with a violet lip
-    bossPair(p, ['..kkkkkkk', '.kGGGkkkkk', 'kGeeeeeeek', 'keeEEEEeek', 'keeEEEEeek', '.kkeeeeekk', '..kkkkkkk.'], 3, 23, { k: BK, G: '#6a6a8c', e: '#2c2a44', E: '#16142a' }, cx);
-    const glow = hurt ? '#ff3a3a' : f % 2 ? '#ffffff' : '#dfe8ff';
-    bossPair(p, ['gg'], 9, 25, { g: glow }, cx);
-    // gold crown of white-tipped points round the lower belly
-    for (let x = 2; x < 30; x++) {
-      const k2 = (x + 2) % 5, lit = x < 16;
-      if (k2 === 2) p.set(x, 32, '#ffffff');
-      if (k2 >= 1 && k2 <= 3) p.set(x, 33, k2 === 2 ? Au[0] : lit ? Au[1] : Au[2]);
-      p.set(x, 34, k2 >= 1 && k2 <= 3 ? (lit ? Au[1] : Au[2]) : Au[2]);
-      p.set(x, 35, lit ? Au[2] : Au[3]);
-      p.set(x, 36, (x % 5) === 0 ? Au[4] : Au[3]);
-    }
-    return hurt ? brightenBoss(bossFinish(p, S[4])) : bossFinish(p, S[4]);
+    const put = (L, rows, x, y) => L.blit(fromRows(rows, pal), x, y);
+    // stamp rows at x and mirrored on the other side (works for odd and even widths)
+    const both = (L, rows, x, y) => { const t = fromRows(rows, pal); L.blit(t, x, y); L.blit(t, W - x - t.w, y, true); };
+    const layer = (draw, target, ink) => { const L = new Pix(W, H); draw(L); (target || p).blit(L.outlined(ink || BK), 0, 0); return L; };
+    const mirror = (L) => { const half = W >> 1; for (let y = 0; y < H; y++) for (let x = 0; x < half; x++) { const c = L.get(x, y); if (c) L.set(W - 1 - x, y, c); } };
+    return { p, put, both, layer, mirror };
   }
 
-  // thick leg segment: orange core with a darker lower edge (the final outline adds the black)
-  function limb(p, x0, y0, x1, y1, core, dark, w) {
+  // ------------------------------------------------------------ BOSS 1 — drill robot (31x46)
+  // Built from the original's features, top to bottom. Top: a threaded spire with a white core, a gold collar near the
+  // tip and a gold ring at its base, set in a socket between two gold horns. Middle: an onion body lit from the front,
+  // gold crescent ears, small slanted eyes, a gold-rimmed mouth slot, big black cheek sockets with a grey glint, gold
+  // drops on the lower sides and a gold V necklace with a pendant. Bottom: a neck standing in a gold-rimmed dish.
+  // Odd width, so the spire comes to a single-pixel point on the centre column.
+  function buildDrill(f, hurt) {
+    const W = 31, H = 46, cx = 15;
+    const S = RAMP.silver, Au = RAMP.gold, GR = RAMP.grey;
+    const PAL = { k: BK, W: S[0], w: S[1], m: S[2], s: S[3], S: S[4], Y: Au[0], y: Au[1], o: Au[2], d: Au[3], D: Au[4], g: GR[2], G: GR[3], n: '#262440', N: '#6a6890' };
+    const { p, put, both, layer, mirror } = bossKit(W, H, PAL);
+
+    // ---- bottom: a gold-rimmed dish; the neck's ink makes the hole it stands in
+    layer((L) => put(L, [
+      'yo.............od',
+      'yoSGG.......GGSod',
+      'yoGgggggggggggGod',
+      'yogwwwwwwwWWwwgod',
+      '.yoGGGGGGGGGGGod.',
+      '...Yyyyyyyyood...',
+    ], 7, 39));
+
+    // ---- middle: the onion body lit from the front, shoulders beside the socket, gold horns and the neck
+    layer((L) => {
+      bossSolid(L, cx, 12, 38, curve([[12, 8], [13, 8], [14, 9], [15, 9], [16, 10], [17, 10], [18, 11], [19, 11], [20, 12], [23, 12], [24, 13], [27, 13], [28, 12], [30, 12], [31, 11], [33, 11], [34, 10], [35, 10], [36, 9], [37, 8], [38, 6]]), S, { odd: true, light: unit([-0.25, 0.22, 1]), spec: 0.992, win: 4 });
+      both(L, ['.sw.', 'smyo'], 8, 10);
+      both(L, ['oyy'], 10, 12);
+      put(L, ['mwWWwms'], 12, 39);
+    });
+    // gold crescent ears on the upper sides and little gold drops lower down
+    layer((L) => {
+      put(L, ['..yyo', '.yYo.', 'yYWo.', 'yyo..', 'oyd..', 'od...', '.d...'], 1, 13);
+      put(L, ['y.', 'o.', 'W.', 'yo'], 1, 28);
+      mirror(L);
+    });
+
+    // ---- top: the threaded spire; the white core and the thread turn every frame
+    const spin = f % 2;
+    layer((L) => put(L, [
+      '.....W.....',
+      '....wWs....',
+      '....yYo....',
+      '....oyd....',
+      spin ? '....w.m....' : '...m.W.s...',
+      spin ? '...wWwms...' : '...mwWms...',
+      spin ? '..mwWwmsS..' : '..smwWwmS..',
+      spin ? '.smwWwwmsS.' : '.smwwWwmsS.',
+      '..soyYyoS..',
+      '...smwms...',
+    ], 10, 1));
+
+    // ---- face: slanted eyes with a gold streak, the mouth slot, cheek sockets, and the V necklace with its pendant
+    both(p, ['.mm.....', 'mkkmm...', 'mkWkkmm.', 'mkWWWkkm', '.mkWWWkm', '..mkkkm.'], 6, 12);
+    both(p, ['Yy..', '.oyy'], 3, 16);
+    put(p, ['..kkk..', '.kYyok.', 'kykkkok', 'sykkkos', 'soknkds', 'sokkkds', 'sdyooDs', '.sdddS.'], 12, 17);
+    both(p, ['....yYWW..', '...oy..kk.', '..od..kkkk', '..d..kknkk', '.k..kkNNk.', '.k.kkNNkk.', '.kk.kkkk..', '..kk.kk...'], 3, 20);
+    both(p, ['...WW.....', 'yyWyYW...W', 'doyoyyW.WY', '.dodoyy.yy', '....dood.o', '.....dD..d'], 5, 31);
+    put(p, ['.', 'W', 'Y', 'y', 'o', 'd', 'd'], 15, 31);
+
+    return hurt ? brightenBoss(bossFinish(p, null)) : bossFinish(p, null);
+  }
+
+  // ------------------------------------------------------------ BOSS 2 — flame spider (48x50)
+  // Built from the original's features, top to bottom. Top: a flame head with a white wick, bright licks, a hot core
+  // and two small eyes, held in a gold cup set with blue gems; horn legs rising from the head and arching legs that
+  // hang their tips at the edges. Middle: thick banded legs reaching out with hooked tips, and a face below the cup —
+  // brow plate, big white eyes, nose ridge, fangs and mandibles, chin plate. Bottom: jointed lower legs and big
+  // banded claw feet. Each part is outlined on its own layer so the legs stay readable against each other.
+  // thick limb from (x0, y0) to (x1, y1): lit top edge, core, shaded underside
+  function rod(L, x0, y0, x1, y1, w, lit, core, dark) {
     const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1);
     for (let i = 0; i <= n; i++) {
       const x = Math.round(x0 + ((x1 - x0) * i) / n), y = Math.round(y0 + ((y1 - y0) * i) / n);
-      p.rect(x, y, w, w, core);
-      p.rect(x, y + w - 1, w, 1, dark);
-    }
-  }
-
-  // ------------------------------------------------------------ BOSS 2 — flame spider: a wide crab-like stance (48x50)
-  // black spindly leg with an orange highlight along its top edge
-  function leg(p, x0, y0, x1, y1, hi) {
-    const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1);
-    for (let i = 0; i <= n; i++) {
-      const x = Math.round(x0 + ((x1 - x0) * i) / n), y = Math.round(y0 + ((y1 - y0) * i) / n);
-      p.rect(x - 1, y - 1, 3, 3, BK);
-      p.set(x, y - 1, hi);
+      for (let j = 0; j < w; j++) for (let k = 0; k < w; k++) L.set(x + k, y + j, j === 0 ? lit : j === w - 1 ? dark : core);
     }
   }
   function buildSpider(f, hurt) {
     const W = 48, H = 50, cx = 24;
-    const p = new Pix(W, H);
-    const RED = RAMP.red, OR = RAMP.orange, Au = RAMP.gold;
-    const s = f % 2 ? 1 : -1;
-    for (const side of [-1, 1]) {
-      const X = (dx) => Math.round(cx - 0.5 + side * dx);
-      // upper legs arch up and out, middle legs reach to the edge, lower legs dig down
-      leg(p, X(8), 20, X(16), 9, '#ffa030'); leg(p, X(16), 9, X(22), 17 + s, '#e07818');
-      leg(p, X(11), 26, X(20), 22, '#ffa030'); leg(p, X(20), 22, X(23), 31 - s, '#e07818');
-      leg(p, X(10), 32, X(17), 36, '#ffa030'); leg(p, X(17), 36, X(19), 44 + s, '#e07818');
-      // orange-red knuckles
-      for (const [jx, jy] of [[16, 9], [20, 22], [17, 36]]) { p.rect(X(jx) - 1, jy - 1, 3, 3, '#e07818'); p.set(X(jx), jy - 1, '#ffd060'); }
-    }
-    // big red feet, apart, banded like claws
-    for (const fx of [17, 31]) {
-      bossSolid(p, fx, 39, 49, curve([[39, 3.5], [41, 5], [47, 5], [49, 4]]), RED, { spec: 0.95 });
-      for (const y of [43, 46]) for (let x = fx - 4; x < fx + 4; x++) p.set(x, y, x < fx ? RED[3] : RED[4]);
-    }
-    // leg roots: orange and red plates packed round the face
-    bossPair(p, ['.ooo', 'oyyo', 'orro', 'oRRo', 'orro', 'oRRo', '.oo.'], 11, 26, { o: OR[2], y: OR[1], r: RED[2], R: RED[4] }, cx);
-    // face segment: red, white eyes, brow, fangs
-    bossSolid(p, cx, 25, 38, curve([[25, 8], [28, 9.5], [34, 9.5], [37, 8], [38, 6]]), RED, { spec: 0.96 });
-    bossPair(p, ['kkkk', 'kwwk', 'kwkk', 'kwwk', '.kk.'], 17, 27, { k: BK, w: '#ffffff' }, cx);
-    bossPair(p, ['p'], 19, 29, { p: hurt ? '#ffffff' : '#000000' }, cx);
-    bossPair(p, ['RR', '.RR'], 16, 26, { R: RED[4] }, cx);
-    for (let x = 18; x < 30; x++) p.set(x, 33, x < 24 ? OR[1] : OR[2]);
-    bossPair(p, ['w.w', 'wgw', 'w.w', 'g..'], 18, 34, { w: '#ffffff', g: '#9a98c0' }, cx);
-    for (let x = 21; x < 27; x++) p.set(x, 37, RED[4]);
-    // gold band and blue collar
-    bossSolid(p, cx, 21, 25, () => 12.5, Au, { spec: 0.97, tilt: -0.2 });
-    for (let x = 14; x < 35; x += 3) p.vline(x, 22, 3, x < 24 ? Au[3] : Au[4]);
-    bossSolid(p, cx, 18, 21, () => 9.5, RAMP.blue, { spec: 0.97, tilt: -0.2 });
-    for (const x of [17, 21, 26, 30]) p.set(x, 19, '#ffe020');
-    // round flame head with licking tips, a hot star-shaped core and little white eyes
-    const fl = f % 2;
-    // fire glows from within, so it ignores the scene light: hot yellow core fading to crimson at the rim
-    bossFire(p, cx, 5, 18, curve([[5, 2], [7, 5], [9, 7], [12, 8.5], [16, 8.5], [18, 7]]), ['#fff4a0', '#ffb030', '#f04a1a', '#d01830', '#6a0c2a'], 14);
-    // licking flame tips that flicker between frames
-    for (const [tx, ty, h] of [[16, 6 + fl, 3], [19, 2, 4], [23, 0 + fl, 5], [27, 2 - fl, 4], [30, 6, 3]]) for (let j = 0; j < h; j++) { p.set(tx, ty + j, j === 0 ? '#d01830' : '#f04a1a'); if (j > 1) p.set(tx + (tx < 24 ? 1 : -1), ty + j, '#d01830'); }
-    // dark strokes curling up through the flame
-    for (const [x0, y0] of [[17, 13], [20, 9], [27, 9], [30, 13]]) { p.set(x0, y0, '#6a0c2a'); p.set(x0 + (x0 < 24 ? 1 : -1), y0 - 1, '#6a0c2a'); p.set(x0 + (x0 < 24 ? 1 : -1), y0 - 2, '#a0102a'); }
-    stamp(p, ['...y...', '..yYy..', 'yyYWYyy', '.yYWYy.', '..yYy..', '.y...y.'], 21, 10, { y: '#ffc020', Y: '#ffe060', W: '#ffffff' });
-    bossPair(p, ['wk'], 19, 10, { k: BK, w: '#ffffff' }, cx);
-    p.vline(23, 0, 5, '#ffffff'); p.vline(24, 0, 5, '#a8a8b8');
-    return hurt ? brightenBoss(bossFinish(p, null)) : bossFinish(p, null);
+    const RED = RAMP.red, OR = RAMP.orange, Au = RAMP.gold, BL = RAMP.blue;
+    // deep armour reds and browns with orange highlights, as in the original; gold and blue for the cup
+    const PAL = {
+      k: BK, W: '#ffffff', g: '#c8c8dc', G: '#8a8aa8', e: '#e8f4ff',
+      p: '#ffb8a0', r: '#ff4a3a', R: '#d01828', h: '#8a0a1e', H: '#4a0412',
+      a: '#ffe08a', n: '#ffb03a', j: '#e0781a', i: '#a04a10', I: '#5a2408',
+      Y: Au[0], y: Au[1], o: Au[2], d: Au[3], D: Au[4],
+      b: BL[1], B: BL[2], u: BL[3], U: BL[4],
+    };
+    const { p, put, both, layer, mirror } = bossKit(W, H, PAL);
+    const s = f % 2;
+
+    // ---- middle legs, furthest back: an inner brown segment, a red joint, an outer segment and a tip hooking down
+    layer((L) => {
+      put(L, [
+        '.nnjjirrRhnnjjji',
+        'najjiiprRhjanjii',
+        'jjiiIirRhHijjiiI',
+        'jiIIIIhhHHIiIII.',
+        'jI..............',
+        'ij..............',
+        'iI..............',
+        '.i..............',
+      ], 1, 22 + s);
+      mirror(L);
+    });
+    // ---- arching legs: a red upper segment from the shoulder out to a brown knee, the tip hanging down at the edge
+    layer((L) => {
+      put(L, [
+        '.nj.........',
+        'njiRh.......',
+        'ji.rRh......',
+        'ji..rRh.....',
+        'iI...rRh....',
+        'iI....rRh...',
+        'i......nji..',
+        'I.......nji.',
+        '.........iI.',
+      ], 4, 10 - s);
+      mirror(L);
+    });
+    // ---- horn legs rising from the sides of the head to a point
+    layer((L) => { put(L, ['.a.....', '.nj....', '..ni...', '...ni..', '....ji.', '.....ji', '......i'], 12, 7); mirror(L); });
+    // ---- shoulders: a red plate over an orange one where the legs meet the body
+    layer((L) => {
+      put(L, ['..rrR..', '.rprRh.', '.RrRhh.', '..hhH..'], 11, 15);
+      put(L, ['.nrRh..', 'nrpRRh.', 'jRrRhhH', '.hRhhH.', '..hHH..'], 11, 19);
+      mirror(L);
+    });
+    // ---- lower legs: an upper segment, a red joint, a lower segment stepping down to the feet
+    layer((L) => {
+      put(L, [
+        '......nji..',
+        '.....naji..',
+        '....naji...',
+        '...rRjiI...',
+        '..rpRhI....',
+        '.nRRhH.....',
+        'naji.......',
+        'njiI.......',
+        'jiI........',
+        'iI.........',
+      ], 7, 30);
+      mirror(L);
+    });
+    // ---- bottom: deep red claw feet, three knuckles lit on top, slits between them
+    layer((L) => {
+      put(L, [
+        '..hRrrRh..',
+        '.hRrprRRh.',
+        'hRrRRRkkkr',
+        'hhRrrRhRRh',
+        '.hRrprRh..',
+        'hhhhhhkkR.',
+        '.hRrrRRhrh',
+        '..hRprRRh.',
+        '..HhhhhhH.',
+      ], 10, 40);
+      mirror(L);
+    });
+
+    // ---- the face below the cup (left half): brow plate and bar, big eyes with pupils low and inward, nose ridge,
+    // red cheeks, inner fangs round the tongue, white mandibles with pale tips, a dark mouth and a lit chin plate
+    layer((L) => {
+      put(L, [
+        '..ijnnan',
+        '.ijkikkk',
+        '.hkWWkij',
+        '.hWWWWji',
+        'hRgWkkjn',
+        'hRRkkRhj',
+        'hrRRhkij',
+        'hRkWWkRr',
+        'ihkWgkRr',
+        'iWkkkkrR',
+        'gWkHHHHH',
+        'ekgkkkkk',
+        'Gkkiiiii',
+        '.kjjnnnn',
+        '..kjjjjj',
+      ], 16, 24);
+      mirror(L);
+    });
+
+    // ---- top: a flame head glowing from within: a jagged crown of tongues, flame strokes, a small star-bright core with
+    // the eyes beside it
+    layer((L) => {
+      bossFire(L, cx, 6, 20, curve([[6, 1.5], [8, 3], [10, 5], [12, 6.5], [15, 7.5], [18, 7], [20, 5.5]]), ['#fffbe0', '#ffe04a', '#ff5a2a', '#d81830', '#7a0c28'], 16);
+      const tongues = [[23, 4, 3], [24, 5, 2], [21, 5 + s, 3], [26, 5 - s, 3], [19, 7, 3], [28, 7, 3], [17, 10 - s, 3], [30, 10 + s, 3]];
+      for (const [x, y, hgt] of tongues) for (let t = 0; t < hgt; t++) L.set(x, y + t, t === 0 ? '#ff7a3a' : t === 1 ? '#ff5a2a' : '#d81830');
+      for (const [x0, y0, dir] of [[19, 12, 1], [20, 9, 1], [27, 9, -1], [28, 12, -1]]) { L.set(x0, y0, '#ff8a4a'); L.set(x0 + dir, y0 - 1, '#ff8a4a'); L.set(x0 + dir * 2, y0 - 1, '#7a0c28'); }
+      put(L, ['..yy..', '.yWWy.', 'yWWWWy', '.yWWy.', '.oyyo.'], 21, 13);
+      put(L, ['kWk......kWk'], 18, 13);
+    });
+    // gold cup set with blue gems, holding the flame
+    layer((L) => {
+      put(L, [
+        'U.......',
+        'uy......',
+        'yeBy....',
+        'YBuo....',
+        'oyodkk..',
+        '.doyyk kk'.replace(' ', 'k'),
+        '..dooyYY',
+      ], 16, 17);
+      mirror(L);
+    });
+
+    // the wick stands clear of the outline, like the original's
+    const out = bossFinish(p, null);
+    for (let y = 0; y < 5; y++) { out.set(23, y, '#ffffff'); out.set(24, y, '#a8a8c0'); }
+    return hurt ? brightenBoss(out) : out;
   }
 
   // ------------------------------------------------------------ BOSS 3 — gold bear mech (36x58)
@@ -1789,6 +1895,15 @@
     stamp(p, EMOTES[key], 2, 1, { k: K, r: '#ec3d5f', b: '#3d86f0', w: '#ffffff', y: '#ffc53a' });
     return p;
   }
+  // Honey's pet bunny, in the style of the original's white rabbit: black outline, white fur shaded pale blue, red eyes,
+  // pink inner ears and a red bow on one ear. Frame 0 sits; frame 1 is mid-hop, stretched with the ears swept back.
+  const BUNNY_PAL = { k: K, W: '#ffffff', l: '#d8e8f8', m: '#a8bcd8', n: '#ffb0c4', p: '#ffc8d8', R: '#c0102a', r: '#ff4a6a', b: '#e8203c', B: '#9a1020' };
+  const BUNNY = [
+    ['..kk.....kk..', '.kWnk...knWk.', '.kWnk..bknWk.', '.kWnk.bBbnWk.', '..kWnk.bnWk..', '..kWWkkkWWk..', '.kWWWWWWWWlk.', 'kWWWWWWWWWWlk', 'kWWRWWWWWRWlk',
+      'kWpRWWrWWRplk', 'kWWWWkrkWWllk', '.klWWWWWWllk.', '..kkWWWWlkk..', '.kWWWlllllmk.', '.kWWllllllmk.', '.kWlkmmmklmk.', '..kkk...kkk..'],
+    ['.kk.......kk.', 'kWnk.....knWk', '.kWnk..bknWk.', '..kWnkbBbnk..', '..kWWkkbkWk..', '.kWWWWWWWWlk.', 'kWWWWWWWWWWlk', 'kWWRWWWWWRWlk', 'kWpRWWrWWRplk',
+      'kWWWWkrkWWllk', '.klWWWWWWllk.', '..kkWWWWlkk..', '.kWWWlllllmk.', '.kWWllllllmk.', '..kWlmmmlmk..', '...kk...kk...', '.............'],
+  ];
   function buildProp(kind) {
     if (kind === 'broom') {
       const p = new Pix(8, 18);
@@ -2144,6 +2259,7 @@
       gifts: {},
       window: buildWindow(),
       broom: buildProp('broom'), vacuum: buildProp('vacuum'), cushion: buildProp('cushion'), book: buildProp('book'), cup: buildProp('cup'), mat: buildProp('mat'),
+      bunny: BUNNY.map((rows) => fromRows(rows, BUNNY_PAL, 13)),
     };
     for (const k of Object.keys(EMOTES)) art.room.emotes[k] = buildEmote(k);
     for (const k of ['bed', 'princess', 'desk', 'wardrobe', 'teatable', 'bookshelf', 'plant', 'plush', 'rug', 'piano', 'lamp', 'fishbowl', 'dresser', 'sofa', 'gramophone']) art.room.furniture[k] = buildFurniture(k);
