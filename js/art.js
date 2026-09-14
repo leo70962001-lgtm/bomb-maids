@@ -562,150 +562,219 @@
     }
   }
 
-  // four-tone shaded ellipse lit from the top-left with a specular glint: T = [shine, light, mid, dark]
-  function ball4(p, x, y, w, h, T, glint) {
-    const cx = x + w / 2 - 0.5, cy = y + h / 2 - 0.5, rx = w / 2, ry = h / 2;
-    for (let j = 0; j < h; j++)
-      for (let i = 0; i < w; i++) {
-        const dx = (x + i - cx) / rx, dy = (y + j - cy) / ry;
-        const d2 = dx * dx + dy * dy;
-        if (d2 > 1.05) continue;
-        const lit = -dx * 0.55 - dy * 0.8;
-        let col = T[2];
-        if (lit < -0.42 || (d2 > 0.78 && lit < 0.05)) col = T[3];
-        else if (lit > 0.3) col = T[1];
-        const gx = dx + 0.42, gy = dy + 0.48;
-        if (gx * gx + gy * gy < (glint || 0.035)) col = T[0];
-        p.set(x + i, y + j, col);
+  // Bosses drawn like the originals: a silhouette profile shaded bright down the middle and darker to the rims,
+  // black outlines, and hand-placed parts stamped symmetrically.
+  const BK = '#000000';
+
+
+  // fill rows y0..y1 of a symmetric shape centred between columns cx-1 and cx; hw(y) = half width in pixels
+  // tones: [centre, light, mid, rim]; stops: |dx| fractions where each tone ends
+  function bossBody(p, cx, y0, y1, hw, tones, stops) {
+    const st = stops || [0.18, 0.55, 0.82];
+    for (let y = y0; y <= y1; y++) {
+      const h = hw(y);
+      if (h <= 0) continue;
+      for (let i = 0; i < Math.ceil(h); i++) {
+        const t = (i + 0.5) / h;
+        const col = t < st[0] ? tones[0] : t < st[1] ? tones[1] : t < st[2] ? tones[2] : tones[3];
+        p.set(cx + i, y, col);
+        p.set(cx - 1 - i, y, col);
       }
-  }
-
-  // BOSS 1 — drill robot: a silver egg with a drill on top, gold trim, skull-like eye sockets (32x48)
-  function buildDrill(f, hurt) {
-    const p = new Pix(32, 48);
-    const SL = '#ffffff', SM = '#c4d2f0', SS = '#94a6d0', SD = '#5c6c9c';
-    const GL = '#fff2a8', GM = '#ffbe1a', GD = '#c07406';
-    // base: silver foot plate under a gold ring
-    const SILVER = ['#ffffff', '#dfe8fa', '#a6b6dc', '#56669a'], GOLD = ['#fff6c8', '#ffd23f', '#e09a10', '#9a5a04'];
-    ball4(p, 6, 42, 20, 6, SILVER);
-    ball4(p, 5, 38, 22, 7, GOLD);
-    p.rect(8, 40, 16, 2, SD);
-    // egg body with a bright centre stripe
-    ball4(p, 2, 15, 28, 27, SILVER, 0.05);
-    ball4(p, 6, 9, 20, 18, SILVER, 0.06);
-    for (let y = 14; y < 38; y++) p.set(15, y, SL), p.set(16, y, y % 3 ? SM : SL);
-    for (let y = 16; y < 40; y++) { p.set(3, y, SD); p.set(28, y, SD); }
-    // gold ear knobs
-    ball4(p, 0, 16, 6, 11, GOLD, 0.08); ball4(p, 26, 16, 6, 11, GOLD, 0.08);
-    // gold zigzag trim around the lower body
-    for (let x = 4; x < 28; x++) { const y = 32 + (((x + 1) >> 2) % 2); p.set(x, y, GM); p.set(x, y + 1, GD); }
-    // eye sockets with angry brows
-    ball(p, 5, 19, 9, 8, null, '#2a3048', null); ball(p, 18, 19, 9, 8, null, '#2a3048', null);
-    const pupil = hurt ? '#ff3a3a' : f % 2 ? '#ffffff' : '#e8f0ff';
-    p.rect(9, 22, 2, 3, pupil); p.rect(21, 22, 2, 3, pupil);
-    for (let i = 0; i < 7; i++) { p.set(5 + i, 16 + (i >> 1), GD); p.set(26 - i, 16 + (i >> 1), GD); }
-    // round mouth with a gold rim
-    ball4(p, 12, 24, 8, 8, GOLD, 0.08); ball(p, 13, 25, 6, 6, null, '#141420', null);
-    // drill with spiral bands that shift every frame
-    for (let j = 0; j < 13; j++) {
-      const half = Math.max(1, Math.round(((j + 1) * 5) / 13));
-      for (let i = -half; i < half; i++) p.set(16 + i, j, ((j + i + f * 2) & 3) < 2 ? SL : SS);
     }
-    p.rect(10, 11, 12, 3, GM); p.hline(10, 11, 12, GL); p.hline(10, 13, 12, GD);
-    const out = p.outlined('#000000');
-    return hurt ? brighten(out) : out;
+  }
+  // stamp template rows at (x, y) and mirrored on the other side of the centre line
+  function bossPair(p, rows, x, y, pal, cx) {
+    const s = fromRows(rows, pal);
+    p.blit(s, x, y);
+    p.blit(s, 2 * cx - x - s.w, y, true);
+  }
+  
+  // black outline plus a dark rim just inside it on the lower right
+  function bossFinish(p, rim) {
+    const out = p.outlined(BK);
+    if (rim) {
+      for (let y = 0; y < out.h; y++)
+        for (let x = 0; x < out.w; x++) {
+          if (!p.solid(x, y)) continue;
+          if (!p.solid(x + 1, y) || !p.solid(x, y + 1) || !p.solid(x - 1, y) || !p.solid(x, y - 1)) out.set(x, y, rim);
+        }
+    }
+    return out;
+  }
+  const brightenBoss = (pix) => pix.map((c) => [Math.min(255, c[0] + 110), Math.min(255, c[1] + 110), Math.min(255, c[2] + 110), 255]);
+
+  // piecewise-linear profile through [y, halfWidth] points
+  const curve = (pts) => (y) => {
+    if (y < pts[0][0] || y > pts[pts.length - 1][0]) return 0;
+    for (let i = 1; i < pts.length; i++) if (y <= pts[i][0]) { const [y0, h0] = pts[i - 1], [y1, h1] = pts[i]; return h0 + ((h1 - h0) * (y - y0)) / Math.max(1, y1 - y0); }
+    return 0;
+  };
+
+  // ------------------------------------------------------------ BOSS 1 — drill robot: an onion-shaped silver dome (32x48)
+  function buildDrill(f, hurt) {
+    const W = 32, H = 48, cx = 16;
+    const p = new Pix(W, H);
+    const SIL = ['#ffffff', '#d8e6fa', '#98b0de', '#6a7cac'];
+    const GOLD = { k: BK, o: '#f09800', y: '#ffe020', Y: '#fff2a0', d: '#a85a00', w: '#ffffff', G: '#6a6a78' };
+    // pedestal: grey plate wrapped in a gold rim with a pale band underneath
+    bossBody(p, cx, 40, 47, curve([[40, 8], [42, 9.5], [47, 10]]), ['#e4e4ee', '#b4b4c4', '#8a8aa0', '#646478'], [0.25, 0.55, 0.85]);
+    for (let x = 6; x < 26; x++) { p.set(x, 45, '#f09800'); p.set(x, 46, '#fff2a0'); p.set(x, 47, '#f09800'); }
+    bossPair(p, ['oy', 'oo', 'oy', 'do', 'oo'], 6, 41, GOLD, cx);
+    // onion body: slim top, full belly
+    bossBody(p, cx, 7, 40, curve([[7, 2.5], [10, 5], [13, 8], [16, 10.5], [19, 12.5], [22, 14], [25, 15.5], [33, 15.5], [36, 14], [38, 11.5], [40, 8]]), SIL, [0.14, 0.46, 0.8]);
+    // drill tip with spiral bands and a gold ring
+    for (let y = 0; y < 8; y++) {
+      const h = Math.max(1, Math.round(0.6 + y * 0.35));
+      for (let i = 0; i < h; i++) {
+        const band = ((y + i + f * 2) & 3) < 2;
+        const col = i === 0 ? '#ffffff' : i === h - 1 ? '#6a7cac' : band ? '#d8e6fa' : '#98b0de';
+        p.set(cx + i, y, col); p.set(cx - 1 - i, y, col);
+      }
+    }
+    for (let x = 13; x < 19; x++) { p.set(x, 5, '#f09800'); p.set(x, 6, '#ffe020'); }
+    // gold collar ring round the upper dome
+    for (let x = 7; x < 25; x++) { p.set(x, 11, (x % 3) ? '#ffe020' : '#fff2a0'); p.set(x, 12, '#f09800'); p.set(x, 13, (x % 3) === 1 ? '#a85a00' : '#f09800'); }
+    // gold ear knobs, upper and lower
+    bossPair(p, ['..kkk', '.koyYk', 'koyyYk', 'koyyyk', 'kooyyk', 'kdooyk', 'kddook', '.kddk.', '..kk..'], 0, 14, GOLD, cx);
+    bossPair(p, ['.kk.', 'koyk', 'koyk', 'kdok', '.kk.'], 1, 30, GOLD, cx);
+    // brow stripes over the eye sockets
+    bossPair(p, ['...kkkk', '..kwwww', '.kwccck', 'kwck...'], 4, 18, { k: BK, w: '#ffffff', c: '#c8dcf8' }, cx);
+    // mouth: a black slot inside a gold ring
+    stamp(p, ['..kkkk..', '.kyyyyk.', 'kyokkoyk', 'kokGGkok', 'kokkkkok', 'kokkkkok', 'kyokkoyk', '.kyooyk.', '..kkkk..'], 12, 15, GOLD);
+    // wide eye sockets
+    bossPair(p, ['..kkkkkkk', '.kGGGkkkkk', 'kGeeeeeeek', 'keeEEEEeek', 'keeEEEEeek', '.kkeeeeekk', '..kkkkkkk.'], 3, 23, { k: BK, G: '#7a7a8a', e: '#34343e', E: '#1c1c24' }, cx);
+    const glow = hurt ? '#ff3a3a' : f % 2 ? '#ffffff' : '#dfe8ff';
+    bossPair(p, ['gg'], 9, 25, { g: glow }, cx);
+    // gold crown of white-tipped points round the lower belly
+    for (let x = 2; x < 30; x++) {
+      const k2 = (x + 2) % 5;
+      if (k2 === 2) { p.set(x, 32, '#ffffff'); }
+      if (k2 >= 1 && k2 <= 3) p.set(x, 33, k2 === 2 ? '#fff2a0' : '#ffe020');
+      p.set(x, 34, k2 >= 1 && k2 <= 3 ? '#ffe020' : '#f09800');
+      p.set(x, 35, '#f09800');
+      p.set(x, 36, (x % 5) === 0 ? '#a85a00' : '#f09800');
+    }
+    return hurt ? brightenBoss(bossFinish(p, '#4a4a56')) : bossFinish(p, '#4a4a56');
   }
 
-  // BOSS 2 — flame spider: a fire head on a blue collar, a segmented red body with a fanged face, orange legs, red feet (48x50)
+  // thick leg segment: orange core with a darker lower edge (the final outline adds the black)
+  function limb(p, x0, y0, x1, y1, core, dark, w) {
+    const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1);
+    for (let i = 0; i <= n; i++) {
+      const x = Math.round(x0 + ((x1 - x0) * i) / n), y = Math.round(y0 + ((y1 - y0) * i) / n);
+      p.rect(x, y, w, w, core);
+      p.rect(x, y + w - 1, w, 1, dark);
+    }
+  }
+
+  // ------------------------------------------------------------ BOSS 2 — flame spider: a wide crab-like stance (48x50)
+  // black spindly leg with an orange highlight along its top edge
+  function leg(p, x0, y0, x1, y1, hi) {
+    const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1);
+    for (let i = 0; i <= n; i++) {
+      const x = Math.round(x0 + ((x1 - x0) * i) / n), y = Math.round(y0 + ((y1 - y0) * i) / n);
+      p.rect(x - 1, y - 1, 3, 3, BK);
+      p.set(x, y - 1, hi);
+    }
+  }
   function buildSpider(f, hurt) {
-    const p = new Pix(48, 50);
-    const RL = '#ff9a8a', RM = '#e0202c', RD = '#8e1018';
-    const OL = '#ffb24a', OM = '#d8741c', OD = '#8a4008';
+    const W = 48, H = 50, cx = 24;
+    const p = new Pix(W, H);
+    const RED = ['#ff7a5a', '#f02828', '#c81818', '#8a0c10'];
     const s = f % 2 ? 1 : -1;
     for (const side of [-1, 1]) {
-      const cx = 23.5;
-      const legs = [
-        [cx + side * 8, 21, cx + side * 16, 8, cx + side * 21, 20 + s * side],
-        [cx + side * 10, 26, cx + side * 19, 22, cx + side * 23, 34 - s * side],
-        [cx + side * 9, 31, cx + side * 16, 34, cx + side * 19, 42 + s * side],
-      ];
-      for (const [x0, y0, x1, y1, x2, y2] of legs) {
-        seg(p, Math.round(x0), y0, Math.round(x1), y1, OM, 3);
-        seg(p, Math.round(x1), y1, Math.round(x2), y2, OD, 2);
-        p.rect(Math.round(x1), y1, 3, 1, OL);
-        p.rect(Math.round(x2), y2 + 1, 2, 2, '#000000');
-      }
+      const X = (dx) => Math.round(cx - 0.5 + side * dx);
+      // upper legs arch up and out, middle legs reach to the edge, lower legs dig down
+      leg(p, X(8), 20, X(16), 9, '#ffa030'); leg(p, X(16), 9, X(22), 17 + s, '#e07818');
+      leg(p, X(11), 26, X(20), 22, '#ffa030'); leg(p, X(20), 22, X(23), 31 - s, '#e07818');
+      leg(p, X(10), 32, X(17), 36, '#ffa030'); leg(p, X(17), 36, X(19), 44 + s, '#e07818');
+      // orange-red knuckles
+      for (const [jx, jy] of [[16, 9], [20, 22], [17, 36]]) { p.rect(X(jx) - 1, jy - 1, 3, 3, '#e07818'); p.set(X(jx), jy - 1, '#ffd060'); }
     }
-    const RED = ['#ffd6cc', '#ff5a50', '#d0202c', '#7a0c14'], ORANGE = ['#ffe6b0', '#ffa84a', '#d06a18', '#7a3a08'];
-    ball4(p, 9, 40, 12, 10, RED, 0.06); ball4(p, 27, 40, 12, 10, RED, 0.06);
-    p.hline(11, 46, 8, RD); p.hline(29, 46, 8, RD);
-    // body: an orange upper segment and a red face segment
-    ball4(p, 13, 18, 22, 13, ORANGE, 0.04);
-    for (const x of [16, 20, 24, 28, 31]) p.vline(x, 21, 7, OD);
-    ball4(p, 14, 27, 20, 15, RED, 0.04);
-    p.rect(17, 30, 5, 4, '#ffffff'); p.rect(26, 30, 5, 4, '#ffffff');
-    const pupil = hurt ? '#ffffff' : '#1a0a0e';
-    p.rect(19, 31, 2, 3, pupil); p.rect(27, 31, 2, 3, pupil);
-    p.hline(16, 29, 7, '#000000'); p.hline(25, 29, 7, '#000000');
-    p.rect(18, 36, 12, 3, '#3a0810');
-    for (const x of [19, 22, 25, 28]) { p.rect(x, 39, 1, 2, '#ffffff'); p.set(x, 36, '#ffffff'); }
-    // blue collar
-    p.rect(14, 15, 20, 4, '#2f6fe0'); p.hline(14, 15, 20, '#9ad0ff'); p.hline(14, 18, 20, '#16389a');
-    for (const x of [17, 21, 26, 30]) p.set(x, 16, '#ffd23f');
-    // fire head: a round flame with licking tips and a hot core
+    // big red feet, apart, banded like claws
+    for (const fx of [17, 31]) {
+      bossBody(p, fx, 39, 49, curve([[39, 3.5], [41, 5], [47, 5], [49, 4]]), RED, [0.2, 0.5, 0.8]);
+      for (const y of [43, 46]) for (let x = fx - 4; x < fx + 4; x++) p.set(x, y, '#8a0c10');
+      p.rect(fx - 3, 40, 2, 1, '#ffc0b0');
+    }
+    // leg roots: orange and red plates packed round the face
+    bossPair(p, ['.ooo', 'oyyo', 'orro', 'oRRo', 'orro', 'oRRo', '.oo.'], 11, 26, { o: '#e07818', y: '#ffd060', r: '#f02828', R: '#8a0c10' }, cx);
+    // face segment: red, white eyes, brow, fangs
+    bossBody(p, cx, 25, 38, curve([[25, 8], [28, 9.5], [34, 9.5], [37, 8], [38, 6]]), RED, [0.22, 0.55, 0.85]);
+    bossPair(p, ['kkkk', 'kwwk', 'kwkk', 'kwwk', '.kk.'], 17, 27, { k: BK, w: '#ffffff' }, cx);
+    bossPair(p, ['p'], 19, 29, { p: hurt ? '#ffffff' : '#000000' }, cx);
+    bossPair(p, ['RR', '.RR'], 16, 26, { R: '#8a0c10' }, cx);
+    for (let x = 18; x < 30; x++) p.set(x, 33, '#ff9a1a');
+    bossPair(p, ['w.w', 'wgw', 'w.w', 'g..'], 18, 34, { w: '#ffffff', g: '#a8a8b8' }, cx);
+    for (let x = 21; x < 27; x++) p.set(x, 37, '#8a0c10');
+    // gold band and blue collar
+    bossBody(p, cx, 21, 25, () => 12.5, ['#fff2a0', '#ffc020', '#e08000', '#8a4a00'], [0.15, 0.5, 0.82]);
+    for (let x = 14; x < 35; x += 3) p.vline(x, 22, 3, '#8a4a00');
+    bossBody(p, cx, 18, 21, () => 9.5, ['#a8d8ff', '#58a8f8', '#2a7ae0', '#16409a'], [0.2, 0.5, 0.8]);
+    for (const x of [17, 21, 26, 30]) p.set(x, 19, '#ffe020');
+    // round flame head with licking tips, a hot star-shaped core and little white eyes
     const fl = f % 2;
-    ball4(p, 15, 3, 18, 14, ['#ffe0a0', '#ff6a3a', '#e0202c', '#8e1018'], 0.05);
-    tri(p, 15, 0 + fl, 6, 8, RM); tri(p, 21, 0, 6, 6 + fl, RM); tri(p, 27, 1 - fl, 6, 8, RM);
-    ball(p, 19, 6, 10, 9, null, '#ff7a1a', null);
-    ball(p, 21, 8, 6, 6, '#fff6cc', '#ffd23f', '#ffa21a');
-    p.vline(24, 0, 3, '#ffffff');
-    const out = p.outlined('#000000');
-    return hurt ? brighten(out) : out;
+    bossBody(p, cx, 5, 18, curve([[5, 2], [7, 5], [9, 7], [12, 8.5], [16, 8.5], [18, 7]]), ['#ff9a4a', '#f23030', '#d01818', '#8a0c10'], [0.25, 0.55, 0.82]);
+    for (const [tx, ty] of [[17, 7 + fl], [20, 3], [27, 3 + fl], [30, 7 - fl]]) { p.rect(tx, ty, 2, 2, '#f23030'); p.set(tx, ty + 2, '#8a0c10'); }
+    for (let y = 8; y < 17; y += 3) for (const x of [18, 22, 26, 29]) p.set(x, y, '#8a0c10');
+    stamp(p, ['...y...', '..yYy..', 'yyYWYyy', '.yYWYy.', '..yYy..', '.y...y.'], 21, 10, { y: '#ffc020', Y: '#ffe060', W: '#ffffff' });
+    bossPair(p, ['wk'], 19, 10, { k: BK, w: '#ffffff' }, cx);
+    p.vline(23, 0, 5, '#ffffff'); p.vline(24, 0, 5, '#a8a8b8');
+    return hurt ? brightenBoss(bossFinish(p, null)) : bossFinish(p, null);
   }
 
-  // BOSS 3 — gold bear mech: a glass dome with the pilot inside, round ears, goggle eyes, arms and treads (36x58)
+  // ------------------------------------------------------------ BOSS 3 — gold bear mech (36x58)
   function buildBoss(f, hurt) {
-    const p = new Pix(36, 58);
-    const GL = '#fff2a8', GM = '#ffbe1a', GD = '#c07406', GX = '#7a3c04';
-    const SL = '#eef2f8', SM = '#a4aabb', SD = '#626878';
-    // treads
-    for (const x of [6, 20]) {
-      p.rect(x, 48, 10, 9, SD);
-      for (let i = 0; i < 10; i++) p.rect(x + i, 49, 1, 7, (i + f * 2) % 4 < 2 ? SM : SD);
-      p.hline(x, 48, 10, SL);
+    const W = 36, H = 58, cx = 18;
+    const p = new Pix(W, H);
+    const GOLD = ['#fff2a0', '#ffd020', '#f09800', '#a85a00'];
+    const GREY = ['#e8e8f0', '#b8b8c8', '#8a8a9c', '#5a5a6c'];
+    // treads with a dark red hub between them
+    for (const tx of [11, 25]) {
+      bossBody(p, tx, 49, 57, () => 5, GREY, [0.25, 0.55, 0.85]);
+      for (let x = tx - 5; x < tx + 5; x++) { p.set(x, 49, '#f4f4fa'); p.set(x, 53 + ((x + f) % 2), '#5a5a6c'); }
     }
-    p.rect(15, 50, 6, 5, GX);
-    // arms
-    for (const x of [1, 27]) {
-      p.rect(x, 34, 8, 16, GM);
-      p.rect(x, 34, 8, 2, GL);
-      p.rect(x + 1, 40, 6, 2, GX); p.rect(x + 1, 46, 6, 2, GX);
-      p.rect(x + (x < 10 ? 6 : 0), 36, 2, 13, GD);
+    bossBody(p, cx, 50, 55, () => 3, ['#e05050', '#b02020', '#801010', '#500808'], [0.3, 0.6, 0.85]);
+    // arms: gold segments, brown bands, grey elbows
+    for (const ax of [5, 31]) {
+      bossBody(p, ax, 38, 53, () => 4, GOLD, [0.25, 0.55, 0.85]);
+      for (let x = ax - 4; x < ax + 4; x++) { p.set(x, 43, '#7a3c04'); p.set(x, 44, '#a85a00'); p.set(x, 49, '#7a3c04'); }
+      for (let x = ax - 3; x < ax + 3; x++) { p.set(x, 46, '#b8b8c8'); p.set(x, 47, '#8a8a9c'); }
+      p.rect(ax - 1, 38, 2, 2, '#e8e8f0');
     }
-    // torso with a dark chest panel
-    p.rect(9, 33, 18, 16, GM);
-    p.rect(9, 33, 18, 2, GL);
-    p.rect(12, 36, 12, 10, GX);
-    for (let x = 13; x < 23; x += 3) p.rect(x, 37, 2, 8, GD);
-    p.rect(15, 46, 6, 2, SM);
-    // head: ears, face and goggles
-    const GOLD = ['#fff6c8', '#ffd23f', '#e09a10', '#9a5a04'], SILVER = ['#ffffff', '#d0d6e4', '#9aa0b4', '#5a6070'];
-    ball4(p, 0, 0, 10, 10, GOLD, 0.1); ball4(p, 26, 0, 10, 10, GOLD, 0.1);
-    p.rect(3, 3, 2, 2, '#ffffff'); p.rect(29, 3, 2, 2, '#ffffff');
-    ball4(p, 1, 14, 34, 21, GOLD, 0.02);
-    for (let x = 4; x < 32; x += 4) p.set(x, 30, GD);
-    const eye = hurt ? '#ff5a5a' : f % 2 ? '#ffffff' : '#dfe8ff';
-    ball4(p, 5, 19, 9, 9, SILVER, 0.12); ball4(p, 22, 19, 9, 9, SILVER, 0.12);
-    p.rect(8, 21, 2, 2, eye); p.rect(25, 21, 2, 2, eye);
-    p.rect(16, 25, 4, 3, GX); p.hline(14, 30, 8, GX);
+    // torso with a brown chest plate striped in gold
+    bossBody(p, cx, 36, 50, () => 10, GOLD, [0.2, 0.5, 0.82]);
+    bossBody(p, cx, 39, 48, () => 6, ['#c87830', '#a85a18', '#8a4a10', '#6a3408'], [0.25, 0.55, 0.85]);
+    for (const x of [14, 17, 18, 21]) p.vline(x, 40, 8, '#ffc020');
+    bossBody(p, cx, 36, 38, () => 7, GREY, [0.25, 0.55, 0.85]);
+    for (let y = 38; y < 54; y++) { p.set(9, y, BK); p.set(26, y, BK); }
+    for (let x = 2; x < 34; x++) p.set(x, 37, x < 11 || x > 24 ? BK : p.get(x, 37) ? '#8a8a9c' : null);
+    // head: round ears with a sparkle
+    for (const ex of [4, 32]) {
+      bossBody(p, ex, 0, 9, curve([[0, 2.5], [2, 4.5], [7, 4.5], [9, 2.5]]), GOLD, [0.2, 0.5, 0.8]);
+      p.set(ex - 1, 3, '#ffffff'); p.set(ex - 2, 4, '#ffffff'); p.set(ex, 4, '#ffffff'); p.set(ex - 1, 5, '#ffffff');
+    }
+    // face plate
+    bossBody(p, cx, 17, 37, curve([[17, 12], [20, 15], [26, 16], [32, 15], [35, 12.5], [37, 9.5]]), GOLD, [0.18, 0.5, 0.8]);
+    // plating seams curving round the goggles
+    bossPair(p, ['..k', '.k.', 'k..'], 3, 30, { k: '#7a3c04' }, cx);
+    bossPair(p, ['kkkk'], 10, 31, { k: '#7a3c04' }, cx);
+    for (let x = 6; x < 30; x += 4) p.set(x, 34, '#a85a00');
+    // side bolts, goggles, nose and mouth
+    bossPair(p, ['kk', 'wk', 'gk', 'kk'], 0, 24, { k: BK, w: '#e8e8f0', g: '#8a8a9c' }, cx);
+    bossPair(p, ['..kkkkk..', '.kgggggk.', 'kgwwbbbgk', 'kgwbbbbgk', 'kgbbbbbgk', 'kgbbbbbgk', 'kgbbbbbgk', '.kgggggk.', '..kkkkk..'], 4, 21, { k: BK, g: '#8a8a9c', w: '#ffffff', b: '#c8e4ff' }, cx);
+    const glint = hurt ? '#ff5a5a' : f % 2 ? '#ffffff' : '#e8f4ff';
+    bossPair(p, ['gg'], 7, 23, { g: glint }, cx);
+    stamp(p, ['.kk.', 'kkkk', '.kk.'], 16, 28, { k: BK });
+    for (let x = 13; x < 23; x++) p.set(x, 32, '#7a3c04');
     // glass dome with the bear pilot inside
-    ball4(p, 3, 2, 30, 18, ['#ffffff', '#a8d8ff', '#5a98e0', '#2a5aa0'], 0.05);
-    ball(p, 12, 6, 12, 12, null, '#7aa890', '#4a7860');
-    p.rect(14, 5, 3, 3, '#7aa890'); p.rect(20, 5, 3, 3, '#7aa890');
-    p.set(15, 11, '#1a2a20'); p.set(20, 11, '#1a2a20'); p.rect(17, 13, 2, 1, '#c86a8a');
-    p.rect(7, 4, 2, 4, '#ffffff'); p.set(9, 3, '#ffffff');
-    const out = p.outlined('#000000');
-    return hurt ? brighten(out) : out;
+    bossBody(p, cx, 1, 20, curve([[1, 7], [3, 11], [6, 14], [12, 15.5], [17, 15], [20, 13]]), ['#c8e8ff', '#94c4f2', '#6098d8', '#3a64a8'], [0.3, 0.6, 0.85]);
+    bossBody(p, cx, 7, 19, curve([[7, 6], [9, 8], [15, 8.5], [19, 7]]), ['#d0e4d8', '#aac8b8', '#88a898', '#607868'], [0.25, 0.55, 0.85]);
+    bossPair(p, ['.ss', 'sss'], 11, 5, { s: '#aac8b8' }, cx);
+    bossPair(p, ['k'], 15, 12, { k: '#203028' }, cx);
+    stamp(p, ['pp'], 17, 16, { p: '#d07090' });
+    stamp(p, ['..www', '.w...', 'w....'], 23, 3, { w: '#ffffff' });
+    return hurt ? brightenBoss(bossFinish(p, null)) : bossFinish(p, null);
   }
 
   // ---------------------------------------------------------------- bomb (16x16), maid-cap cherry bomb
