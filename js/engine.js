@@ -55,8 +55,12 @@
   // Pictures are never stretched: a crop shaped differently from its box is trimmed to fit
   // (evenly from the sides, or more from the bottom than the top so faces stay in frame).
   // screen: place the picture in screen coordinates (the portrait panel) instead of game coordinates
-  E.art = function (id, src, x, y, w, h, crop, filter, screen) {
+  // opts: true for screen coordinates, or { screen, opacity, fadeRight: [from, to], fadeBottom: [from, to] } where the
+  // fades take the picture out between two points given as fractions of its width / height
+  E.art = function (id, src, x, y, w, h, crop, filter, opts) {
     if (!artLayer.el || w <= 0 || h <= 0) return;
+    const o = opts && typeof opts === 'object' ? opts : { screen: !!opts };
+    const screen = !!o.screen;
     let it = artLayer.items.get(id);
     if (!it) {
       it = document.createElement('div');
@@ -64,7 +68,7 @@
       artLayer.el.appendChild(it);
       artLayer.items.set(id, it);
     }
-    artLayer.used.set(id, { filter: filter || 'none', shade: 1, screen: !!screen });
+    artLayer.used.set(id, { filter: filter || 'none', shade: 1, screen, opacity: o.opacity == null ? 1 : o.opacity });
     let [sx, sy, sw, sh] = crop;
     const iw = crop[4], ih = crop[5];
     if (sw / sh > w / h) { const nw = (sh * w) / h; sx += (sw - nw) / 2; sw = nw; }
@@ -77,6 +81,17 @@
       backgroundPosition: (iw > sw ? (sx / (iw - sw)) * 100 : 0) + '% ' + (ih > sh ? (sy / (ih - sh)) * 100 : 0) + '%',
     };
     for (const k of Object.keys(css)) if (it.style[k] !== css[k]) it.style[k] = css[k];
+    const grad = (dir, f) => 'linear-gradient(to ' + dir + ', #000 ' + (f[0] * 100).toFixed(1) + '%, transparent ' + (f[1] * 100).toFixed(1) + '%)';
+    const masks = [o.fadeRight && grad('right', o.fadeRight), o.fadeBottom && grad('bottom', o.fadeBottom)].filter(Boolean);
+    const mask = masks.length ? masks.join(', ') : 'none';
+    if (it._mask !== mask) {
+      it._mask = mask;
+      it.style.webkitMaskImage = mask;
+      it.style.maskImage = mask;
+      // two fades keep only what both leave
+      it.style.webkitMaskComposite = masks.length > 1 ? 'source-in' : '';
+      it.style.maskComposite = masks.length > 1 ? 'intersect' : '';
+    }
   };
   // Overlays drawn on the canvas (pause menus, pop-ups) cannot cover the pictures, so an overlay shades the pictures
   // already drawn this frame: 1 leaves them as they are, 0.4 darkens them like a 60% dim, 0 hides them.
@@ -93,8 +108,8 @@
       if (display === 'none') continue;
       const filter = u.shade < 1 ? (u.filter === 'none' ? '' : u.filter + ' ') + 'brightness(' + u.shade + ')' : u.filter;
       if (it.style.filter !== filter) it.style.filter = filter;
-      const op = u.screen ? '1' : o;
-      if (it.style.opacity !== op) it.style.opacity = op;
+      const op = ((u.screen ? 1 : +o) * u.opacity).toFixed(2);
+      if (it._op !== op) { it._op = op; it.style.opacity = op; }
     }
     artLayer.used.clear();
   }

@@ -309,36 +309,126 @@
   G.outfitOf = (k) => (SAVE && SAVE.outfits && SAVE.outfits[k]) || 'maid';
   G.persist = persist;
   G.BOND = { getBond, affLevel, trainLevel, perks, maidStats, getRoom, roomHas, unlockPlan, syncUnlocks };
-  G.UI = { C, CG_ART, CG_CROP, goldBar, edgeBar, bg, lace, heartCursor, hint, header, coinLabel, maidImg, drawHead, isLocked, silhouette, maidName, rankColor, paper, darkPanel, statPips, wrapLines, marquee };
+  G.UI = { C, CG_ART, CG_CROP, portraitFace, goldBar, edgeBar, bg, lace, heartCursor, hint, header, coinLabel, maidImg, drawHead, isLocked, silhouette, maidName, rankColor, paper, darkPanel, statPips, wrapLines, marquee };
 
   // ------------------------------------------------------------------ Portrait panel (16:9 screen, left of the game)
   // The maid who matters on this screen stands beside the game with no frame and no caption: cut out of the
   // illustration, on the scene's own wallpaper carried across, in front of the scene's top and bottom bars (which run
-  // on across the panel behind her), her skirt going off the bottom of the screen. Each moves in her own way (Berry bounces, Yoru breathes calmly, Honey fidgets,
-  // Yukino sways) and a newly shown maid rises up into place.
-  // cut-outs of the plain-background illustration: pixel size, her face centre in it (she is placed by her face) and
-  // the right-most pixel of her that shows on screen (the cake plate, a lock of hair), which decides how far she leans
+  // on across the panel behind her), her skirt going off the bottom of the screen. She shows how she feels with her
+  // joy / anger / sorrow / fun pictures, cross-fading between them; each moves in her own way (Berry bounces, Yoru
+  // breathes calmly, Honey fidgets, Yukino sways) and a newly shown maid rises up into place.
+  // Pictures are placed by her eyes — [centre x, centre y, distance between them] in source pixels — so her face keeps
+  // its size and height from one picture to the next; right is the right-most column of her figure (not counting the
+  // sparkles and notes around her).
+  const EMOTIONS = ['joy', 'anger', 'sorrow', 'fun'];
   const STAND = {
-    berry: { src: 'img/stand-berry.webp', w: 369, h: 560, face: [175, 163], right: 368 },
-    yoru: { src: 'img/stand-yoru.webp', w: 430, h: 550, face: [250, 138], right: 424 },
-    honey: { src: 'img/stand-honey.webp', w: 401, h: 549, face: [200, 147], right: 400 },
-    yukino: { src: 'img/stand-yukino.webp', w: 403, h: 552, face: [222, 125], right: 402 },
+    berry: {
+      normal: { w: 369, h: 560, eye: [186, 154, 58.5], right: 368 },
+      joy: { w: 399, h: 567, eye: [217, 161, 66.5], right: 398 },
+      anger: { w: 379, h: 562, eye: [209, 163.5, 58], right: 377 },
+      sorrow: { w: 398, h: 559, eye: [191.5, 152, 60], right: 397 },
+      fun: { w: 399, h: 561, eye: [211, 150, 60], right: 397 },
+    },
+    yoru: {
+      normal: { w: 430, h: 550, eye: [235, 139, 55.5], right: 424 },
+      joy: { w: 363, h: 567, eye: [149.5, 172, 65.8], right: 361 },
+      anger: { w: 406, h: 567, eye: [186.5, 171, 69.5], right: 404 },
+      sorrow: { w: 408, h: 594, eye: [198, 149, 62.8], right: 406 },
+      fun: { w: 366, h: 593, eye: [164, 151.5, 59.7], right: 364 },
+    },
+    honey: {
+      normal: { w: 401, h: 549, eye: [206, 134, 50.6], right: 400 },
+      joy: { w: 429, h: 565, eye: [216, 163, 67.2], right: 426 },
+      anger: { w: 414, h: 570, eye: [208.5, 171.5, 71], right: 413 },
+      sorrow: { w: 412, h: 582, eye: [217, 140.5, 52.5], right: 411 },
+      fun: { w: 426, h: 592, eye: [224.5, 179.5, 71.2], right: 423 },
+    },
+    yukino: {
+      normal: { w: 403, h: 552, eye: [217, 118.5, 52.7], right: 402 },
+      joy: { w: 446, h: 538, eye: [217, 151, 61.3], right: 444 },
+      anger: { w: 384, h: 538, eye: [173.5, 148.5, 65.4], right: 383 },
+      sorrow: { w: 423, h: 545, eye: [183.5, 168, 69.5], right: 422 },
+      fun: { w: 424, h: 547, eye: [208, 154.8, 74], right: 423 },
+    },
   };
-  const STAND_SCALE = 0.36;
-  const STAND_TOP = 48; // where the top of her head sits: under the tallest top bar (the room's status bar), low enough
-  // that the bottom edge of the cut-out stays below the screen even at the top of Berry's bounce
-  const STAND_LEAN = 6; // she may reach this far into the game area; past that she steps left and the screen edge crops her
-  // load them all up front so switching maids never shows an empty panel
-  if (typeof Image !== 'undefined') for (const k in STAND) new Image().src = STAND[k].src;
+  const STAND_SCALE = 0.36; // the standing picture's scale
+  const STAND_TOP = 48; // where the top of the standing picture sits: under the tallest top bar (the room's status bar)
+  const STAND_LEAN = 6; // how far she may reach into the game area; past it she fades out
+  for (const k in STAND) {
+    const base = STAND[k].normal;
+    Object.assign(base, { src: 'img/stand-' + k + '.webp', s: STAND_SCALE, drop: 0 });
+    const eyeD = base.eye[2] * STAND_SCALE, eyeY = STAND_TOP + base.eye[1] * STAND_SCALE;
+    for (const e of EMOTIONS) {
+      const S = STAND[k][e];
+      S.src = 'img/emo-' + k + '-' + e + '.webp';
+      // the expression pictures are closer shots: her face keeps its size, then leans in a little (up to 1.25x and 16px
+      // lower) so the picture reaches the bottom of the screen; its faded lower edge covers any gap that is left
+      const head = eyeD / S.eye[2];
+      const need = (E.H + 4 - eyeY) / (S.h - S.eye[1]);
+      S.s = head * Math.min(1.25, Math.max(1, need / head));
+      S.drop = Math.min(16, Math.max(0, E.H + 4 - (eyeY + (S.h - S.eye[1]) * S.s)));
+    }
+  }
+  // load them all up front so switching maids or feelings never shows an empty panel
+  const PRELOADED = [];
+  if (typeof Image !== 'undefined') for (const k in STAND) for (const e in STAND[k]) {
+    const im = new Image();
+    im.src = STAND[k][e].src;
+    if (im.decode) im.decode().catch(() => {}); // decoded ahead, so a first change of feeling does not blink
+    PRELOADED.push(im);
+  }
+  // a square around her face in one of her pictures (dialogue boxes, job results); zoom is its side in eye distances
+  function portraitFace(k, emo, zoom) {
+    const set = STAND[k] || STAND.berry;
+    const S = set[emo] || set.normal;
+    const side = S.eye[2] * (zoom || 3.1);
+    return { src: S.src, crop: [S.eye[0] - side / 2, S.eye[1] - side * 0.42, side, side, S.w, S.h] };
+  }
+  // the room's expressions as feelings
+  const FACE_EMOTION = { happy: 'joy', blush: 'joy', surprise: 'fun', angry: 'anger', tired: 'sorrow' };
+  G.UI.FACE_EMOTION = FACE_EMOTION;
+  const RANK_EMOTION = { S: 'fun', A: 'fun', B: 'joy', C: 'normal' };
+  function moodEmotion(k) {
+    const b = SAVE && SAVE.bond && SAVE.bond[k];
+    if (!b) return 'normal';
+    if (b.stamina < 20 || b.mood < 30) return 'sorrow';
+    return b.mood >= 80 ? 'joy' : 'normal';
+  }
+  // short reactions while she works: glad when coins come in, fired up when she uses her skill
+  const react = { world: null, coins: 0, sp: 0, emo: null, until: 0 };
+  function reaction(w, m) {
+    if (react.world !== w) Object.assign(react, { world: w, coins: w.stats.coins, sp: m.sp, until: 0 });
+    if (m.sp < react.sp - 10) Object.assign(react, { emo: 'anger', until: E.frame + 80 });
+    else if (w.stats.coins >= react.coins + 10 && !(react.emo === 'anger' && E.frame < react.until)) Object.assign(react, { emo: 'joy', until: E.frame + 90 });
+    react.coins = w.stats.coins;
+    react.sp = m.sp;
+    return E.frame < react.until ? react.emo : 'normal';
+  }
   function portraitFor(sc) {
     const hired = G.MAID_ORDER.filter((k) => SAVE && SAVE.hired[k]);
     const home = (SAVE && SAVE.maid) || hired[0] || 'berry';
-    if (sc === SC.select && sc.sel != null) { const k = G.MAID_ORDER[sc.sel]; return { key: k, locked: isLocked(k) }; }
-    if (sc === SC.play && sc.world && sc.world.maids[0]) { const m = sc.world.maids[0]; return { key: m.maidKey, hurt: m.burnT > 0 || !m.alive }; }
-    if (sc === SC.battle && sc.lineup && sc.lineup[0]) return { key: sc.lineup[0].maid };
-    if (sc === SC.battleSetup && sc.cfg) return { key: sc.cfg.p1 || home };
-    if (sc === SC.title && hired.length) return { key: hired[Math.floor(E.frame / 360) % hired.length] };
-    return { key: home };
+    if (sc === SC.select && sc.sel != null) { const k = G.MAID_ORDER[sc.sel]; return isLocked(k) ? { key: k, locked: true, emo: 'normal' } : { key: k, emo: 'joy' }; }
+    if ((sc === SC.play || sc === SC.battle) && sc.world && sc.world.maids[0]) {
+      const w = sc.world, m = w.maids[0];
+      const key = m.maidKey;
+      if (w.state === 'clear') return { key, emo: 'fun' };
+      if (w.state === 'end') return { key, emo: w.winner === m ? 'fun' : 'sorrow' };
+      if (w.state === 'fail' || !m.alive) return { key, emo: 'sorrow', ko: true };
+      if (m.burnT > 0) return { key, emo: 'sorrow' };
+      return { key, emo: reaction(w, m) };
+    }
+    if (sc === SC.result && sc.rank) return { key: home, emo: sc.t > 100 ? RANK_EMOTION[sc.rank] : 'normal' };
+    if (sc === SC.gameover) return { key: home, emo: 'sorrow' };
+    if (sc === SC.ending) return { key: home, emo: 'fun' };
+    if (sc === SC.room) {
+      const cur = sc.dialog && sc.dialog.queue[sc.dialog.i];
+      if (cur && cur.who) return { key: cur.who, emo: FACE_EMOTION[cur.face] || 'normal' };
+      const face = sc.maid && sc.maid.face;
+      return { key: home, emo: (face && FACE_EMOTION[face]) || moodEmotion(home) };
+    }
+    if (sc === SC.battleSetup && sc.cfg) return { key: sc.cfg.p1 || home, emo: 'normal' };
+    if (sc === SC.title && hired.length) return { key: hired[Math.floor(E.frame / 360) % hired.length], emo: ['normal', 'joy', 'fun'][Math.floor(E.frame / 120) % 3] };
+    return { key: home, emo: moodEmotion(home) };
   }
   const MOTION = {
     berry: (t) => [0, -Math.abs(Math.sin(t * 0.11)) * 7],
@@ -346,12 +436,13 @@
     honey: (t) => [(t % 140) < 24 ? Math.sin(t * 1.3) * 5 : 0, Math.sin(t * 0.06) * 3],
     yukino: (t) => [Math.sin(t * 0.025) * 4, Math.sin(t * 0.05) * 2],
   };
-  const shown = { key: null, since: 0 };
+  const shown = { key: null, emo: 'normal', since: 0, prev: null, slot: 0 };
   function drawSidePanel(ctx) {
     const PW = E.sideW;
     if (!SAVE || PW <= 0) return;
     const p = portraitFor(E.scene);
     const k = STAND[p.key] ? p.key : 'berry';
+    const emo = STAND[k][p.emo] ? p.emo : 'normal';
     // the wallpaper, lined up with the scene's (same scroll, same tint); scenes without one get it dimmed
     const drew = lastBg.frame === E.draws;
     const off = drew ? lastBg.off : Math.floor(E.frame * 0.25) % 32;
@@ -378,17 +469,28 @@
         if (bar.rule != null) E.rect(0, bar.rule, PW, 1, '#f8b000');
       }
     }
-    // her figure, in front of everything on the panel
-    if (shown.key !== k) { shown.key = k; shown.since = E.frame; }
-    const S = STAND[k];
-    const w = S.w * STAND_SCALE, h = S.h * STAND_SCALE;
+    // her figure, in front of everything on the panel; a change of feeling cross-fades with a little pop. Two picture
+    // elements take turns, so neither swaps its image while it is still showing
+    if (shown.key !== k) Object.assign(shown, { key: k, emo, since: E.frame, prev: null });
+    else if (shown.emo !== emo) Object.assign(shown, { prev: { emo: shown.emo, at: E.frame, slot: shown.slot }, emo, slot: 1 - shown.slot });
+    const blend = shown.prev ? Math.min(1, (E.frame - shown.prev.at) / 10) : 1;
+    if (blend >= 1) shown.prev = null;
     const rise = Math.max(0, 1 - (E.frame - shown.since) / 16);
     const [mx, my] = p.locked ? [0, 0] : (MOTION[k] || MOTION.yoru)(E.frame);
-    const faceX = Math.min(PW / 2, PW + STAND_LEAN - (S.right - S.face[0]) * STAND_SCALE);
-    const x = faceX - S.face[0] * STAND_SCALE + mx;
-    const y = STAND_TOP + my + rise * rise * 48;
-    const filter = p.locked ? 'brightness(0) opacity(0.6)' : p.hurt ? 'sepia(0.6) brightness(0.55) contrast(1.2)' : null;
-    E.art('side-portrait', S.src, x, y, w, h, [0, 0, S.w, S.h, S.w, S.h], filter, true);
+    const filter = p.locked ? 'brightness(0) opacity(0.6)' : p.ko ? 'grayscale(0.7) brightness(0.8)' : null;
+    const eyeY = STAND_TOP + STAND[k].normal.eye[1] * STAND_SCALE;
+    const edge = PW + STAND_LEAN;
+    const figure = (id, e, opacity, pop) => {
+      const S = STAND[k][e];
+      const sc = S.s * pop;
+      const w = S.w * sc, h = S.h * sc;
+      const ex = Math.max(PW / 2 - 8, Math.min(PW / 2, edge - (S.right - S.eye[0]) * sc)) + mx;
+      const x = ex - S.eye[0] * sc;
+      const y = eyeY + S.drop + my + rise * rise * 48 - S.eye[1] * sc;
+      E.art(id, S.src, x, y, w, h, [0, 0, S.w, S.h, S.w, S.h], filter, { screen: true, opacity, fadeRight: [(edge - 12 - x) / w, (edge + 2 - x) / w] });
+    };
+    if (shown.prev) figure('side-portrait-' + shown.prev.slot, shown.prev.emo, 1 - blend, 1);
+    figure('side-portrait-' + shown.slot, emo, blend, 1 + 0.05 * (1 - blend));
   }
   E.sidePanel = drawSidePanel;
 
@@ -1797,7 +1899,8 @@
       const m = SAVE.maid;
       const hop = this.t > 100 ? Math.round(Math.abs(Math.sin(this.t * 0.15)) * 4) : 0;
       E.panel(231, 132 - hop, 70, 74, '#ffe0ea', G.MAID_DATA[m].color, {});
-      E.art('result-portrait', CG_ART, 233, 134 - hop, 66, 70, CG_CROP.bust[m]);
+      const rf = portraitFace(m, this.t > 100 ? RANK_EMOTION[this.rank] : 'normal', 4.4);
+      E.art('result-portrait', rf.src, 233, 134 - hop, 66, 70, rf.crop);
       if (this.newMaid && this.t > 130) {
         const k = this.newMaid;
         const pop = Math.min(1, (this.t - 130) / 12);
@@ -1845,12 +1948,14 @@
       }
       E.text(G.t('委託失敗……'), 160, 36, { color: C.white, align: 'center', scale: 2, size: 14 });
       E.text(G.t(this.reason === 'time' ? '時間到了，灰塵還沒掃完。' : '被炸得黑漆漆的……'), 160, 76, { color: C.gray, align: 'center' });
-      const img = E.spr.maids[SAVE.maid].burnt;
-      E.ctx.drawImage(img, 136, 92, 48, 72);
+      // her crying picture, sooty when the blast got her, with dizzy stars circling just above her head
+      const face = portraitFace(SAVE.maid, 'sorrow', 4.6);
+      const sob = Math.round(Math.sin(this.t * 0.09) * 1.5);
       for (let i = 0; i < 3; i++) {
         const a = this.t * 0.1 + (i * Math.PI * 2) / 3;
-        E.ctx.drawImage(E.spr.fx.star[(this.t >> 3) % 2], Math.round(160 + Math.cos(a) * 18), Math.round(92 + Math.sin(a) * 5));
+        E.ctx.drawImage(E.spr.fx.star[(this.t >> 3) % 2], Math.round(157 + Math.cos(a) * 26), Math.round(96 + Math.sin(a) * 4));
       }
+      E.art('gameover-portrait', face.src, 118, 96 + sob, 84, 72, face.crop, this.reason === 'time' ? null : 'sepia(0.5) brightness(0.5) contrast(1.3)', { fadeBottom: [0.62, 1] });
       if (this.salvage) E.text(G.t('撿到的金幣留下一半：+{n}G', { n: this.salvage }), 160, 170, { color: C.gold, align: 'center' });
       if (this.tired > 0) { this.tired--; E.text(G.t('體力不足，先回房間休息吧'), 160, 150, { color: C.pink, align: 'center' }); }
       [G.t('再試一次（體力 -{n}）', { n: G.JOB_STAMINA }), G.t('回房間')].forEach((s, i) => {

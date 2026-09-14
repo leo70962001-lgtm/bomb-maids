@@ -1551,9 +1551,10 @@
       UI.lace(8, 168, 304, C.plum);
       let tx = 14;
       if (cur.who) {
-        // CG portrait; the expression shows as a little bubble beside the name plate
+        // her portrait in the line's feeling (joy / anger / sorrow / fun), and a little bubble beside the name plate
         E.panel(10, 176, 54, 54, '#ffe0ea', G.MAID_DATA[cur.who].color, {});
-        E.art('dialog-portrait', UI.CG_ART, 12, 178, 50, 50, UI.CG_CROP.face[cur.who]);
+        const face = UI.portraitFace(cur.who, UI.FACE_EMOTION[cur.face] || 'normal');
+        E.art('dialog-portrait', face.src, 12, 178, 50, 50, face.crop);
         const nameW = E.textWidth(G.MAID_DATA[cur.who].name);
         E.rect(66, 174, nameW + 10, 15, G.MAID_DATA[cur.who].color);
         E.text(G.MAID_DATA[cur.who].name, 71, 175, { color: C.white });
