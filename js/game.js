@@ -1493,7 +1493,7 @@
       const ctx = E.ctx;
       const x = Math.round(ox + e.x), y = Math.round(oy + e.y);
       if (!e.alive) {
-        if (e.deadT < 10) ctx.drawImage(S.white[0], x, y - 2);
+        if (e.deadT < 10) ctx.drawImage(S.white[0], x, y + 16 - S.white[0].height);
         return;
       }
       ctx.fillStyle = 'rgba(42,27,48,0.3)';
@@ -1502,9 +1502,11 @@
       const frozen = this.freezeT > 0;
       let img = (e.dir === 'right' ? S.flipped : S.frames)[frozen || e.charm > 0 ? 0 : f];
       if (e.hitT > 0 && (e.hitT >> 2) % 2) img = S.white[0];
-      ctx.drawImage(img, x, y - 2);
-      if (e.charm > 0) ctx.drawImage(E.spr.fx.heart, x + 6 + Math.round(Math.sin(this.frame * 0.2) * 3), y - 8 - ((this.frame >> 2) % 4));
-      if (frozen) ctx.drawImage(E.spr.fx.sparkle[(this.frame >> 4) % 3], x + 11, y - 3);
+      // sprites stand on the tile's bottom edge whatever their height
+      const top = y + 16 - img.height;
+      ctx.drawImage(img, x, top);
+      if (e.charm > 0) ctx.drawImage(E.spr.fx.heart, x + 6 + Math.round(Math.sin(this.frame * 0.2) * 3), top - 6 - ((this.frame >> 2) % 4));
+      if (frozen) ctx.drawImage(E.spr.fx.sparkle[(this.frame >> 4) % 3], x + 11, top - 1);
     }
 
     drawBoss(ox, oy) {

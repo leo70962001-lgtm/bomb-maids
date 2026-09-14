@@ -191,12 +191,21 @@
     { id: 'system', label: '系統' },
     { id: 'decor', label: '佈置' },
   ];
+  // tool buttons under the status bar; 「佈置」 is the yellow quarter circle in the bottom-right corner
+  const CORNER_R = 60;
   function tabRect(i) {
-    if (i === 5) {
-      const w = Math.max(50, E.textWidth(G.t('佈置')) + 26);
-      return { x: 316 - w, y: 38, w, h: 20 };
+    if (i === 5) return { x: E.W - CORNER_R, y: E.H - CORNER_R, w: CORNER_R, h: CORNER_R };
+    return { x: 4 + i * 25, y: 39, w: 23, h: 21 };
+  }
+  function drawCornerButton(label, hot) {
+    for (let dy = 0; dy < CORNER_R; dy++) {
+      const y = E.H - 1 - dy;
+      const hw = Math.round(Math.sqrt(CORNER_R * CORNER_R - dy * dy));
+      E.rect(E.W - hw, y, hw, 1, '#000000');
+      if (hw > 2) E.rect(E.W - hw + 1, y, hw - 1, 1, '#c88a00');
+      if (hw > 4) E.rect(E.W - hw + 3, y, hw - 3, 1, hot ? '#ffe27a' : '#ffc400');
     }
-    return { x: 4 + i * 30, y: 38, w: 28, h: 20 };
+    E.text(label, E.W - 4, E.H - 17, { color: '#1a1020', align: 'right', fit: 54 });
   }
 
   SC.room = {
@@ -1369,7 +1378,8 @@
       const by = maidKey() === 'berry' ? ms.y - 6 - hop : ms.y - 2 - hop + ((this.t >> 3) % 2);
       if (maidKey() === 'honey' && m.state !== 'sleep') {
         const side = m.dir === 'left' ? 14 : -12;
-        ctx.drawImage(E.spr.monsters.jelly.frames[(this.t >> 5) % 2], ms.x + side, ms.y - 2 - Math.round(Math.abs(Math.sin(this.t * 0.1)) * 2));
+        const slime = E.spr.monsters.jelly.frames[(this.t >> 5) % 2];
+        ctx.drawImage(slime, ms.x + side, ms.y + 16 - slime.height - Math.round(Math.abs(Math.sin(this.t * 0.1)) * 2));
       }
       if (m.prop === 'broom' && m.dir !== 'right') ctx.drawImage(broom, ms.x + 12, by);
       ctx.drawImage(img, ms.x, ms.y - 8 - hop);
@@ -1423,28 +1433,31 @@
       const k = maidKey();
       const b = bond(k);
       const D = G.MAID_DATA[k];
-      // status bar in the original's style: gold frame with her CG face strip on the left
-      UI.goldBar(0, 0, E.W, 37);
-      if (!(this.panel && this.panel.kind === 'diary')) E.art('hud-portrait', UI.CG_ART, 3, 3, 46, 31, UI.CG_CROP.face[k]);
-      E.text(D.name, 54, 4, { color: C.text, fit: 50 });
+      // status bar in the original's style: emblem and bunny badge, her CG face strip, readings on the right
+      UI.goldBar(0, 0, E.W, 38);
+      ctx.drawImage(E.spr.ui.emblem, 5, 5);
+      ctx.drawImage(E.spr.ui.bunny, 6, 23);
+      if (!(this.panel && this.panel.kind === 'diary')) E.art('hud-portrait', UI.CG_ART, 18, 3, 112, 32, UI.CG_CROP.face[k]);
+      E.rect(130, 3, 1, 32, '#f8b000');
       const ai = affInfo(k);
-      E.text('Lv' + (ai.lv + 1) + ' ' + ai.name, 54, 20, { color: C.red, fit: 56 });
-      ctx.drawImage(E.spr.ui.heart, 112, 6);
-      E.bar(121, 7, 36, 6, ai.t, C.pink);
-      E.text(G.t('體力'), 164, 4, { color: C.text });
-      E.bar(190, 7, 38, 7, b.stamina / 100, b.stamina < G.JOB_STAMINA ? C.red : C.mint);
-      E.text(G.t('心情'), 164, 20, { color: C.text });
-      E.bar(190, 23, 38, 7, b.mood / 100, b.mood >= 80 ? C.gold : b.mood < 30 ? '#8fc6ff' : '#ffb45c');
-      const coinX = 314 - E.textWidth(String(S.coins)) - 9;
-      E.text(moodName(b.mood), 232, 20, { color: C.ink, fit: coinX - 235 });
-      E.text(G.t('第 {n} 天', { n: S.day }), 314, 4, { color: C.red, align: 'right' });
-      UI.coinLabel(314, 22, S.coins, 'right');
+      // affection: one heart per level, the next level filling in beside them
+      for (let i = 0; i < 5; i++) ctx.drawImage(i <= ai.lv ? E.spr.ui.heart : E.spr.ui.heartEmpty, 135 + i * 8, 6);
+      E.bar(176, 7, 26, 5, ai.t, C.pink);
+      ctx.drawImage(E.spr.ui.coin, 314 - E.textWidth(String(S.coins)) - 9, 6);
+      E.text(String(S.coins), 314, 5, { color: C.text, align: 'right' });
+      E.text(G.t('體力'), 135, 21, { color: C.text });
+      E.bar(160, 24, 30, 7, b.stamina / 100, b.stamina < G.JOB_STAMINA ? C.red : C.mint);
+      E.text(G.t('心情'), 196, 21, { color: C.text });
+      E.bar(221, 24, 30, 7, b.mood / 100, b.mood >= 80 ? C.gold : b.mood < 30 ? '#8fc6ff' : '#ffb45c');
+      E.text(G.t('第 {n} 天', { n: S.day }), 314, 21, { color: C.red, align: 'right', fit: 56 });
       // tabs (hidden while decorating, the room uses that space)
       if (this.decor) return;
       TABS.forEach((tb, i) => {
         const r = tabRect(i);
         const hv = (this.mode === 'tabs' && this.tab === i) || (this.hover && this.hover.kind === 'tab' && this.hover.i === i && this.mode === 'free');
-        E.panel(r.x, r.y, r.w, r.h, '#ffffff', hv ? C.red : '#f8b000', { outline: '#000000' });
+        if (tb.id === 'decor') { drawCornerButton(G.t('佈置'), hv); return; }
+        // square tool button: white face in a gold rim, red when picked (the original's selected tool)
+        E.panel(r.x, r.y, r.w, r.h, hv ? '#ff6a6a' : '#ffffff', '#f8b000', { outline: '#000000' });
         const cx = r.x + r.w / 2;
         switch (tb.id) {
           case 'diary': ctx.drawImage(E.spr.room.book, cx - 5, r.y + 6); break;
@@ -1455,13 +1468,9 @@
             E.rect(cx - 4, r.y + 6, 8, 8, C.ink); E.rect(cx - 2, r.y + 4, 4, 12, C.ink); E.rect(cx - 6, r.y + 8, 12, 4, C.ink);
             E.rect(cx - 2, r.y + 8, 4, 4, hv ? '#fff' : C.paper);
             break;
-          case 'decor':
-            ctx.drawImage(E.spr.room.furniture.plant, 0, 0, 16, 24, r.x + 4, r.y + 3, 10, 15);
-            E.text(G.t('佈置'), r.x + 18 + (r.w - 18) / 2, r.y + 4, { color: hv ? C.red : C.ink, align: 'center' });
-            break;
         }
       });
-      if (this.mode === 'tabs') {
+      if (this.mode === 'tabs' && this.tab !== 5) {
         const r = tabRect(this.tab);
         // a white name label with a black rim, like the original's tags
         const label = G.t(TABS[this.tab].label);
@@ -1474,15 +1483,17 @@
     drawHint() {
       const S = save();
       const step = G.GUIDE[S.guide];
-      E.rect(0, E.H - 16, E.W, 16, '#000000');
-      E.rect(0, E.H - 16, E.W, 1, '#f8b000');
+      // the bottom strip stops short of the 「佈置」 corner button
+      const hintW = E.W - CORNER_R;
+      E.rect(0, E.H - 16, hintW, 16, '#000000');
+      E.rect(0, E.H - 16, hintW, 1, '#f8b000');
       if (step) {
         const pulse = (this.t >> 5) % 2 === 0;
         E.text('★', 6, E.H - 13, { color: pulse ? C.gold : C.pink });
-        UI.marquee(step.text, 18, E.H - 13, 296, C.gold);
+        UI.marquee(step.text, 18, E.H - 13, hintW - 22, C.gold);
       } else {
         const touch = E.input.lastDevice === 'touch';
-        UI.marquee(G.t(touch ? '拖曳手套、點一下互動　B 功能列' : 'Z 互動　X 功能列　ESC 系統　滑鼠也可以直接點'), 4, E.H - 13, 312, C.paper);
+        UI.marquee(G.t(touch ? '拖曳手套、點一下互動　B 功能列' : 'Z 互動　X 功能列　ESC 系統　滑鼠也可以直接點'), 4, E.H - 13, hintW - 8, C.paper);
       }
     },
     drawGlove() {

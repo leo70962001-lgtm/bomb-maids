@@ -166,7 +166,7 @@
     const ps = Math.max(1, s - 1);
     if (!locked && key === 'honey') {
       const slime = E.spr.monsters.jelly.frames[(E.frame >> 5) % 2];
-      ctx.drawImage(slime, Math.round(x + 8 * s - 8 * ps), Math.round(y + 24 * s - 15 * ps), 16 * ps, 18 * ps);
+      ctx.drawImage(slime, Math.round(x + 8 * s - 8 * ps), Math.round(y + 24 * s + 3 * ps - slime.height * ps), 16 * ps, slime.height * ps);
       y -= (s >= 3 ? 2 : 5) * s;
     }
     ctx.drawImage(maidImg(key, 'down', f), Math.round(x), Math.round(y), 16 * s, 24 * s);
@@ -624,8 +624,9 @@
       ctx.fillRect(Math.round(m.x - 10), Math.round(m.y - 3), 20, 4);
       if (m.key === 'honey') {
         const jig = m.petJig > 0 ? Math.round(Math.sin(m.petJig) * 2) : 0;
-        const px = Math.round(m.petX - 8), py = Math.round(m.petY - 18 - Math.abs(Math.sin(t * 0.12)) * 2 - Math.abs(jig));
-        ctx.drawImage(E.spr.monsters.jelly.frames[(t >> 5) % 2], px, py);
+        const slime = E.spr.monsters.jelly.frames[(t >> 5) % 2];
+        const px = Math.round(m.petX - 8), py = Math.round(m.petY - slime.height - Math.abs(Math.sin(t * 0.12)) * 2 - Math.abs(jig));
+        ctx.drawImage(slime, px, py);
       }
       const cleaning = m.state === 'clean';
       const sway = cleaning ? Math.round(Math.sin(m.t * 0.35) * 3) : 0;
@@ -963,7 +964,7 @@
         E.text(G.t('出現怪物'), 152, 147, { color: C.ink });
         let ex = 152;
         const types = s.boss ? [] : Object.keys(s.enemies);
-        for (const k of types) { E.ctx.drawImage(E.spr.monsters[k].frames[(this.t >> 5) % 2], ex, 163); ex += 20; }
+        for (const k of types) { const img = E.spr.monsters[k].frames[(this.t >> 5) % 2]; E.ctx.drawImage(img, ex, 181 - img.height); ex += 20; }
         if (s.boss) fitImage((E.spr.bosses[s.boss] || E.spr.boss).frames[0], 152, 160, 30, 33);
         const best = SAVE.cleared[s.id];
         const joiner = G.MAID_ORDER.find((k) => unlockPlan()[k] === s.id && !SAVE.hired[k]);
@@ -1159,7 +1160,8 @@
       E.rect(x + 8, y + 13, 68, 2, '#c98a5a');
       ctx.drawImage(E.spr.room.gifts.daifuku, x + 6, y - 2);
       ctx.drawImage(E.spr.room.gifts.honeycake, x + 24, y - 2);
-      ctx.drawImage(E.spr.monsters.penguin.frames[(this.t >> 5) % 2], x + 8, y + 20);
+      const peng = E.spr.monsters.penguin.frames[(this.t >> 5) % 2];
+      ctx.drawImage(peng, x + 8, y + 38 - peng.height);
       // the maid on duty: her CG portrait stands behind the counter, cut off at the counter top
       E.panel(x + 46, y + 2, 34, 36, '#ffe0ea', G.MAID_DATA[k].color, {});
       E.art('cafe-maid', CG_ART, x + 48, y + 4, 30, 32, CG_CROP.bust[k]);
@@ -1324,7 +1326,7 @@
     } else if (card.kind === 'monster') {
       const img = E.spr.monsters[card.ref].frames[(E.frame >> 5) % 2];
       const s = big ? 3 : w < 50 ? 1 : 2;
-      ctx.drawImage(img, Math.round(cx - 8 * s), Math.round(cy - 9 * s), 16 * s, 18 * s);
+      fitImage(img, Math.round(cx - 8 * s), Math.round(cy - 9 * s), 16 * s, 18 * s);
     } else if (card.kind === 'boss') {
       const img = ((E.spr.bosses && E.spr.bosses[card.ref]) || E.spr.boss).frames[0];
       const s = big ? 1.5 : w < 50 ? 0.5 : 1;
@@ -1775,7 +1777,8 @@
         const hop = Math.abs(Math.sin(this.t * 0.1 + i)) * 8;
         E.ctx.drawImage(maidImg(k, 'down', [1, 2][((this.t >> 4) + i) % 2]), x + 14, 190 - hop, 32, 48);
       });
-      E.ctx.drawImage(E.spr.monsters.teddy.frames[(this.t >> 5) % 2], 152, 214);
+      const bear = E.spr.monsters.teddy.frames[(this.t >> 5) % 2];
+      E.ctx.drawImage(bear, 152, 232 - bear.height);
       if (this.t > 120) E.text('Z', 312, 4, { color: C.plum, align: 'right' });
     },
   };

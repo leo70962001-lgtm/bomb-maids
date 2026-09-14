@@ -60,20 +60,20 @@
   // frames: standing, step A, step B
   const BODY = {
     down: [
-      ['...k|cwkk|kkwc|k...', '....|kDkd|dkDk|....', '...k|sdkc|ckds|k...', '...k|wkdw|wdkw|k...', '...k|sdDc|cDds|k...', '..kw|dDww|wwDd|wk..', '...k|cwcw|wcwc|k...', '....|.ksk|ksk.|....', '....|.kwk|kwk.|....', '....|.kkk|kkk.|....'],
-      ['...k|cwkk|kkwc|k...', '....|kDkd|dkDk|....', '...k|sdcw|wcdd|k...', '...k|wkdw|wdks|k...', '...k|sdDw|wDdw|k...', '..kw|dDww|wwDd|wk..', '...k|cwcw|wcwc|k...', '....|.ksk|ksk.|....', '....|.kwk|.kk.|....', '....|.kkk|....|....'],
-      ['...k|cwkk|kkwc|k...', '....|kDkd|dkDk|....', '...k|ddcw|wcds|k...', '...k|skdw|wdkw|k...', '...k|wdDw|wDds|k...', '..kw|dDww|wwDd|wk..', '...k|cwcw|wcwc|k...', '....|.ksk|ksk.|....', '....|.kk.|kwk.|....', '....|....|kkk.|....'],
+      ['...k|wckk|kkcw|k...', '....|ksDk|kDsk|....', '....|kscw|wcsk|....', '....|ktdw|wdtk|....', '....|kwsd|dswk|....', '...k|dDdw|wdDd|k...', '...k|wdcw|wcdw|k...', '....|.ksk|ksk.|....', '....|.kck|kck.|....', '....|.kkk|kkk.|....'],
+      ['...k|wckk|kkcw|k...', '....|ksDk|kDsk|....', '....|kscw|wcsk|....', '....|ktdw|wdtk|....', '....|kwsd|dswk|....', '...k|dDdw|wdDd|k...', '...k|wdcw|wcdw|k...', '....|.ksk|ksk.|....', '....|.kck|.kk.|....', '....|.kkk|....|....'],
+      ['...k|wckk|kkcw|k...', '....|ksDk|kDsk|....', '....|kscw|wcsk|....', '....|ktdw|wdtk|....', '....|kwsd|dswk|....', '...k|dDdw|wdDd|k...', '...k|wdcw|wcdw|k...', '....|.ksk|ksk.|....', '....|.kk.|kck.|....', '....|....|kkk.|....'],
     ],
     up: [
-      ['...k|cddd|dddc|k...', '....|kDdd|ddDk|....', '...k|sddd|ddds|k...', '...k|wkww|wwkw|k...', '...k|sdwk|kwds|k...', '..kw|dDdw|wdDd|wk..', '...k|cwcw|wcwc|k...', '....|.ksk|ksk.|....', '....|.kwk|kwk.|....', '....|.kkk|kkk.|....'],
-      ['...k|cddd|dddc|k...', '....|kDdd|ddDk|....', '...k|sddd|dddd|k...', '...k|wkww|wwks|k...', '...k|sdwk|kwdw|k...', '..kw|dDdw|wdDd|wk..', '...k|cwcw|wcwc|k...', '....|.ksk|ksk.|....', '....|.kwk|.kk.|....', '....|.kkk|....|....'],
-      ['...k|cddd|dddc|k...', '....|kDdd|ddDk|....', '...k|dddd|ddds|k...', '...k|skww|wwkw|k...', '...k|wdwk|kwds|k...', '..kw|dDdw|wdDd|wk..', '...k|cwcw|wcwc|k...', '....|.ksk|ksk.|....', '....|.kk.|kwk.|....', '....|....|kkk.|....'],
+      ['...k|cddd|dddc|k...', '....|kDdd|ddDk|....', '....|ksdd|ddsk|....', '....|ktww|wwtk|....', '....|kwwk|kwwk|....', '...k|dDdw|wdDd|k...', '...k|wcdd|ddcw|k...', '....|.ksk|ksk.|....', '....|.kck|kck.|....', '....|.kkk|kkk.|....'],
+      ['...k|cddd|dddc|k...', '....|kDdd|ddDk|....', '....|ksdd|ddsk|....', '....|ktww|wwtk|....', '....|kwwk|kwwk|....', '...k|dDdw|wdDd|k...', '...k|wcdd|ddcw|k...', '....|.ksk|ksk.|....', '....|.kck|.kk.|....', '....|.kkk|....|....'],
+      ['...k|cddd|dddc|k...', '....|kDdd|ddDk|....', '....|ksdd|ddsk|....', '....|ktww|wwtk|....', '....|kwwk|kwwk|....', '...k|dDdw|wdDd|k...', '...k|wcdd|ddcw|k...', '....|.ksk|ksk.|....', '....|.kk.|kck.|....', '....|....|kkk.|....'],
     ],
     // facing left; right is the mirror image
     side: [
-      ['....|kcwk|k...|....', '....|kkDd|dk..|....', '....|kcsd|Dk..|....', '....|kwwd|dk..|....', '....|kcsd|dk..|....', '...k|wdDd|dwk.|....', '...k|cwcw|cwk.|....', '....|.ksk|....|....', '....|.kwk|....|....', '....|kkkk|....|....'],
-      ['....|kcwk|k...|....', '....|kkDd|dk..|....', '....|kcds|Dk..|....', '....|kwdw|dk..|....', '....|kcds|dk..|....', '...k|wdDd|dwk.|....', '...k|cwcw|cwk.|....', '...k|sk.k|sk..|....', '..kw|k...|kwk.|....', '.kkk|....|kkk.|....'],
-      ['....|kcwk|k...|....', '....|kkDd|dk..|....', '...k|scdd|Dk..|....', '...k|wwdd|dk..|....', '...k|scdd|dk..|....', '...k|wdDd|dwk.|....', '...k|cwcw|cwk.|....', '....|.ksk|....|....', '....|..kw|k...|....', '....|.kkk|k...|....'],
+      ['....|kcwk|....|....', '....|kkDd|k...|....', '....|kcsd|k...|....', '....|kwtd|k...|....', '....|kcsd|k...|....', '...k|wdDd|wk..|....', '...k|cwdc|wk..|....', '....|ksk.|....|....', '....|kck.|....|....', '...k|kkk.|....|....'],
+      ['....|kcwk|....|....', '....|kkDd|k...|....', '....|kcds|k...|....', '....|kwdt|k...|....', '....|kcds|k...|....', '...k|wdDd|wk..|....', '...k|cwdc|wk..|....', '...k|sk.k|sk..|....', '..kc|k...|kck.|....', '.kkk|....|kkk.|....'],
+      ['....|kcwk|....|....', '....|kkDd|k...|....', '...k|scdd|k...|....', '...k|tcdd|k...|....', '...k|scdd|k...|....', '...k|wdDd|wk..|....', '...k|cwdc|wk..|....', '....|.ksk|....|....', '....|.kck|....|....', '....|kkkk|....|....'],
     ],
   };
 
@@ -84,234 +84,234 @@
     berry: {
       down: {
         head: [
-          '....|.kkk|kkk.|..k.',
-          '....|kwww|wwwk|.khk',
-          '...c|wcww|wwcw|ckhk',
-          '..kc|HHHH|HHHH|ckhk',
-          '.cHH|hhhh|hhhh|Hhhk',
-          '.kHh|hhhh|hhlL|hHk.',
-          'cHHh|Hhhh|hhll|hhHc',
-          'kHhh|hHhh|hhhh|hHHk',
-          '.kHH|hHhH|hHhH|HHk.',
+          '....|..kk|kk..|....',
+          '....|.kww|wwk.|..k.',
+          '....|cwcw|wcwc|.khk',
+          '...k|cHHH|HHHc|kkhk',
+          '...c|HhhH|hhhH|chk.',
+          '..kH|hhHh|hlLh|Hhk.',
+          '..cH|hHhh|hllh|hHk.',
+          '.kHh|Hhhh|Hhhh|hHk.',
+          '..kH|HhHH|hHhH|Hk..',
           '..kH|skks|skks|Hk..',
-          '.sHs|kcEs|sEck|sHs.',
-          '.tHt|swes|sews|tHt.',
-          '..kH|tsss|ssst|Hk..',
-          '...k|Htts|sttH|k...',
+          '..sH|kcEs|sEck|Hs..',
+          '..tH|swes|sews|Ht..',
+          '...k|Htss|sstH|k...',
+          '....|kHtt|ttHk|....',
         ],
       },
       up: {
         head: [
-          '..k.|.kkk|kkk.|....',
-          'khk.|kwww|wwwk|....',
-          'khkc|wcww|wwcw|c...',
-          'khkc|HHHH|HHHH|ck..',
-          'khhH|hhhh|hhhh|HHc.',
-          '.kHh|hhhh|hLlh|hHk.',
-          'cHhh|hhhh|hllh|hhHc',
-          'kHhh|hhhh|hhhh|hhHk',
-          'kHhh|Hhhh|hhhH|hhHk',
-          '.kHh|hHhh|hhHh|hHk.',
-          '.kHH|hHHh|HHhH|HHk.',
-          '.tkH|HHHH|HHHH|Hkt.',
-          '..kk|HHHH|HHHH|kk..',
+          '....|..kk|kk..|....',
+          '.k..|.kww|wwk.|....',
+          'khk.|cwcw|wcwc|....',
+          'khkk|cHHH|HHHc|k...',
+          '.khc|hhhh|hhhh|c...',
+          '..kh|hhhh|hLlh|Hk..',
+          '..ch|hhhh|hllh|Hc..',
+          '.kHh|hhhh|hhhh|hHk.',
+          '..kH|hhHh|hHhh|Hk..',
+          '..kH|hHhh|hhHh|Hk..',
+          '..kH|HhHh|hHhH|Hk..',
+          '..sk|HHHH|HHHH|ks..',
+          '...k|kHHH|HHHk|k...',
           '....|kHkH|HkHk|....',
         ],
       },
       side: {
         head: [
-          '....|..kk|....|....',
-          '....|.kwc|k...|....',
-          '...k|kHwc|Hkk.|....',
-          '..kH|Hhhc|wHHk|....',
-          '.kHh|hhhh|hcHH|k...',
-          '.kHh|lLhh|hhwh|Hk..',
-          'kHhh|llhh|hhhc|wHk.',
-          'kHhh|hhhh|hhcw|cwk.',
-          'kHhH|hhHh|hhhw|cHk.',
-          'kHHk|kHhh|HhhH|hHk.',
-          'ksEc|sHhh|hhHh|HHk.',
-          'ksew|stHh|hHhH|Hk..',
-          '.kts|stHH|HhHH|k...',
-          '..kt|tkkH|HHkk|....',
+          '....|.kk.|....|....',
+          '....|kwc.|k...|....',
+          '...k|Hwck|hk..|....',
+          '..kH|hhwc|Hhk.|....',
+          '.kHh|lLhh|wcHk|....',
+          '.kHh|llhh|hwck|....',
+          'kHhh|hhhH|hcwk|....',
+          'kHhH|hHhh|Hwck|....',
+          'kHHh|HhhH|hHk.|....',
+          'kHkk|Hhhh|HHk.|....',
+          'ksEc|sHhH|hHk.|....',
+          'ksew|stHh|Hk..|....',
+          '.kss|tkHH|k...|....',
+          '..kt|tk..|....|....',
         ],
       },
     },
     yoru: {
       down: {
         head: [
-          '....|.kkk|kkk.|....',
-          '....|kwww|wwwk|....',
-          '...c|wcww|wwcw|c...',
-          '..kc|hhhh|hhhh|ck..',
-          '.chh|hlhh|hhlh|hhc.',
-          '.khh|hlLh|hhlh|hhk.',
-          '.chh|lhhh|lhhh|hhc.',
-          '.khl|hhhl|lhhh|lhk.',
+          '....|..kk|kk..|....',
+          '....|.kww|wwk.|....',
+          '....|cwcw|wcwc|....',
+          '...k|chhh|hhhc|kxk.',
+          '...c|hlhh|hhlh|cxXk',
+          '..kh|lhlL|Llhl|hkk.',
+          '..ch|lhhl|lhhl|hc..',
+          '.khl|hhlh|hlhh|lhk.',
           'khhh|hhhh|hhhh|hhhk',
           '.kHk|skks|skks|kHk.',
           '.khk|kcEs|sEck|khk.',
-          '.khl|swes|sews|lhk.',
-          '.khh|tsss|ssst|hhk.',
-          '.khl|ktts|sttk|lhk.',
+          '.khk|swes|sews|khk.',
+          '.khk|ktss|sstk|khk.',
+          '.klk|.ktt|ttk.|klk.',
         ],
-        over: pad(14, ['.khk|....|....|khk.', '.khl|k...|...k|lhk.', '.khh|k...|...k|hhk.', '.khl|k...|...k|lhk.', '.khh|k...|...k|hhk.', '..kh|k...|...k|hk..', '...k|....|....|k...']),
+        over: pad(14, ['.khk|....|....|khk.', '.klk|....|....|klk.', '.khk|....|....|khk.', '.klk|....|....|klk.', '.khk|....|....|khk.', '..k.|....|....|.k..']),
       },
       up: {
         head: [
-          '....|.kkk|kkk.|....',
-          '....|kwww|wwwk|....',
-          '...c|wcww|wwcw|c...',
-          '..kc|hhhh|hhhh|ck..',
-          '.chh|hhhh|lLhh|hhc.',
-          '.khh|hhhh|llhh|hhk.',
-          '.chh|hhhh|hlhh|hhc.',
-          '.khh|hhhh|hhhh|hhk.',
+          '....|..kk|kk..|....',
+          '....|.kww|wwk.|....',
+          '....|cwcw|wcwc|....',
+          '.kxk|chhh|hhhc|k...',
+          'kXxc|hhlh|hlhh|c...',
+          '.kkh|lhlL|Lhlh|hk..',
+          '..ch|hlhh|hhlh|hc..',
+          '.khl|hhlh|hlhh|lhk.',
           'khhh|hhhh|hhhh|hhhk',
           '.khh|hhhh|hhhh|hhk.',
-          '.khh|hlhh|hhhh|hhk.',
           '.khh|hlhh|hhlh|hhk.',
-          '.khh|hhhh|hhlh|hhk.',
+          '.khh|hlhh|hhlh|hhk.',
           '.khh|hhhh|hhhh|hhk.',
+          '.khl|hhhh|hhhh|lhk.',
         ],
-        over: pad(14, ['.khh|hhhh|hhhh|hhk.', '.khh|hlhh|hhhh|hhk.', '.khh|hlhh|hhlh|hhk.', '..kh|hhhh|hhlh|hk..', '..kh|hhhh|hhhh|hk..', '...k|hkhh|hhkh|k...', '....|k.kk|kk.k|....']),
+        over: pad(14, ['.khl|hhhh|hhhh|lhk.', '.khh|hlhh|hhlh|hhk.', '.khh|hlhh|hhlh|hhk.', '..kh|hhhh|hhhh|hk..', '..kh|hlhh|hhlh|hk..', '...k|hkhh|hhkh|k...', '....|k.kk|kk.k|....']),
       },
       side: {
         head: [
-          '....|..kk|....|....',
-          '....|.kwc|k...|....',
-          '...k|khwc|hkk.|....',
-          '..kh|hhhc|whhk|....',
-          '.khh|hhhh|hchh|k...',
-          '.khh|lLhh|hhwh|hk..',
-          'khhh|llhh|hhhc|whk.',
-          'khhh|hhhh|hhcw|cwhk',
-          'khhh|hhhh|hhhw|chhk',
-          'kHHk|khhh|hhlh|hhhk',
-          'ksEc|shhh|hhlh|hhhk',
-          'ksew|sthh|hhlh|hhhk',
-          '.kts|sthh|hhhl|hhhk',
-          '..kt|tkhh|hhhl|hhhk',
+          '....|.kk.|....|....',
+          '....|kwc.|k...|....',
+          '...k|hwck|hk..|....',
+          '..kh|hhwc|hhk.|....',
+          '.khh|lLhh|wchk|....',
+          '.khh|llhh|hwck|....',
+          'khhh|hhhh|hcwk|k...',
+          'khhl|hhhh|hwck|xk..',
+          'khhh|hhhh|hhhk|Xk..',
+          'kHkk|hhhh|hlhh|k...',
+          'ksEc|shhh|hlhh|k...',
+          'ksew|sthh|hhlh|k...',
+          '.kss|tkhh|hhlh|k...',
+          '..kt|tkhh|hhhl|k...',
         ],
-        over: pad(14, ['....|..kh|hhhl|hhk.', '....|..kh|hhhl|hhk.', '....|...k|hhhl|hhk.', '....|...k|hhhh|lhk.', '....|...k|hhhh|lk..', '....|....|khhk|k...', '....|....|.kk.|....']),
+        over: pad(14, ['....|kkhh|hlhk|....', '....|.khh|hlhk|....', '....|.khh|hhlk|....', '....|.khh|hhlk|....', '....|..kh|hhk.|....', '....|...k|kk..|....']),
       },
     },
     honey: {
       down: {
         head: [
-          '....|.kkk|kkk.|....',
-          '....|kwww|wwwk|....',
-          '...c|wcww|wwcw|c...',
-          '..kc|HHHH|HHHH|ck..',
-          '.cHh|hhhh|hhhL|hHc.',
-          '.kHh|hhhh|hhlL|hHk.',
-          'cHhh|Hhhh|hhll|hhHc',
-          'kHhH|hhHh|hhhh|HhHk',
-          '.kHh|HhhH|hHhh|hHk.',
+          '....|..kk|kk..|....',
+          '....|.kww|wwk.|....',
+          '....|cwcw|wcwc|....',
+          '...k|cHHH|HHHc|k...',
+          '...c|hLHh|hHLh|c...',
+          '..kh|hlHh|hHlh|hk..',
+          '..ch|hlHh|hHlh|hc..',
+          '.kHh|hlHh|hHlh|hHk.',
+          '..kH|hHhH|HhHh|Hk..',
           '..kH|skks|skks|Hk..',
-          '.kHs|kcEs|sEck|sHk.',
-          '.kHt|swes|sews|tHk.',
-          '..kH|tsss|ssst|Hk..',
-          '...k|Htts|sttH|k...',
+          '..sH|kcEs|sEck|Hs..',
+          '..tH|swes|sews|Ht..',
+          '...k|Htss|sstH|k...',
+          '....|kHtt|ttHk|....',
         ],
-        over: pad(12, ['k...|....|....|...k', 'hk..|....|....|..kh', 'Hhkk|....|....|kkhH', 'klhH|k...|...k|Hhlk', '.kHh|k...|...k|hHk.', '..kk|....|....|kk..']),
+        over: pad(12, ['.k..|....|....|..k.', 'khk.|....|....|.khk', 'hlHk|....|....|kHlh', 'kHhl|k...|...k|lhHk', '.kkH|k...|...k|Hkk.', '...k|....|....|k...']),
       },
       up: {
         head: [
-          '....|.kkk|kkk.|....',
-          '....|kwww|wwwk|....',
-          '...c|wcww|wwcw|c...',
-          '..kc|HHHH|HHHH|ck..',
-          '.cHh|hhhh|hhhh|hHc.',
-          '.kHh|hhhh|hlLh|hHk.',
-          'cHhh|hhhh|hllh|hhHc',
-          'kHhh|Hhhh|hhhh|hhHk',
-          'kHhH|hhHh|hHhh|HhHk',
-          '.kHh|hhhH|Hhhh|hHk.',
-          '.kHH|hHHh|HHhH|HHk.',
-          '..kH|HHHH|HHHH|Hk..',
+          '....|..kk|kk..|....',
+          '....|.kww|wwk.|....',
+          '....|cwcw|wcwc|....',
+          '...k|cHHH|HHHc|k...',
+          '...c|hLHh|hHLh|c...',
+          '..kh|hlHh|hHlh|hk..',
+          '..ch|hlHh|hHlh|hc..',
+          '.kHh|hlHh|hHlh|hHk.',
+          '..kH|hHhH|HhHh|Hk..',
+          '..kH|HhHh|hHhH|Hk..',
+          '..kH|hHHh|HHhH|Hk..',
+          '..sk|HHHH|HHHH|ks..',
           '...k|kHHH|HHHk|k...',
           '....|kHkH|HkHk|....',
         ],
-        over: pad(11, ['k...|....|....|...k', 'hk..|....|....|..kh', 'Hhkk|....|....|kkhH', 'klhH|k...|...k|Hhlk', 'kHhh|k...|...k|hhHk', '.kHh|k...|...k|hHk.', '..kk|....|....|kk..']),
+        over: pad(10, ['.k..|....|....|..k.', 'khk.|....|....|.khk', 'hlHk|....|....|kHlh', 'kHhl|k...|...k|lhHk', 'khHh|k...|...k|hHhk', '.kkH|k...|...k|Hkk.', '...k|....|....|k...']),
       },
       side: {
         head: [
-          '....|..kk|....|....',
-          '....|.kwc|k...|....',
-          '...k|kHwc|Hkk.|....',
-          '..kH|Hhhc|wHHk|....',
-          '.kHh|hhhh|hcHH|k...',
-          '.kHh|lLhh|hhwh|Hk..',
-          'kHhh|llhh|hhhc|wHk.',
-          'kHhh|hhhh|hhcw|cwk.',
-          'kHhH|hhHh|hhhw|cHk.',
-          'kHHk|kHhh|HhhH|hHk.',
-          'ksEc|sHhh|hhHh|HHk.',
-          'ksew|stHh|hHhH|Hk..',
-          '.kts|stHH|HhHH|k...',
-          '..kt|tkkH|HHkk|....',
+          '....|.kk.|....|....',
+          '....|kwc.|k...|....',
+          '...k|Hwck|hk..|....',
+          '..kH|hhwc|Hhk.|....',
+          '.kHh|LHhh|wcHk|....',
+          '.kHh|lHhl|hwck|....',
+          'kHhl|hHhl|hcwk|....',
+          'kHhl|hHhl|Hwck|....',
+          'kHhH|HhHh|hHk.|....',
+          'kHkk|Hhhh|HHk.|....',
+          'ksEc|sHhH|hHk.|....',
+          'ksew|stHh|Hk..|....',
+          '.kss|tkHH|k...|....',
+          '..kt|tk..|....|....',
         ],
-        under: pad(9, ['....|....|....|kk..', '....|....|...k|hhk.', '....|....|...k|Hlhk', '....|....|...k|hHhh', '....|....|....|kHhk', '....|....|....|.kk.']),
+        under: pad(8, ['....|....|kk..|....', '....|...k|hhk.|....', '....|...k|Hlhk|....', '....|....|khHh|k...', '....|....|kHlh|k...', '....|....|.kHk|....', '....|....|..k.|....']),
       },
     },
     yukino: {
       down: {
         head: [
-          '....|.kkk|kkk.|....',
-          '.k..|kwww|wwwk|..k.',
-          'khkc|wcww|wwcw|ckhk',
-          '.khc|HHHH|HHHH|chk.',
-          'kHhh|hhlh|hLhh|hhHk',
-          '.kHh|hhll|hlhh|hHk.',
-          'khHh|Hhhh|hhhH|hHhk',
-          '.kHh|hHhh|hhHh|hHk.',
-          'kHhH|HhHH|HHhH|HhHk',
-          '.kHk|skks|skks|kHk.',
-          '..kH|kcEs|sEck|Hk..',
+          '....|..kk|kk..|....',
+          '.k..|.kww|wwk.|..k.',
+          'khk.|cwcw|wcwc|.khk',
+          '.khk|cHHH|HHHc|khk.',
+          '..kh|HhlH|HlhH|hk..',
+          '.kHh|lLhh|hhlh|hHk.',
+          'khHh|hHlh|hlHh|hHhk',
+          '.kHh|HhhH|HhhH|hHk.',
+          'khHH|hHkH|HkHh|HHhk',
+          '..kH|skks|skks|Hk..',
+          '..sH|kcEs|sEck|Hs..',
           '.kHt|swes|sews|tHk.',
-          'kHHk|tsss|ssst|kHHk',
-          'hHhk|Htts|sttH|khHh',
+          'khHk|Htss|sstH|kHhk',
+          'lHhk|kHtt|ttHk|khHl',
         ],
-        over: pad(14, ['lHk.|....|....|.kHl', 'kHhk|....|....|khHk', 'hHk.|....|....|.kHh', 'kk..|....|....|..kk']),
+        over: pad(14, ['kHlh|k...|...k|hlHk', '.khH|k...|...k|Hhk.', 'khk.|....|....|.khk', '.k..|....|....|..k.']),
       },
       up: {
         head: [
-          '....|.kkk|kkk.|....',
-          '.k..|kwww|wwwk|..k.',
-          'khkc|wcww|wwcw|ckhk',
-          '.khc|HHHH|HHHH|chk.',
-          'kHhh|hhhh|hhhh|hhHk',
-          '.kHh|hhhh|hlLh|hHk.',
-          'khHh|hhhh|hllh|hHhk',
-          '.kHh|Hhhh|hhhh|hHk.',
-          'kHhH|hhHh|hHhh|HhHk',
-          '.kHh|hhhH|Hhhh|hHk.',
+          '....|..kk|kk..|....',
+          '.k..|.kww|wwk.|..k.',
+          'khk.|cwcw|wcwc|.khk',
+          '.khk|cHHH|HHHc|khk.',
+          '..kh|hhlh|hlhh|hk..',
+          '.kHh|hlLh|hhlh|hHk.',
+          'khHh|hhhh|hhhh|hHhk',
+          '.kHh|Hhhh|hhhH|hHk.',
+          'khHh|hHhh|hhHh|hHhk',
+          '..kH|hhHh|hHhh|Hk..',
           '.kHH|hHHh|HHhH|HHk.',
-          'kHhk|HHHH|HHHH|khHk',
-          'hHhk|kHHH|HHHk|khHh',
+          '.kHk|HHHH|HHHH|kHk.',
+          'khHk|kHHH|HHHk|kHhk',
           'lHhk|kHkH|HkHk|khHl',
         ],
-        over: pad(14, ['kHhk|....|....|khHk', 'hHk.|....|....|.kHh', 'kk..|....|....|..kk']),
+        over: pad(14, ['kHlh|k...|...k|hlHk', '.khH|k...|...k|Hhk.', 'khk.|....|....|.khk', '.k..|....|....|..k.']),
       },
       side: {
         head: [
-          '....|..kk|....|....',
-          '....|.kwc|k.k.|....',
-          '...k|kHwc|Hkhk|....',
-          '..kH|Hhhc|wHHk|k...',
-          '.kHh|hhhh|hcHH|hk..',
-          'kHhh|lLhh|hhwh|Hk..',
-          '.kHh|llhh|hhhc|wHk.',
-          'kHhh|hhhh|hhcw|cwhk',
-          '.kHH|hhHh|hhhw|cHk.',
-          'kHHk|kHhh|HhhH|hHhk',
-          'ksEc|sHhh|hhHh|HHk.',
-          'ksew|stHh|hHhH|Hk..',
-          '.kts|stHH|HhHH|hk..',
-          '..kt|tkkH|HHkk|....',
+          '....|.kk.|....|....',
+          '....|kwc.|k.k.|....',
+          '...k|Hwck|hkhk|....',
+          '..kH|hhwc|Hhk.|....',
+          'kkHh|lLhh|wcHk|k...',
+          '.kHh|llhh|hwck|hk..',
+          'kHhh|hhhH|hcwk|k...',
+          '.kHH|hHhh|Hwck|hk..',
+          'kHHh|HhhH|hHhk|k...',
+          'kHkk|Hhhh|HHk.|....',
+          'ksEc|sHhH|hHk.|....',
+          'ksew|stHh|Hk..|....',
+          '.kss|tkHH|k...|....',
+          '..kt|tk..|....|....',
         ],
-        under: pad(9, ['....|....|....|.kk.', '....|....|...k|hHhk', '....|....|...k|Hlhh', '....|....|....|khHk', '....|....|....|kHhh', '....|....|....|.kk.']),
+        under: pad(8, ['....|....|kk..|....', '....|...k|Hhk.|....', '....|...k|hlHk|....', '....|....|kHhl|k...', '....|....|khHh|k...', '....|....|.kkH|k...', '....|....|...k|....']),
       },
     },
   };
@@ -394,19 +394,23 @@
     out.faces = { normal: out.down[0] };
     for (const key of Object.keys(FACES)) {
       const head = withHeadwear(parts.down.head, outfit, 'down').map((r) => r.replace(/\|/g, ''));
-      FACES[key].forEach((r, i) => { if (r) head[9 + i] = head[9 + i].slice(0, 4) + r + head[9 + i].slice(12); });
+      FACES[key].forEach((r, i) => {
+        if (!r) return;
+        const row = head[9 + i];
+        head[9 + i] = row.slice(0, 4) + r.split('').map((ch, j) => (ch === '?' ? row[4 + j] : ch)).join('') + row.slice(12);
+      });
       out.faces[key] = compose('down', head, 0, 0);
     }
     return out;
   }
   // expressions replace the eye block (columns 4-11) of head rows 9-12; null keeps the row
   const FACES = {
-    happy: ['ssssssss', 'skksskks', 'ksskkssk', 'tpsmmspt'],
-    blush: [null, null, null, 'ppsssspp'],
-    angry: ['kksssskk', 'skEssEks', 'swessews', 'tpskkspt'],
+    happy: ['ssssssss', 'skksskks', 'ksskkssk', '?psmmsp?'],
+    blush: [null, null, null, '?ppsspp?'],
+    angry: ['kksssskk', 'skEssEks', 'swessews', '?tskkst?'],
     tired: ['ssssssss', 'skksskks', 'sEessEes', null],
-    sleep: ['ssssssss', 'ssssssss', 'skksskks', 'tpsssspt'],
-    surprise: ['skksskks', 'kwEssEwk', 'swessews', 'tpsmmspt'],
+    sleep: ['ssssssss', 'ssssssss', 'skksskks', null],
+    surprise: ['skksskks', 'kwEssEwk', 'swessews', '?tsmmst?'],
   };
 
   // ---------------------------------------------------------------- painters
@@ -450,105 +454,96 @@
   // mirrored; the second frame bobs everything above the feet down a pixel.
   const MON_BASE = { k: '#000000', w: '#ffffff' };
   const MON_ART = {
-    // gray sleepy cat
+    // dark grey sleepy cat
     dustcat: {
-      pal: { G: '#4a4a56', g: '#7c7c8a', l: '#b4b4c2', d: '#26262e', n: '#ff8aa0' },
+      pal: { L: '#a8a8b8', M: '#62626e', D: '#3a3a44', X: '#24242c', n: '#ff8aa0' },
       rows: [
-        '........', '..k.....', '.kGk....', '.kgGk...', '.kggGkkk', 'kGgggggg',
-        'kGgllggg', 'kGgkkkgg', 'kGgggggg', 'kGgggkkn', '.kGggggg', '..kGGggg',
-        '..kddGGG', '.kddgddd', '.kdggddd', '.kdddddd', '..kddk..', '...kk...',
+        '........', '........', '........', '..k.....', '.kMk....', '.kLMk...', '.kLDMkkk', 'kMMMMMMM', 'kMLLMMMM', 'kMLMMMMM', 'kMkkkMMM',
+        'kMMMMMMM', 'kDMMMMkn', '.kDMMMMM', '..kXDDDD', '.kDMMMMM', 'kDMLMMMM', 'kDMMMMMM', 'kXDMMMMM', '.kXDDDDD', '.kLLk.kL', '..kk...k',
       ],
     },
-    // round orange hamster-pig
+    // round orange hamster pig
     piggy: {
-      pal: { B: '#9a4418', b: '#e07a36', c: '#ffd6ae', n: '#ff8aa0', N: '#c8506e' },
+      pal: { L: '#ffb070', M: '#e0762e', D: '#a44a16', c: '#ffe0bc', C: '#f2b88a', n: '#ff8aa0', N: '#c8506e', r: '#e85a3a' },
       rows: [
-        '........', '........', '..kk....', '.kbBk...', '.kBbbkkk', '.kbbbbbb',
-        'kbbccbbb', 'kbckkcbb', 'kbccccnn', 'kbBccnNn', 'kbBcccnn', '.kbBcccc',
-        '.kbbBccc', 'kbbbbccc', 'kbBbbBcc', '.kbbbbbb', '..knnk..', '...kk...',
+        '........', '........', '........', '........', '..kk....', '.kDMk...', '.kMDMkkk', '.kMMMMMM', 'kMMLLMMM', 'kMLccMMM', 'kMckkcMM',
+        'kMcccccn', 'kDcrcnNn', 'kDccccnn', '.kDCcccc', '.kDDCccc', 'kDMMDCcc', 'kMMLMCcc', 'kDMMMMCc', '.kDDMMMM', '..knnk..', '...kk...',
       ],
     },
     // angry brown bear with a flame on its head
     teddy: {
-      pal: { B: '#4a220c', b: '#8c4418', o: '#e0862a', r: '#e8203c', y: '#ffd23f' },
+      pal: { L: '#e89040', M: '#a4521c', D: '#6a3010', X: '#3a1806', r: '#e8203c', R: '#9a1020', y: '#ffd23f' },
       rows: [
-        '.......r', '......rr', '.....kry', '..kk.kyy', '.kobkbbb', 'kbBobbbb',
-        'kBbkkobb', 'kbbwkbbb', 'kBbbbbbb', 'kbowwkwk', '.kbkwkwk', '.kBbbbbb',
-        'kbBoBbbo', 'kbbbBobb', 'kBobbbBo', '.kbbbbbb', '.kBBk.kB', '..kk...k',
+        '.......r', '......rr', '.....rRy', '.....kry', '..kk.kyy', '.kLMkkkk', 'kMLMMMMM', 'kMMMLLMM', 'kDMkkLMM', 'kMkwwkMM', 'kMkwkkMM',
+        'kDMMMMMM', 'kDLwkwkw', '.kDkwkwk', '.kXDDDDD', 'kDLMDLMM', 'kMLLMDLM', 'kDMMLMDL', 'kXDMMMMM', '.kXDDDDD', '.kDDk.kD', '..kk...k',
       ],
     },
-    // blue droplet slime
+    // blue droplet slime with a little drop on top
     jelly: {
-      pal: { b: '#3aa0f2', l: '#9ad6ff', B: '#1a5ec4' },
+      pal: { L: '#bfe6ff', M: '#3aa0f2', D: '#1a66c8', X: '#0e3c8a' },
       rows: [
-        '........', '......kk', '.....klw', '......kk', '.....kbb', '....kbbl',
-        '...kbbll', '..kbbblw', '..kbbbbb', '.kbkwbbb', '.kbkkbbb', 'kbbbbbbb',
-        'kbllbbbb', 'kblwbbbb', 'kbbbbBBb', 'kBbbbbBB', '.kBBBBBB', '..kkkkkk',
+        '........', '........', '......kk', '.....kLw', '......kk', '.......k', '......kM', '.....kMM', '....kMLM', '...kMLLM', '...kMLwM',
+        '..kMMMMM', '..kMkwMM', '.kMMkkMM', '.kMMMMMM', 'kMLMMMMM', 'kMLwMMMM', 'kMMMMMDD', 'kDMMMDDD', 'kXDDDDDD', '.kXXXXXX', '..kkkkkk',
       ],
     },
     // penguin with an orange beak
     penguin: {
-      pal: { d: '#1c1c24', G: '#5a5a6a', o: '#ff9a1a', O: '#c86400' },
+      pal: { L: '#6a6a7e', M: '#2a2a36', D: '#16161e', o: '#ffa21a', O: '#c86400', c: '#c8d4e8' },
       rows: [
-        '........', '....kkkk', '...kddGd', '..kdddGG', '..kddddd', '.kddwwdd',
-        '.kdwkwdd', '.kddwddo', 'kdddwwoo', 'kddwwwOO', 'kdwwwwww', 'kdwwwwww',
-        'kdwwwwww', 'kddwwwww', '.kddwwww', '..kddddd', '..kook..', '..kkk...',
+        '........', '........', '........', '....kkkk', '...kMMLM', '..kMMMLL', '..kMMMMM', '.kMMwwMM', '.kMwkwMM', '.kMMwwMM', 'kMMMMMoo',
+        'kMMMMooO', 'kMMwwwOO', 'kMwwwwww', 'kMwwwwww', 'kDMwwwww', 'kDMcwwww', 'kDMccwww', '.kDMcccc', '..kDDDDD', '..kook..', '..kkk...',
       ],
     },
     // white snow bunny with a red flower
     snowkid: {
-      pal: { c: '#b8c6dc', r: '#e8203c', y: '#ffd23f', g: '#3cb44a' },
+      pal: { c: '#c8d4e8', C: '#8e9cb8', r: '#e8203c', y: '#ffd23f', g: '#3cb44a', p: '#ffb0c4' },
       rows: [
-        '........', '......r.', '.kk...ry', 'kwck...g', 'kwwck.kg', 'kcwwkkww',
-        '.kwwwwww', 'kcwwwwww', 'kwwrwwww', 'kwwwwwwr', 'kcwwwwww', '.kcwwwww',
-        '..kccwww', '..kwwwww', '..kcwwww', '..kccccc', '...kwk..', '....k...',
+        '........', '.......r', '......ry', '.......g', '.kk....g', 'kwck..kg', 'kwpck.kw', 'kcwpckww', '.kcwwwww', 'kcwwwwww', 'kwwwwwww',
+        'kwwrwwww', 'kwwrwwwr', 'kcwwwwww', '.kCcwwww', '..kCccww', '..kcwwww', '.kcwwwww', '.kCcwwww', '..kCcccc', '...kwk..', '....k...',
       ],
     },
     // cherry cream cake
     cupcake: {
-      pal: { r: '#e8203c', R: '#8c1022', c: '#b8c6dc', d: '#3a2418', o: '#ff9a1a', G: '#8a8a96' },
+      pal: { r: '#e8203c', R: '#8c1022', c: '#c8d4e8', C: '#8e9cb8', d: '#3a2418', D: '#6a4428', o: '#ffa21a', G: '#8a8a96' },
       rows: [
-        '........', '........', '.....kkk', '....krRr', '....krwr', '...kkrrr',
-        '..kwwkkk', '.kwwwwww', 'kwwcwwww', 'kwcccwww', 'kwcccccw', 'kccccccc',
-        'kkokkkok', 'kdddwkdd', 'kddddddd', '.kGGGGGG', '..kokk..', '...kk...',
+        '........', '........', '........', '.....kkk', '....krRr', '....krwr', '...krrrr', '...kkRRR', '..kwwkkk', '.kwwwwww', 'kwwwwwww',
+        'kwcwwwww', 'kwccwwww', 'kcccwwww', 'kcCccccc', 'kCCCcccc', 'kkokkkok', 'kDdwkDdd', 'kdddkddd', '.kGGGGGG', '..kokk..', '...kk...',
       ],
     },
-    // green crocodile with a golden crest and shades
+    // green crocodile with a golden crest and dark shades
     dragon: {
-      pal: { g: '#5cb42c', G: '#2e7a18', y: '#ffd23f', Y: '#c88a00', d: '#303848', b: '#a8c8f0' },
+      pal: { L: '#9ae04c', M: '#5cb42c', D: '#2e7a18', y: '#ffd23f', Y: '#c88a00', s: '#303848', b: '#a8c8f0', B: '#6a8ac0' },
       rows: [
-        '.......y', '......yY', '.....kYy', '....kyYY', '...kkgGg', '..kgggGg',
-        '.kgGgggg', '.kkkkkkk', '.kgkdwdk', '.kgkkkkk', '..kgggGg', '..kwkwkw',
-        '...kGggg', '..kbwbwb', '..kgwbwb', '..kggGgg', '...kGk.k', '....k...',
+        '.......y', '......yY', '.....kyY', '....kyYY', '...kkLMM', '..kLMMMM', '.kMLMMMM', '.kMMMMMM', '.kkkkkkk', '.kMksswk', '.kMkkkkk',
+        '..kMMMMM', '..kwkwkw', '...kDMMM', '..kbwbwb', '..kbBwbw', '..kMbwbw', '..kDMMMM', '..kDDMMM', '...kDDDD', '...kMk.k', '....k...',
       ],
     },
-    // rabbit in a red robot helmet
+    // rabbit in a red robot helmet with blue ribbons
     drumbun: {
-      pal: { r: '#e8203c', R: '#9a1024', b: '#3a7ff0', p: '#ff9aae', d: '#1c1c24', y: '#ffd23f' },
+      pal: { r: '#e8203c', R: '#9a1024', b: '#3a7ff0', B: '#1f4aa0', p: '#ff9aae', d: '#1c1c24', D: '#4a4a5a', y: '#ffd23f', c: '#c8d4e8' },
       rows: [
-        '.....bkb', '......kb', '....kkkk', '...krrrR', '..krrwrr', '..kRrrrr',
-        '.kwkRRRR', '.kwwkwww', '.kwkkwww', '.kwpwwww', '..kwwwkw', '...kkkkk',
-        '..kwkddd', '..kwdyyy', '..kwdddd', '...kdddw', '...kwk..', '....k...',
+        '.....bkb', '.....kbB', '....kkkk', '...krrrR', '..krrwrr', '..krrrrr', '..kRrrrR', '.kwkRRRR', '.kwckwww', '.kwwkkww', '.kwkwwww',
+        '.kwpwwww', '..kcwwkw', '...kkkkk', '..kwkddd', '..kwdyyy', '..kwdDdd', '..kcdddd', '...kdddw', '...kccck', '...kwk..', '....k...',
       ],
     },
     // golden ring robot with a pink visor
     gemknight: {
-      pal: { y: '#ffd23f', Y: '#c88a00', p: '#ff6a8a', c: '#b8c6dc', b: '#3a7ff0' },
+      pal: { y: '#ffd23f', Y: '#c88a00', L: '#fff2a8', p: '#ff6a8a', P: '#c83a5a', c: '#c8d4e8', C: '#8e9cb8', b: '#3a7ff0' },
       rows: [
-        '.......k', '......kw', '....kkyy', '...kyYyy', '..kyykkk', '.kyykppp',
-        '.kykpwpp', '.kykpppp', '.kyykkkk', '..kyyyyy', '...kkwww', '..kwcwkw',
-        '..kwckbk', '..kwwckb', '...kcwwk', '...kyyyy', '....kyk.', '.....k..',
+        '.......k', '......kw', '.....kLy', '....kkyy', '...kyLyy', '..kyYkkk', '.kyykppp', '.kyYkpwp', '.kyYkppP', '.kyykPPP', '..kyykkk',
+        '...kyyyy', '...kkwww', '..kwcwkw', '..kwckbk', '..kcwckb', '..kCcwwk', '...kCcck', '...kyyyy', '...kYyyY', '....kyk.', '.....k..',
       ],
     },
   };
+  // monsters are 16x22 and stand on the bottom row: draw them with their feet on the tile's bottom edge
   function monsterFrame(key, f) {
     const m = MON_ART[key];
     const rows = m.rows.map((r) => (r.length === 8 ? r + r.split('').reverse().join('') : r));
     const P = Object.assign({}, MON_BASE, m.pal);
-    if (!f) return fromRows(rows, P);
-    const p = new Pix(16, 18);
-    p.blit(fromRows(rows.slice(0, 16), P), 0, 1);
-    p.blit(fromRows(rows.slice(16), P), 0, 16);
+    if (!f) return fromRows(rows, P, 16);
+    const p = new Pix(16, rows.length);
+    p.blit(fromRows(rows.slice(0, rows.length - 2), P, 16), 0, 1);
+    p.blit(fromRows(rows.slice(rows.length - 2), P, 16), 0, rows.length - 2);
     return p;
   }
   const MONSTERS = {};
@@ -567,22 +562,41 @@
     }
   }
 
+  // four-tone shaded ellipse lit from the top-left with a specular glint: T = [shine, light, mid, dark]
+  function ball4(p, x, y, w, h, T, glint) {
+    const cx = x + w / 2 - 0.5, cy = y + h / 2 - 0.5, rx = w / 2, ry = h / 2;
+    for (let j = 0; j < h; j++)
+      for (let i = 0; i < w; i++) {
+        const dx = (x + i - cx) / rx, dy = (y + j - cy) / ry;
+        const d2 = dx * dx + dy * dy;
+        if (d2 > 1.05) continue;
+        const lit = -dx * 0.55 - dy * 0.8;
+        let col = T[2];
+        if (lit < -0.42 || (d2 > 0.78 && lit < 0.05)) col = T[3];
+        else if (lit > 0.3) col = T[1];
+        const gx = dx + 0.42, gy = dy + 0.48;
+        if (gx * gx + gy * gy < (glint || 0.035)) col = T[0];
+        p.set(x + i, y + j, col);
+      }
+  }
+
   // BOSS 1 — drill robot: a silver egg with a drill on top, gold trim, skull-like eye sockets (32x48)
   function buildDrill(f, hurt) {
     const p = new Pix(32, 48);
     const SL = '#ffffff', SM = '#c4d2f0', SS = '#94a6d0', SD = '#5c6c9c';
     const GL = '#fff2a8', GM = '#ffbe1a', GD = '#c07406';
     // base: silver foot plate under a gold ring
-    ball(p, 6, 42, 20, 6, SL, SM, SD);
-    ball(p, 5, 38, 22, 7, GL, GM, GD);
+    const SILVER = ['#ffffff', '#dfe8fa', '#a6b6dc', '#56669a'], GOLD = ['#fff6c8', '#ffd23f', '#e09a10', '#9a5a04'];
+    ball4(p, 6, 42, 20, 6, SILVER);
+    ball4(p, 5, 38, 22, 7, GOLD);
     p.rect(8, 40, 16, 2, SD);
     // egg body with a bright centre stripe
-    ball(p, 2, 15, 28, 27, SL, SM, SS, 0.08);
-    ball(p, 6, 9, 20, 18, SL, SM, SS, 0.1);
+    ball4(p, 2, 15, 28, 27, SILVER, 0.05);
+    ball4(p, 6, 9, 20, 18, SILVER, 0.06);
     for (let y = 14; y < 38; y++) p.set(15, y, SL), p.set(16, y, y % 3 ? SM : SL);
     for (let y = 16; y < 40; y++) { p.set(3, y, SD); p.set(28, y, SD); }
     // gold ear knobs
-    ball(p, 0, 16, 6, 11, GL, GM, GD); ball(p, 26, 16, 6, 11, GL, GM, GD);
+    ball4(p, 0, 16, 6, 11, GOLD, 0.08); ball4(p, 26, 16, 6, 11, GOLD, 0.08);
     // gold zigzag trim around the lower body
     for (let x = 4; x < 28; x++) { const y = 32 + (((x + 1) >> 2) % 2); p.set(x, y, GM); p.set(x, y + 1, GD); }
     // eye sockets with angry brows
@@ -591,7 +605,7 @@
     p.rect(9, 22, 2, 3, pupil); p.rect(21, 22, 2, 3, pupil);
     for (let i = 0; i < 7; i++) { p.set(5 + i, 16 + (i >> 1), GD); p.set(26 - i, 16 + (i >> 1), GD); }
     // round mouth with a gold rim
-    ball(p, 12, 24, 8, 8, GL, GM, GD); ball(p, 13, 25, 6, 6, null, '#141420', null);
+    ball4(p, 12, 24, 8, 8, GOLD, 0.08); ball(p, 13, 25, 6, 6, null, '#141420', null);
     // drill with spiral bands that shift every frame
     for (let j = 0; j < 13; j++) {
       const half = Math.max(1, Math.round(((j + 1) * 5) / 13));
@@ -622,12 +636,13 @@
         p.rect(Math.round(x2), y2 + 1, 2, 2, '#000000');
       }
     }
-    ball(p, 9, 40, 12, 10, RL, RM, RD); ball(p, 27, 40, 12, 10, RL, RM, RD);
+    const RED = ['#ffd6cc', '#ff5a50', '#d0202c', '#7a0c14'], ORANGE = ['#ffe6b0', '#ffa84a', '#d06a18', '#7a3a08'];
+    ball4(p, 9, 40, 12, 10, RED, 0.06); ball4(p, 27, 40, 12, 10, RED, 0.06);
     p.hline(11, 46, 8, RD); p.hline(29, 46, 8, RD);
     // body: an orange upper segment and a red face segment
-    ball(p, 13, 18, 22, 13, OL, OM, OD);
+    ball4(p, 13, 18, 22, 13, ORANGE, 0.04);
     for (const x of [16, 20, 24, 28, 31]) p.vline(x, 21, 7, OD);
-    ball(p, 14, 27, 20, 15, RL, RM, RD);
+    ball4(p, 14, 27, 20, 15, RED, 0.04);
     p.rect(17, 30, 5, 4, '#ffffff'); p.rect(26, 30, 5, 4, '#ffffff');
     const pupil = hurt ? '#ffffff' : '#1a0a0e';
     p.rect(19, 31, 2, 3, pupil); p.rect(27, 31, 2, 3, pupil);
@@ -639,7 +654,7 @@
     for (const x of [17, 21, 26, 30]) p.set(x, 16, '#ffd23f');
     // fire head: a round flame with licking tips and a hot core
     const fl = f % 2;
-    ball(p, 15, 3, 18, 14, '#ff9a4a', RM, RD);
+    ball4(p, 15, 3, 18, 14, ['#ffe0a0', '#ff6a3a', '#e0202c', '#8e1018'], 0.05);
     tri(p, 15, 0 + fl, 6, 8, RM); tri(p, 21, 0, 6, 6 + fl, RM); tri(p, 27, 1 - fl, 6, 8, RM);
     ball(p, 19, 6, 10, 9, null, '#ff7a1a', null);
     ball(p, 21, 8, 6, 6, '#fff6cc', '#ffd23f', '#ffa21a');
@@ -674,16 +689,17 @@
     for (let x = 13; x < 23; x += 3) p.rect(x, 37, 2, 8, GD);
     p.rect(15, 46, 6, 2, SM);
     // head: ears, face and goggles
-    ball(p, 0, 0, 10, 10, GL, GM, GD); ball(p, 26, 0, 10, 10, GL, GM, GD);
+    const GOLD = ['#fff6c8', '#ffd23f', '#e09a10', '#9a5a04'], SILVER = ['#ffffff', '#d0d6e4', '#9aa0b4', '#5a6070'];
+    ball4(p, 0, 0, 10, 10, GOLD, 0.1); ball4(p, 26, 0, 10, 10, GOLD, 0.1);
     p.rect(3, 3, 2, 2, '#ffffff'); p.rect(29, 3, 2, 2, '#ffffff');
-    ball(p, 1, 14, 34, 21, GL, GM, GD, 0.05);
+    ball4(p, 1, 14, 34, 21, GOLD, 0.02);
     for (let x = 4; x < 32; x += 4) p.set(x, 30, GD);
     const eye = hurt ? '#ff5a5a' : f % 2 ? '#ffffff' : '#dfe8ff';
-    ball(p, 5, 19, 9, 9, SL, SM, SD); ball(p, 22, 19, 9, 9, SL, SM, SD);
+    ball4(p, 5, 19, 9, 9, SILVER, 0.12); ball4(p, 22, 19, 9, 9, SILVER, 0.12);
     p.rect(8, 21, 2, 2, eye); p.rect(25, 21, 2, 2, eye);
     p.rect(16, 25, 4, 3, GX); p.hline(14, 30, 8, GX);
     // glass dome with the bear pilot inside
-    ball(p, 3, 2, 30, 18, '#d8f0ff', '#6aa8e0', '#3a6aa8', 0.16);
+    ball4(p, 3, 2, 30, 18, ['#ffffff', '#a8d8ff', '#5a98e0', '#2a5aa0'], 0.05);
     ball(p, 12, 6, 12, 12, null, '#7aa890', '#4a7860');
     p.rect(14, 5, 3, 3, '#7aa890'); p.rect(20, 5, 3, 3, '#7aa890');
     p.set(15, 11, '#1a2a20'); p.set(20, 11, '#1a2a20'); p.rect(17, 13, 2, 1, '#c86a8a');
@@ -1329,10 +1345,10 @@
     const p = new Pix(32, 32);
     p.rect(0, 0, 32, 32, '#ffe8ef');
     p.rect(0, 0, 16, 16, '#ffd0dd'); p.rect(16, 16, 16, 16, '#ffd0dd');
-    const bunny = ['.o...o.', 'oio.oio', 'oio.oio', 'owoooow', 'owwwwwo', 'owewewo', 'owwnwwo', '.owwwo.', '..ooo..'];
-    const pal = { o: '#e89ab4', i: '#ffb6cc', w: '#ffffff', e: '#6a3a50', n: '#ff8aa8' };
-    stamp(p, bunny, 4, 3, pal);
-    stamp(p, bunny, 20, 19, pal);
+    const bunny = ['..ooo..ooo..', '..oio..oio..', '..oio..oio..', '.oowoooowoo.', 'owwwwwwwwwwo', 'owweewweewwo', 'owwpwnnwpwwo', '.owwwwwwwwo.', '..oooooooo..'];
+    const pal = { o: '#e89ab4', i: '#ffb6cc', w: '#ffffff', e: '#c86a90', n: '#ff8aa8', p: '#ffd0dc' };
+    stamp(p, bunny, 2, 4, pal);
+    stamp(p, bunny, 18, 20, pal);
     return p;
   }
 
@@ -1880,6 +1896,9 @@
     art.items.coin = [0, 1, 2, 3].map(buildCoin);
     art.items.dust = [0, 1, 2].map(buildDust);
     for (const k of Object.keys(UI)) art.ui[k] = fromRows(UI[k], UI_PAL);
+    // status-bar badges like the original's: a gold sunburst with a green orb, and a bunny head
+    art.ui.emblem = fromRows(['...y.y...', '.y.yyy.y.', '..kGGGk..', 'yykGgwGky', '.yGgggGy.', 'yykGggGky', '..kGGGk..', '.y.yyy.y.', '...y.y...'], { y: '#ffc020', k: '#000000', G: '#2e8a2a', g: '#6ad04a', w: '#e8ffd0' });
+    art.ui.bunny = fromRows(['.o...o.', 'oio.oio', 'oio.oio', 'owoooow', 'owwwwwo', 'owewewo', 'owwnwwo', '.owwwo.', '..ooo..'], { o: '#e89ab4', i: '#ffb6cc', w: '#ffffff', e: '#6a3a50', n: '#ff8aa8' });
     art.fx.star = [buildStar(0), buildStar(1)];
     art.fx.heart = buildHeartFx();
     art.fx.sparkle = [0, 1, 2].map(buildSparkle);
