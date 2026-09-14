@@ -590,6 +590,7 @@
     p.blit(s, 2 * cx - x - s.w, y, true);
   }
   
+  const bossPairLab = (p, rows, x, y, pal, cx) => bossPair(p, rows, x, y, pal, cx);
   function bossFire(p, cx, y0, y1, hw, ramp, coreY) {
     for (let y = y0; y <= y1; y++) {
       const h = hw(y); if (h <= 0) continue;
@@ -782,57 +783,142 @@
   }
 
   // ------------------------------------------------------------ BOSS 3 — gold bear mech (36x58)
+  // Built from the original's features, top to bottom. Top: a flat-topped glass dome with a teddy pilot at the
+  // controls, round ears with rivets, a gold face with big grey-rimmed goggles, a snout over a toothy grille and a
+  // bear-mouth jaw seam. Middle: shoulder pistons, a striped chest and pincer arms. Bottom: ridged legs in wide
+  // boots. Each part goes down on its own layer with a black outline, so parts are separated by ink.
   function buildBoss(f, hurt) {
     const W = 36, H = 58, cx = 18;
     const p = new Pix(W, H);
-    const Au = RAMP.gold, GREY = RAMP.grey;
-    const GOLD = [Au[1], Au[2], Au[3], Au[4]];
-    // treads with a dark red hub between them
-    for (const tx of [11, 25]) {
-      bossSolid(p, tx, 49, 57, () => 5, GREY, { spec: 0.99, tilt: -0.3 });
-      for (let x = tx - 5; x < tx + 5; x++) { p.set(x, 49, '#f4f4fa'); p.set(x, 53 + ((x + f) % 2), '#5a5a6c'); }
-    }
-    bossSolid(p, cx, 50, 55, () => 3, RAMP.red, { spec: 0.99 });
-    // arms: gold segments, brown bands, grey elbows
-    for (const ax of [5, 31]) {
-      bossSolid(p, ax, 38, 53, () => 4, Au, { spec: 0.97 });
-      for (let x = ax - 4; x < ax + 4; x++) { p.set(x, 43, '#7a3c04'); p.set(x, 44, '#a85a00'); p.set(x, 49, '#7a3c04'); }
-      for (let x = ax - 3; x < ax + 3; x++) { p.set(x, 46, '#b8b8c8'); p.set(x, 47, '#8a8a9c'); }
-      p.rect(ax - 1, 38, 2, 2, '#e8e8f0');
-    }
-    // torso with a brown chest plate striped in gold
-    bossSolid(p, cx, 36, 50, () => 10, Au, { spec: 0.97 });
-    bossSolid(p, cx, 39, 48, () => 6, RAMP.brown, { spec: 1 });
-    for (const x of [14, 17, 18, 21]) p.vline(x, 40, 8, '#ffc020');
-    bossSolid(p, cx, 36, 38, () => 7, GREY, { spec: 0.98, tilt: -0.3 });
-    for (let y = 38; y < 54; y++) { p.set(9, y, BK); p.set(26, y, BK); }
-    for (let x = 2; x < 34; x++) p.set(x, 37, x < 11 || x > 24 ? BK : p.get(x, 37) ? '#8a8a9c' : null);
-    // head: round ears with a sparkle
-    for (const ex of [4, 32]) {
-      bossSolid(p, ex, 0, 9, curve([[0, 2.5], [2, 4.5], [7, 4.5], [9, 2.5]]), Au, { spec: 0.95 });
-      p.set(ex - 1, 3, '#ffffff'); p.set(ex - 2, 4, '#ffffff'); p.set(ex, 4, '#ffffff'); p.set(ex - 1, 5, '#ffffff');
-    }
-    // face plate
-    bossSolid(p, cx, 17, 37, curve([[17, 12], [20, 15], [26, 16], [32, 15], [35, 12.5], [37, 9.5]]), Au, { spec: 0.97 });
-    // plating seams curving round the goggles
-    bossPair(p, ['..k', '.k.', 'k..'], 3, 30, { k: '#7a3c04' }, cx);
-    bossPair(p, ['kkkk'], 10, 31, { k: '#7a3c04' }, cx);
-    for (let x = 6; x < 30; x += 4) p.set(x, 34, '#a85a00');
-    // side bolts, goggles, nose and mouth
-    bossPair(p, ['kk', 'wk', 'gk', 'kk'], 0, 24, { k: BK, w: '#e8e8f0', g: '#8a8a9c' }, cx);
-    bossPair(p, ['..kkkkk..', '.kgggggk.', 'kgwwbbbgk', 'kgwbbbbgk', 'kgbbbbbgk', 'kgbbbbbgk', 'kgbbbbbgk', '.kgggggk.', '..kkkkk..'], 4, 21, { k: BK, g: '#8a8a9c', w: '#ffffff', b: '#c8e4ff' }, cx);
-    const glint = hurt ? '#ff5a5a' : f % 2 ? '#ffffff' : '#e8f4ff';
-    bossPair(p, ['gg'], 7, 23, { g: glint }, cx);
-    stamp(p, ['.kk.', 'kkkk', '.kk.'], 16, 28, { k: BK });
-    for (let x = 13; x < 23; x++) p.set(x, 32, '#7a3c04');
-    // glass dome with the bear pilot inside
-    bossSolid(p, cx, 1, 20, curve([[1, 7], [3, 11], [6, 14], [12, 15.5], [17, 15], [20, 13]]), RAMP.glass, { spec: 0.97 });
-    bossSolid(p, cx, 7, 19, curve([[7, 6], [9, 8], [15, 8.5], [19, 7]]), RAMP.pilot, { spec: 1 });
-    bossPair(p, ['.ss', 'sss'], 11, 5, { s: '#aac8b8' }, cx);
-    bossPair(p, ['k'], 15, 12, { k: '#203028' }, cx);
-    stamp(p, ['pp'], 17, 16, { p: '#d07090' });
-    stamp(p, ['..www', '.w...', 'w....'], 23, 3, { w: '#ffffff' });
-    return hurt ? brightenBoss(bossFinish(p, null)) : bossFinish(p, null);
+    const Au = RAMP.gold, GR = RAMP.grey, BR = RAMP.brown;
+    const PAL = {
+      Y: Au[0], y: Au[1], o: Au[2], d: Au[3], D: Au[4],
+      W: GR[0], g: GR[1], m: GR[2], s: GR[3], S: GR[4],
+      n: BR[2], N: BR[3], k: BK,
+      w: '#ffffff', e: '#e8f6ff', h: '#bcdcf6', i: '#a0c4ea', j: '#7c9ed4',
+    };
+    // the pilot seen through tinted glass: outline, light/mid/shadow fur, eyes, muzzle, mouth
+    const TQ = '#3a68a6', TP = ['#bcdccc', '#9cbfb0', '#80a2a8'], TE = '#1c2c58', TU = '#d4ecdc', TV = '#b87aa8';
+    const put = (L, rows, x, y) => L.blit(fromRows(rows, PAL), x, y);
+    const layer = (draw, target) => { const L = new Pix(W, H); draw(L); (target || p).blit(L.outlined(target ? TQ : BK), 0, 0); };
+    const mirror = (L) => { for (let y = 0; y < H; y++) for (let x = 0; x < cx; x++) { const c = L.get(x, y); if (c) L.set(W - 1 - x, y, c); } };
+
+    // ---- bottom: ridged grey legs stepping into wide boots, a dark coupling between them, claw tips beside
+    layer((L) => {
+      put(L, ['s..', 'ss.', 'SSm', 'ssg', 'SSm', 'ssg', 'SSm', 'mmg'], 11, 45);
+      put(L, ['gWWgggge', 'sSSSSSSS', 'mssssssS', 'sSSSSSSS'], 7, 53);
+      put(L, ['yo', 'od', '.d'], 4, 53);
+      mirror(L);
+    });
+    layer((L) => put(L, ['nnnn', 'NNNN'], 16, 53));
+    // pelvis: a bolted grey plate over a gold block
+    layer((L) => put(L, ['gWWggm', 'mSmmSs'], 15, 46));
+    layer((L) => put(L, ['yYyyoo', 'yooood', 'odddDD'], 15, 49));
+
+    // ---- middle: pincer arms — two curved jaws on a pivot, straight blades below, a chrome rod between
+    layer((L) => {
+      put(L, [
+        '..o.DyD.o..',
+        '.oy..d..yo.',
+        '.oY..D..Yo.',
+        '.oyy.D.yyo.',
+        '.dyo.D.oyd.',
+        '..dd.D.dd..',
+        '..D..D..D..',
+        '.doy...yod.',
+        '.doo...ood.',
+        '.doo...ood.',
+        '.ddo...odd.',
+        '.DdD...DdD.',
+      ], 0, 40);
+      mirror(L);
+    });
+    // shoulder pistons: grey caps on gold barrels with a chrome shaft
+    layer((L) => { put(L, ['mWm', 'yho', 'ohd'], 4, 36); put(L, ['mWm', 'yho', 'ohd'], 8, 36); mirror(L); });
+    // chest: a notched lintel, a lit capsule between striped ribs, and a notched base
+    layer((L) => put(L, [
+      'oyYyyyyood',
+      'doyDDDDodD',
+      'DdDyYyoDdD',
+      'DyDYYyoDoD',
+      'DyDyYyoDoD',
+      'DoDyyooDdD',
+      'DoDooodDdD',
+      'DdDddddDDD',
+      'dooDDDDodd',
+    ], 13, 36));
+
+    // ---- top: the gold face (left half, mirrored) sits behind the dome: rimmed cheeks, a brow band with rivets
+    // and scowling brow wedges, a lit snout, a toothy grille over a lip, and the bear-mouth seam round the chin
+    layer((L) => {
+      put(L, [
+        '......Dooooooooooo',
+        '.....Ddyyyyyyyyyyy',
+        '....Ddyyyyyyyyyyyy',
+        '....DoyYyooooooooo',
+        '....DoyYydDooooooo',
+        '....DoyoWoooddoooo',
+        '....Dyodoooodkdooy',
+        '....DydooooooooyyY',
+        '....DyoooooooooyYY',
+        '....Dyooooooooodoy',
+        '....Dooooooooodddd',
+        '....Doooooooookkkk',
+        '....DoooooooookWgW',
+        '....Dokdooooddkkkk',
+        '.....Dykoooooooyod',
+        '......Dykkkoodkkkk',
+        '.......DyYykkkyYYY',
+        '........Ddoyyooddd',
+        '.........Ddyoooooo',
+      ], 0, 16);
+      mirror(L);
+    });
+    put(p, ['sgWggs'], 15, 35);
+    const goggle = ['.gWWm.', 'gweehs', 'Weehis', 'gehiis', 'mhiijS', '.msSS.'];
+    layer((L) => { put(L, goggle, 7, 23); put(L, goggle, 23, 23); });
+    // side bolts beside the goggles
+    layer((L) => { put(L, ['gm', 'Yh', 'od', 'ms'], 1, 24); mirror(L); });
+
+    // round ears with a rivet, tucked behind the dome
+    layer((L) => {
+      const ear = curve([[1, 2], [2, 3.5], [3, 4], [6, 4], [7, 3.5], [8, 2]]);
+      bossSolid(L, 5, 1, 8, ear, Au, { spec: 0.95 });
+      bossSolid(L, 31, 1, 8, ear, Au, { spec: 0.95 });
+      bossPair(L, ['.h.', 'hwh', '.h.'], 3, 3, PAL, cx);
+    });
+
+    // glass dome: flat on top, widest low down, with the teddy pilot at the controls seen through the tint
+    const glass = ['#ffffff', '#6ea4de', '#5088c4', '#4476b6', '#2e5c9c'];
+    layer((L) => {
+      bossSolid(L, cx, 1, 19, curve([[1, 6], [2, 8], [4, 8.5], [5, 9.5], [6, 11], [7, 12], [8, 12.5], [9, 13.5], [10, 15], [13, 15], [14, 14], [15, 13.5], [16, 12.5], [17, 11.5], [18, 10.5], [19, 8.5]]), glass, { spec: 0.995 });
+      const pl = new Pix(W, H);
+      // each part lit on its own: light upper left, shadow lower right
+      const blob = (Q, x, y, w, h) => { Q.oval(x, y, w, h, TP[1]); for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { if (!Q.solid(x + i, y + j)) continue; const t = (i / w) + (j / h); if (t < 0.55) Q.set(x + i, y + j, TP[0]); else if (t > 1.3) Q.set(x + i, y + j, TP[2]); } };
+      layer((Q) => { Q.rect(8, 16, 2, 3, '#4a6e9e'); Q.rect(26, 16, 2, 3, '#4a6e9e'); }, pl);
+      layer((Q) => { blob(Q, 3, 10, 7, 6); blob(Q, 26, 10, 7, 6); }, pl);
+      layer((Q) => { blob(Q, 12, 13, 12, 7); }, pl);
+      layer((Q) => { blob(Q, 10, 3, 5, 5); blob(Q, 21, 3, 5, 5); }, pl);
+      layer((Q) => { blob(Q, 11, 4, 14, 12); }, pl);
+      for (let x = 12; x < 24; x++) pl.set(x, 6, TQ);
+      const helm = f % 2 ? ['#7ad0ff', '#7ae0a8', '#c890e0'] : ['#c890e0', '#7ad0ff', '#7ae0a8'];
+      [[14, 0], [17, 1], [18, 1], [21, 2]].forEach(([x, k]) => pl.set(x, 6, helm[k]));
+      for (const [x, y, col] of [[14, 9, TE], [21, 9, TE], [14, 10, TE], [21, 10, TE], [16, 11, TU], [17, 11, TE], [18, 11, TE], [19, 11, TU], [15, 12, TU], [16, 12, TU], [17, 12, TU], [18, 12, TU], [19, 12, TU], [20, 12, TU], [16, 13, TU], [17, 13, TV], [18, 13, TV], [19, 13, TU]]) pl.set(x, y, col);
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const c = pl.get(x, y); if (c && L.solid(x, y)) L.set(x, y, c); }
+      // reflections: a soft light-blue glare on the upper right, a white glint arc on the upper left
+      for (let y = 3; y < 13; y++) for (let x = 20; x < 32; x++) {
+        const dx = (x - 25.5) / 3.6, dy = (y - 8) / 2.6;
+        const r = dx * dx + dy * dy;
+        if (r < 1 && L.solid(x, y)) { const c = L.get(x, y); L.set(x, y, r < 0.18 ? '#e8f6ff' : [(c[0] + 170) >> 1, (c[1] + 220) >> 1, (c[2] + 255) >> 1, 255]); }
+      }
+      for (const [x, y] of [[9, 5], [10, 4], [11, 3], [12, 3]]) L.set(x, y, '#ffffff');
+    });
+    // hinges clamping the dome to the head
+    layer((L) => { put(L, ['.m', 'yW', 'od', '.s'], 1, 14); mirror(L); });
+    // see-through gaps between each arm and the chest, and between the blades of each pincer
+    const out = bossFinish(p, null);
+    for (const [x, y] of [[11, 40], [11, 41], [11, 42], [11, 43], [5, 48], [5, 49], [5, 50], [5, 51]]) { out.clear(x, y); out.clear(W - 1 - x, y); }
+    return hurt ? brightenBoss(out) : out;
   }
 
   // ---------------------------------------------------------------- bomb (16x16), maid-cap cherry bomb
