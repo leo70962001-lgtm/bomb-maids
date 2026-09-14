@@ -874,17 +874,13 @@
         p.rect(4, 4, 6, 4, bk); p.hline(4, 4, 6, '#ffffff');
         return p.outlined(K);
       },
-      wallTop(i) {
+      wallTop(i) { // dark wood wall with a row of windows
         const p = new Pix(16, 16);
-        p.rect(0, 0, 16, 16, '#fbe6c8');
-        p.rect(0, 12, 16, 4, '#9c5a34'); p.hline(0, 12, 16, '#c47a48');
-        if (i % 2 === 0) {
-          p.rect(3, 2, 10, 8, K); p.rect(4, 3, 8, 6, '#8fd3ff');
-          p.rect(4, 3, 8, 2, '#c9ecff'); p.vline(8, 3, 6, '#ffffff'); p.hline(4, 6, 8, '#ffffff');
-        } else {
-          p.rect(5, 3, 6, 7, '#2e7d4f'); p.rect(6, 4, 4, 5, '#3fa065');
-          p.set(7, 5, '#ffffff'); p.set(8, 7, '#ffffff');
-        }
+        p.rect(0, 0, 16, 16, '#8a4a24');
+        for (let x = 0; x < 16; x += 4) p.vline(x, 0, 12, '#6a3414');
+        p.rect(0, 12, 16, 4, '#c87838'); p.hline(0, 12, 16, '#f0a860'); p.hline(0, 15, 16, '#5a2a10');
+        p.rect(2, 2, 12, 9, '#000000'); p.rect(3, 3, 10, 7, '#ffffff');
+        p.rect(4, 4, 8, 5, '#5aa8e8'); p.rect(4, 4, 8, 2, '#a8dcff'); p.vline(8, 4, 5, '#ffffff'); p.set(5 + i, 7, '#dff2ff');
         return p;
       },
       wall(i) {
@@ -896,14 +892,14 @@
     },
     garden: {
       name: '花園', bg: '#1d3b24',
-      floor(i) {
+      floor(i) { // two-tone grass checker with blades
         const p = new Pix(16, 16);
-        p.rect(0, 0, 16, 16, i ? '#79c957' : '#86d462');
+        p.rect(0, 0, 16, 16, i ? '#4aa83c' : '#5cbc48');
         for (let n = 0; n < 7; n++) {
-          const x = Math.floor(hash(n, i, 11) * 15), y = Math.floor(hash(n, i, 12) * 14);
-          p.set(x, y + 1, '#5ea93f'); p.set(x + 1, y, '#5ea93f');
+          const x = Math.floor(hash(n, i, 21) * 15), y = Math.floor(hash(n, i, 22) * 14) + 1;
+          p.set(x, y, i ? '#2e7a2a' : '#3a8e30'); p.set(x + 1, y - 1, i ? '#6ad04a' : '#86e060');
         }
-        if (hash(i, 5, 13) > 0.5) { p.set(4, 11, '#ffffff'); p.set(12, 5, '#ffe14d'); }
+        p.hline(0, 15, 16, i ? '#3a8e30' : '#48a038'); p.vline(15, 0, 16, i ? '#3a8e30' : '#48a038');
         return p;
       },
       hard() { // trimmed hedge cube
@@ -926,11 +922,14 @@
         }
         return p.outlined(K);
       },
-      wallTop(i) {
+      wallTop(i) { // strip of sky over a hedge dotted with little red flowers
         const p = new Pix(16, 16);
-        p.rect(0, 0, 16, 7, '#8fd3ff'); p.hline(0, 5, 16, '#c9ecff');
-        ball(p, -2, 5, 20, 12, '#6fd060', '#3f9c44', '#2a6e32');
-        p.set(4 + (i % 3) * 3, 9, '#ff5c7a'); p.set(11 - (i % 2) * 5, 11, '#ffe14d');
+        p.rect(0, 0, 16, 6, '#6ab8ff'); p.hline(0, 4, 16, '#a8dcff');
+        p.rect(0, 6, 16, 10, '#2e7a2a');
+        for (let x = 0; x < 16; x++) { p.set(x, 6, '#000000'); p.set(x, 7 + ((x + i) % 2), '#4aa83c'); }
+        const flower = (x, y) => { for (const [dx, dy] of [[0, -1], [-1, 0], [1, 0], [0, 1]]) p.set(x + dx, y + dy, '#ff3a4a'); p.set(x, y, '#ffe040'); };
+        flower(4, 10); flower(11, 12 - i);
+        p.hline(0, 15, 16, '#1a5018');
         return p;
       },
       wall(i) {
@@ -983,12 +982,14 @@
         p.set(7, 6, '#ff8c2e'); p.set(8, 6, '#ff8c2e');
         return p.outlined('#2c3b5c');
       },
-      wallTop(i) {
+      wallTop(i) { // small snowy pine trees on white snow
         const p = new Pix(16, 16);
-        p.rect(0, 0, 16, 16, '#314a78');
-        tri(p, 2, 1, 12, 13, '#2e7d5a'); tri(p, 4, 0, 8, 6, '#ffffff');
-        p.rect(7, 13, 2, 3, '#6d4a36');
-        p.set(3 + (i % 5) * 2, 3, '#ffffff');
+        p.rect(0, 0, 16, 16, '#e8f4ff');
+        p.set(2 + i * 5, 2, '#ffffff'); p.set(13 - i * 3, 5, '#ffffff');
+        const t = new Pix(12, 14);
+        tri(t, 1, 0, 10, 12, '#2e7a4a'); tri(t, 3, 0, 6, 5, '#ffffff'); t.hline(2, 8, 8, '#1e5a36'); t.rect(5, 12, 2, 2, '#6d4a36');
+        p.blit(t.outlined('#000000'), 2, 0);
+        p.rect(0, 14, 16, 2, '#b8d4f0');
         return p;
       },
       wall(i) {
@@ -1026,12 +1027,15 @@
         tri(p, 3, 2, 10, 5, '#4cb84c'); p.rect(7, 0, 2, 3, '#2c7a33');
         return p.outlined(K);
       },
-      wallTop(i) {
+      wallTop(i) { // strawberries in white cups on a candy stripe
         const p = new Pix(16, 16);
-        p.rect(0, 0, 16, 16, '#ffe0ec');
-        for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) if (((x + y + i * 2) >> 2) % 2 === 0) p.set(x, y, '#ffffff');
-        p.rect(0, 12, 16, 4, '#e0a45a'); p.hline(0, 12, 16, '#ffd08a');
-        p.set(4, 14, '#9c5f3a'); p.set(11, 14, '#9c5f3a');
+        p.rect(0, 0, 16, 16, '#fff0f4');
+        for (let y = 12; y < 16; y++) for (let x = 0; x < 16; x++) p.set(x, y, ((x + y + i) >> 1) % 2 ? '#ffffff' : '#e8203c');
+        const c = new Pix(12, 12);
+        ball(c, 3, 0, 7, 7, '#ff9a9a', '#e8203c', '#9a1020');
+        c.set(5, 0, '#3cb44a'); c.set(6, 0, '#3cb44a'); c.set(4, 3, '#ffe040'); c.set(7, 4, '#ffe040');
+        c.rect(1, 6, 10, 2, '#ffffff'); c.rect(2, 8, 8, 3, '#e6ecf6'); c.hline(2, 10, 8, '#b8c4d8');
+        p.blit(c.outlined('#000000'), 2, 0);
         return p;
       },
       wall(i) {
@@ -1066,13 +1070,14 @@
         p.hline(1, 9, 14, '#9c6e3c');
         return p.outlined(K);
       },
-      wallTop(i) {
+      wallTop(i) { // warning signs over a red and blue hazard band
         const p = new Pix(16, 16);
-        p.rect(0, 0, 16, 16, '#3a3e56');
-        p.rect(2, 2, 12, 8, '#2a2b40'); p.rect(3, 3, 10, 6, i % 2 ? '#3fa065' : '#3d86f0');
-        p.hline(4, 5, 6, '#b8f28a'); p.hline(4, 7, 4, '#b8f28a');
-        p.rect(0, 12, 16, 4, '#ffc53a');
-        for (let x = 0; x < 16; x += 4) p.rect(x, 12, 2, 4, '#2a2b40');
+        p.rect(0, 0, 16, 16, '#f4f4f8');
+        const t = new Pix(14, 12);
+        tri(t, 0, 0, 14, 12, '#e8203c'); tri(t, 3, 4, 8, 7, '#ffffff');
+        t.rect(6, 5, 2, 3, '#000000'); t.rect(6, 9, 2, 1, '#000000');
+        p.blit(t.outlined('#000000'), 1, 0);
+        for (let y = 13; y < 16; y++) for (let x = 0; x < 16; x++) p.set(x, y, ((x + y + i * 2) >> 1) % 2 ? '#3a78e0' : '#e8203c');
         return p;
       },
       wall(i) {
@@ -1115,12 +1120,17 @@
         stamp(p, motif, 6, 11, { w: '#ffffff' });
         return p.outlined(K);
       },
-      wallTop(i) { // stage lights
+      wallTop(i) { // a shelf of little toy cups
         const p = new Pix(16, 16);
-        p.rect(0, 0, 16, 16, '#3b2f52');
-        p.rect(0, 11, 16, 5, '#ffd23f'); p.hline(0, 11, 16, '#fff0a0');
-        p.rect(7, 0, 2, 3, '#1c1526');
-        ball(p, 3, 2, 10, 8, '#ffffff', i ? '#ff9fbb' : '#8fd3ff', i ? '#ec3d5f' : '#3d86f0');
+        p.rect(0, 0, 16, 16, '#3a3a48');
+        p.rect(0, 12, 16, 4, '#8a8a9a'); p.hline(0, 12, 16, '#c8c8d8'); p.hline(0, 15, 16, '#000000');
+        const cup = (x, col, dark) => {
+          const c = new Pix(6, 9);
+          c.rect(0, 0, 6, 2, '#ffffff'); c.rect(1, 2, 4, 5, col); c.vline(4, 2, 5, dark); c.rect(2, 7, 2, 2, dark);
+          p.blit(c.outlined('#000000'), x, 3);
+        };
+        cup(1, i ? '#ff6a8a' : '#6ad04a', i ? '#c83a5a' : '#2e8a2a');
+        cup(8, i ? '#3a9df0' : '#ffd23f', i ? '#1a5ec4' : '#c88a00');
         return p;
       },
       wall(i) {
@@ -1162,11 +1172,14 @@
         stamp(p, ['.llll.', 'lllmmm', 'lmmmmd', '.mmmd.', '..md..'], 5, 3, { l: lt, m: mid, d: dk });
         return p.outlined(K);
       },
-      wallTop(i) {
+      wallTop(i) { // gold ornament strung with jewels
         const p = new Pix(16, 16);
-        p.rect(0, 0, 16, 16, '#7a1f3a');
-        p.rect(0, 11, 16, 5, '#e0a014'); p.hline(0, 11, 16, '#ffe38a');
-        stamp(p, ['.y.', 'yry', '.y.'], 6, 3, { y: '#ffd23f', r: i ? '#3d86f0' : '#ec3d5f' });
+        p.rect(0, 0, 16, 16, '#c88a00');
+        p.rect(0, 1, 16, 10, '#ffc020'); p.hline(0, 1, 16, '#fff2a8'); p.hline(0, 10, 16, '#9a5a04');
+        for (let x = 1; x < 16; x += 4) { p.set(x, 5, '#9a5a04'); p.set(x + 1, 6, '#9a5a04'); }
+        const gem = (x, col) => { const g = new Pix(5, 5); ball(g, 0, 0, 5, 5, '#ffffff', col, '#000000'); p.blit(g.outlined('#000000'), x, 3); };
+        gem(1, i ? '#e8203c' : '#3a9df0'); gem(9, i ? '#3cb44a' : '#e8203c');
+        p.rect(0, 12, 16, 4, '#7a1f3a'); p.hline(0, 12, 16, '#e0a014');
         return p;
       },
       wall(i) {
@@ -1199,12 +1212,15 @@
         p.set(7, 8, '#ec3d5f'); p.set(8, 15, '#4cb84c');
         return p.outlined(K);
       },
-      wallTop(i) {
+      wallTop(i) { // red roses in white vases along the tea room wall
         const p = new Pix(16, 16);
-        p.rect(0, 0, 16, 16, '#ffc9da');
-        for (let x = 0; x < 16; x += 4) p.vline(x + 1, 0, 12, '#ffb0c8');
-        for (let x = 0; x < 16; x++) p.set(x, 12 + ((x >> 1) % 2), '#ffffff');
-        p.rect(0, 14, 16, 2, '#3b2f52');
+        p.rect(0, 0, 16, 16, '#3a78e0');
+        for (let x = 0; x < 16; x += 4) p.vline(x, 0, 16, '#2c5cb8');
+        const v = new Pix(10, 14);
+        ball(v, 1, 0, 8, 7, '#ff9a9a', '#e8203c', '#8e1018'); v.set(4, 2, '#ffd0d0');
+        v.set(3, 6, '#2e8a2a'); v.set(6, 6, '#2e8a2a'); v.vline(5, 6, 3, '#2e8a2a');
+        v.rect(3, 9, 4, 5, '#ffffff'); v.vline(6, 9, 5, '#c8d4e8');
+        p.blit(v.outlined('#000000'), 3, 1);
         return p;
       },
       wall(i) {
@@ -1216,14 +1232,16 @@
     },
   };
 
+  // the originals outline their blocks in pure black
+  const inkOutline = (pix) => pix.map((c) => (c[0] === 0x2a && c[1] === 0x1b && c[2] === 0x30 ? [0, 0, 0, 255] : c));
   function buildTheme(key) {
     const T = THEMES[key];
     return {
       key, name: T.name, bg: T.bg,
       floor: [T.floor(0), T.floor(1)],
-      hard: T.hard(),
-      hard2: T.hard2 ? T.hard2() : null,
-      soft: [T.soft(0), T.soft(1), T.soft(2)],
+      hard: inkOutline(T.hard()),
+      hard2: T.hard2 ? inkOutline(T.hard2()) : null,
+      soft: [T.soft(0), T.soft(1), T.soft(2)].map(inkOutline),
       wallTop: [T.wallTop(0), T.wallTop(1)],
       wall: T.wall(0),
     };

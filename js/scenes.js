@@ -1541,50 +1541,52 @@
     },
   };
 
+  // orange-rimmed white box like the original HUD's item slots
+  function slot(x, y, w, h) { E.panel(x, y, w, h, '#ffffff', '#ff8a1a', { outline: '#000000' }); }
   function drawStoryPanel(w) {
     const ctx = E.ctx;
     const m = w.maids[0];
     const D = G.MAID_DATA[m.maidKey];
     const x0 = 240;
-    E.rect(x0, 0, 80, 240, C.panel);
-    E.rect(x0, 0, 2, 240, '#f8b000'); E.rect(x0 + 2, 0, 1, 240, '#000000');
-    // CG portrait: sooty and shaking for a moment when she gets blasted
+    goldBar(x0, 0, 80, 240);
+    // emblem and bunny badge beside her CG face strip (sooty and shaking for a moment when she gets blasted)
+    ctx.drawImage(E.spr.ui.emblem, x0 + 4, 4);
+    ctx.drawImage(E.spr.ui.bunny, x0 + 5, 20);
     const hurt = m.burnT > 0;
-    E.panel(x0 + 6, 4, 36, 36, '#ffe0ea', D.color, {});
-    E.art('play-portrait', CG_ART, x0 + 8 + (hurt ? ((E.frame >> 1) % 2 ? 1 : -1) : 0), 6, 32, 32, CG_CROP.head[m.maidKey], hurt ? 'sepia(0.7) brightness(0.45) contrast(1.3)' : null);
-    E.text(D.name, x0 + 44, 6, { color: C.white, fit: 34 });
-    E.text(D.en, x0 + 46, 24, { color: D.color === '#6b5a8e' ? '#b8a8e0' : D.color, small: false });
+    E.art('play-portrait', CG_ART, x0 + 18 + (hurt ? ((E.frame >> 1) % 2 ? 1 : -1) : 0), 3, 59, 30, CG_CROP.face[m.maidKey], hurt ? 'sepia(0.7) brightness(0.45) contrast(1.3)' : null);
+    E.rect(x0 + 3, 33, 74, 1, '#f8b000');
     // hearts
-    for (let i = 0; i < m.maxHearts; i++) ctx.drawImage(i < m.hearts ? E.spr.ui.heart : E.spr.ui.heartEmpty, x0 + 6 + (i % 8) * 9, 44 + ((i / 8) | 0) * 9);
-    // SP
-    E.text('SP', x0 + 5, 57, { color: C.gold });
+    for (let i = 0; i < m.maxHearts; i++) ctx.drawImage(i < m.hearts ? E.spr.ui.heart : E.spr.ui.heartEmpty, x0 + 6 + (i % 8) * 9, 37 + ((i / 8) | 0) * 9);
+    // special: SP gauge and the skill's name
     const ready = m.sp >= m.skillCost;
-    E.bar(x0 + 18, 57, 56, 7, m.sp / 100, ready && (E.frame >> 3) % 2 ? C.white : D.color === '#6b5a8e' ? '#9b87c9' : D.color);
-    E.text(D.skill, x0 + 6, 68, { color: ready ? C.mint : C.gray, fit: 71 });
-    // stats
-    const stat = (icon, val, x, y) => { ctx.drawImage(E.spr.ui[icon], x, y); E.text('x' + val, x + 9, y + 1, { color: C.white, small: true }); };
-    stat('bomb', m.bombs, x0 + 6, 88);
-    stat('fire', m.fire, x0 + 30, 88);
-    stat('speed', m.speedLv, x0 + 54, 88);
-    E.rect(x0 + 6, 100, 68, 1, C.panel2);
-    // coins, enemies
-    ctx.drawImage(E.spr.ui.coin, x0 + 6, 106);
-    E.text(String(w.stats.coins), x0 + 16, 106, { color: C.gold });
-    ctx.drawImage(E.spr.ui.enemy, x0 + 6, 120);
-    E.text('x' + w.enemiesLeft(), x0 + 16, 120, { color: C.pink });
+    E.text('SP', x0 + 5, 51, { color: C.red });
+    E.bar(x0 + 19, 53, 55, 7, m.sp / 100, ready && (E.frame >> 3) % 2 ? C.gold : '#ff8a1a');
+    E.text(D.skill, x0 + 5, 63, { color: ready ? C.red : C.ink, fit: 70 });
+    // bombs, fire and speed in item slots
+    const stat = (icon, val, x) => { slot(x, 79, 24, 16); ctx.drawImage(E.spr.ui[icon], x + 3, 83); E.text(String(val), x + 20, 82, { color: C.text, align: 'right', small: true }); };
+    stat('bomb', m.bombs, x0 + 3);
+    stat('fire', m.fire, x0 + 28);
+    stat('speed', m.speedLv, x0 + 53);
+    // coins and monsters left
+    slot(x0 + 3, 98, 74, 16);
+    ctx.drawImage(E.spr.ui.coin, x0 + 7, 103);
+    E.text(String(w.stats.coins), x0 + 73, 101, { color: C.text, align: 'right' });
+    slot(x0 + 3, 116, 74, 16);
+    ctx.drawImage(E.spr.ui.enemy, x0 + 6, 121);
+    E.text('x' + w.enemiesLeft(), x0 + 73, 119, { color: C.red, align: 'right' });
     // cleaning
-    E.text(G.t('打掃度'), x0 + 6, 134, { color: C.white });
+    E.text(G.t('打掃度'), x0 + 5, 135, { color: C.text });
     const clean = w.stats.dustTotal ? w.stats.dustSwept / w.stats.dustTotal : 1;
-    E.bar(x0 + 6, 150, 68, 7, clean, C.mint);
-    E.text(Math.round(clean * 100) + '%', x0 + 74, 138, { color: C.mint, align: 'right' });
-    if (w.freezeT > 0) { ctx.drawImage(E.spr.ui.clock, x0 + 6, 168); E.bar(x0 + 16, 168, 58, 5, w.freezeT / 330, '#9ff3ff'); }
-    if (m.star > 0) { ctx.drawImage(E.spr.fx.star[0], x0 + 6, 176); E.bar(x0 + 16, 176, 58, 5, m.star / 480, C.gold); }
-    // controls
+    E.text(Math.round(clean * 100) + '%', x0 + 75, 135, { color: C.red, align: 'right' });
+    E.bar(x0 + 5, 151, 70, 7, clean, C.mint);
+    if (w.freezeT > 0) { ctx.drawImage(E.spr.ui.clock, x0 + 5, 163); E.bar(x0 + 15, 163, 60, 5, w.freezeT / 330, '#9ff3ff'); }
+    if (m.star > 0) { ctx.drawImage(E.spr.fx.star[0], x0 + 5, 171); E.bar(x0 + 15, 171, 60, 5, m.star / 480, C.gold); }
+    // controls in a black box, like the original's soft-key strip
     const touch = E.input.lastDevice === 'touch';
-    E.rect(x0 + 4, 186, 72, 50, C.plum);
-    E.text(G.t(touch ? 'A 放炸彈' : 'Z 放炸彈'), x0 + 8, 190, { color: C.paper });
-    E.text(G.t(touch ? 'B 特技' : 'X 特技'), x0 + 8, 205, { color: C.paper });
-    E.text(G.t(touch ? '||暫停' : 'ESC 暫停'), x0 + 8, 220, { color: C.gray });
+    E.rect(x0 + 3, 186, 74, 51, '#000000');
+    E.text(G.t(touch ? 'A 放炸彈' : 'Z 放炸彈'), x0 + 7, 190, { color: C.white, fit: 68 });
+    E.text(G.t(touch ? 'B 特技' : 'X 特技'), x0 + 7, 205, { color: C.white, fit: 68 });
+    E.text(G.t(touch ? '||暫停' : 'ESC 暫停'), x0 + 7, 220, { color: C.gray, fit: 68 });
   }
 
   // ------------------------------------------------------------------ Result
@@ -1954,23 +1956,23 @@
       E.rect(0, 224, 240, 16, '#000000'); E.rect(0, 224, 240, 1, '#f8b000');
       E.text(G.t(w.sudden ? '外圈開始封鎖！往中間移動！' : '最後站著的女僕就是贏家'), 120, 226, { color: w.sudden ? C.pink : C.gray, align: 'center' });
       // side panel
-      E.rect(240, 0, 80, 240, C.panel);
-      E.rect(240, 0, 2, 240, '#f8b000'); E.rect(242, 0, 1, 240, '#000000');
+      goldBar(240, 0, 80, 240);
       w.maids.forEach((m, i) => {
-        const y = 6 + i * 56;
+        const y = 5 + i * 58;
         const p = this.lineup[i];
-        E.panel(246, y, 70, 52, m.alive ? '#4a3d66' : '#322840', m.alive ? m.color : '#5a4a6e', {});
-        E.rect(249, y + 3, 26, 26, C.plum);
-        E.art('battle-face-' + i, CG_ART, 250, y + 4, 24, 24, CG_CROP.head[m.maidKey], m.alive ? null : 'grayscale(1) brightness(0.45)');
-        E.text(m.name, 278, y + 4, { color: C.white, fit: 34 });
-        E.text(String(m.slot + 1), 281, y + 20, { color: C.white, outline: m.alive ? m.color : '#5a4a6e', align: 'center', small: true });
-        E.text(p.human ? (p.pad + 1) + 'P' : 'CPU', 312, y + 20, { color: p.human ? C.gold : C.gray, align: 'right' });
-        for (let s = 0; s < this.cfg.wins; s++) E.ctx.drawImage(E.spr.fx.star[s < this.wins[i] ? 0 : 1], 252 + s * 8, y + 32);
-        const stat = (icon, val, x) => { E.ctx.drawImage(E.spr.ui[icon], x, y + 42); E.text(String(val), x + 8, y + 43, { color: C.paper, small: true }); };
-        stat('bomb', m.bombs, 252);
-        stat('fire', m.fire, 272);
-        E.bar(290, y + 43, 22, 5, m.sp / 100, m.color);
-        if (!m.alive) E.text('KO', 300, y + 30, { color: C.red, outline: C.plum, align: 'center' });
+        // one gold-rimmed card per maid in the original HUD's colours
+        E.panel(244, y, 72, 55, m.alive ? '#ffffff' : '#d8d4dc', m.alive ? '#f8b000' : '#8a8494', { outline: '#000000' });
+        E.rect(247, y + 3, 26, 26, '#000000');
+        E.art('battle-face-' + i, CG_ART, 248, y + 4, 24, 24, CG_CROP.head[m.maidKey], m.alive ? null : 'grayscale(1) brightness(0.45)');
+        E.text(m.name, 276, y + 4, { color: C.text, fit: 37 });
+        E.text(String(m.slot + 1), 279, y + 20, { color: C.white, outline: m.alive ? m.color : '#5a4a6e', align: 'center', small: true });
+        E.text(p.human ? (p.pad + 1) + 'P' : 'CPU', 312, y + 19, { color: p.human ? C.red : C.dim, align: 'right' });
+        for (let s = 0; s < this.cfg.wins; s++) E.ctx.drawImage(E.spr.fx.star[s < this.wins[i] ? 0 : 1], 249 + s * 8, y + 32);
+        const stat = (icon, val, x) => { E.ctx.drawImage(E.spr.ui[icon], x, y + 43); E.text(String(val), x + 8, y + 44, { color: C.text, small: true }); };
+        stat('bomb', m.bombs, 249);
+        stat('fire', m.fire, 268);
+        E.bar(287, y + 44, 25, 5, m.sp / 100, '#ff8a1a');
+        if (!m.alive) E.text('KO', 298, y + 30, { color: C.red, outline: '#000000', align: 'center' });
       });
       if (w.state === 'ready') {
         const t = w.stateT;
