@@ -26,7 +26,8 @@
     const top = decorLayout ? 40 : 60, areaH = decorLayout ? 140 : 162;
     const total = WALL_H + S.h * T + 14;
     const wallY = top + Math.floor((areaH - total) / 2);
-    const x0 = Math.floor((E.W - S.w * T) / 2);
+    // beside the portrait panel the room sits left of centre, closer to her
+    const x0 = Math.floor((E.sideW > 0 ? 124 : E.W / 2) - (S.w * T) / 2);
     const floorY = wallY + WALL_H;
     return { w: S.w, h: S.h, x0, wallY, floorY, doorX: x0 + Math.floor(S.w / 2) * T - 12, doorY: floorY + S.h * T };
   }
@@ -210,6 +211,7 @@
   }
 
   SC.room = {
+    wideTop: 38, // the status bar runs across the whole screen
     enter(arg) {
       arg = arg || {};
       decorLayout = false;
@@ -1437,23 +1439,27 @@
       const k = maidKey();
       const b = bond(k);
       const D = G.MAID_DATA[k];
-      // status bar in the original's style: emblem and bunny badge, her CG face strip, readings on the right
-      UI.goldBar(0, 0, E.W, 38);
-      UI.edgeBar({ gold: true, y: 0, h: 38 });
-      ctx.drawImage(E.spr.ui.emblem, 5, 5);
-      ctx.drawImage(E.spr.ui.bunny, 6, 23);
-      if (!(this.panel && this.panel.kind === 'diary')) E.art('hud-portrait', UI.CG_ART, 18, 3, 112, 32, UI.CG_CROP.face[k]);
-      E.rect(130, 3, 1, 32, '#f8b000');
+      // status bar in the original's style: emblem and bunny badge, her CG face strip, readings on the right. Beside the
+      // portrait panel it runs across the whole screen (from x = -E.sideW, see wideTop) and the bars get longer.
+      const L = -E.sideW, wide = E.sideW > 0;
+      const barW = wide ? 56 : 30;
+      UI.goldBar(L, 0, E.W - L, 38);
+      ctx.drawImage(E.spr.ui.emblem, L + 5, 5);
+      ctx.drawImage(E.spr.ui.bunny, L + 6, 23);
+      if (!(this.panel && this.panel.kind === 'diary')) E.art('hud-portrait', UI.CG_ART, L + 18, 3, 112, 32, UI.CG_CROP.face[k]);
+      E.rect(L + 130, 3, 1, 32, '#f8b000');
+      const sx = L + 135;
       const ai = affInfo(k);
       // affection: one heart per level, the next level filling in beside them
-      for (let i = 0; i < 5; i++) ctx.drawImage(i <= ai.lv ? E.spr.ui.heart : E.spr.ui.heartEmpty, 135 + i * 8, 6);
-      E.bar(176, 7, 26, 5, ai.t, C.pink);
+      for (let i = 0; i < 5; i++) ctx.drawImage(i <= ai.lv ? E.spr.ui.heart : E.spr.ui.heartEmpty, sx + i * 8, 6);
+      E.bar(sx + 41, 7, wide ? 62 : 26, 5, ai.t, C.pink);
       ctx.drawImage(E.spr.ui.coin, 314 - E.textWidth(String(S.coins)) - 9, 6);
       E.text(String(S.coins), 314, 5, { color: C.text, align: 'right' });
-      E.text(G.t('體力'), 135, 21, { color: C.text });
-      E.bar(160, 24, 30, 7, b.stamina / 100, b.stamina < G.JOB_STAMINA ? C.red : C.mint);
-      E.text(G.t('心情'), 196, 21, { color: C.text });
-      E.bar(221, 24, 30, 7, b.mood / 100, b.mood >= 80 ? C.gold : b.mood < 30 ? '#8fc6ff' : '#ffb45c');
+      E.text(G.t('體力'), sx, 21, { color: C.text });
+      E.bar(sx + 25, 24, barW, 7, b.stamina / 100, b.stamina < G.JOB_STAMINA ? C.red : C.mint);
+      const mx = sx + 25 + barW + 6;
+      E.text(G.t('心情'), mx, 21, { color: C.text });
+      E.bar(mx + 25, 24, barW, 7, b.mood / 100, b.mood >= 80 ? C.gold : b.mood < 30 ? '#8fc6ff' : '#ffb45c');
       E.text(G.t('第 {n} 天', { n: S.day }), 314, 21, { color: C.red, align: 'right', fit: 56 });
       // tabs (hidden while decorating, the room uses that space)
       if (this.decor) return;
@@ -1493,13 +1499,14 @@
       E.rect(0, E.H - 16, hintW, 16, '#000000');
       E.rect(0, E.H - 16, hintW, 1, '#f8b000');
       UI.edgeBar({ y: E.H - 16, h: 16, rule: E.H - 16 });
+      const hx = E.sideW > 0 ? 14 : 0; // beside the portrait panel her skirt covers the strip's left end
       if (step) {
         const pulse = (this.t >> 5) % 2 === 0;
-        E.text('★', 6, E.H - 13, { color: pulse ? C.gold : C.pink });
-        UI.marquee(step.text, 18, E.H - 13, hintW - 22, C.gold);
+        E.text('★', 6 + hx, E.H - 13, { color: pulse ? C.gold : C.pink });
+        UI.marquee(step.text, 18 + hx, E.H - 13, hintW - 22 - hx, C.gold);
       } else {
         const touch = E.input.lastDevice === 'touch';
-        UI.marquee(G.t(touch ? '拖曳手套、點一下互動　B 功能列' : 'Z 互動　X 功能列　ESC 系統　滑鼠也可以直接點'), 4, E.H - 13, hintW - 8, C.paper);
+        UI.marquee(G.t(touch ? '拖曳手套、點一下互動　B 功能列' : 'Z 互動　X 功能列　ESC 系統　滑鼠也可以直接點'), 4 + hx, E.H - 13, hintW - 8 - hx, C.paper);
       }
     },
     drawGlove() {

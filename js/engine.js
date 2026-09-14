@@ -117,6 +117,10 @@
     const c = E.canvas;
     const holder = E.holder || c.parentElement;
     const pad = E.holderPad || 0;
+    // measure with the canvas collapsed: the holder grows around its content, so a wide canvas would otherwise keep
+    // it (and the next fit) wider than a phone held upright
+    c.style.width = '0px';
+    c.style.height = '0px';
     const aw = holder.clientWidth - pad, ah = holder.clientHeight - pad;
     // phones held upright have no room beside the game, so the portrait panel folds away there
     E.setWide(!(aw < ah && aw < 560));
@@ -736,6 +740,9 @@
     ctx.save();
     ctx.beginPath();
     ctx.rect(E.sideW, 0, W, H);
+    // a scene with wideTop draws a band that far down across the whole screen, over the portrait panel (the room's
+    // status bar); it draws it at x from -E.sideW
+    if (E.sideW > 0 && E.scene && E.scene.wideTop) ctx.rect(0, 0, E.sideW, E.scene.wideTop);
     ctx.clip();
     ctx.translate(E.sideW, 0);
     if (E.scene && E.scene.draw) E.scene.draw(ctx);
@@ -743,8 +750,9 @@
     ctx.restore();
     // the panel comes after the scene so it can carry on the wallpaper and bars the scene just drew
     if (E.sideW > 0) {
+      const band = (E.scene && E.scene.wideTop) || 0; // left as the scene drew it
       ctx.fillStyle = '#2a1b30';
-      ctx.fillRect(0, 0, E.sideW, H);
+      ctx.fillRect(0, band, E.sideW, H - band);
       if (E.sidePanel) E.sidePanel(ctx);
     }
     endArt();

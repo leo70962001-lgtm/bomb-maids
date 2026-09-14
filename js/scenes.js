@@ -447,17 +447,19 @@
     const drew = lastBg.frame === E.draws;
     const off = drew ? lastBg.off : Math.floor(E.frame * 0.25) % 32;
     const tile = E.spr.bgTile;
+    const band = (E.scene && E.scene.wideTop) || 0; // the scene has already drawn its full-width top band
     ctx.save();
     ctx.beginPath();
-    ctx.rect(0, 0, PW, E.H);
+    ctx.rect(0, band, PW, E.H - band);
     ctx.clip();
     for (let y = off - 32; y < E.H; y += 32) for (let x = PW + off - 32 * Math.ceil((PW + off) / 32); x < PW; x += 32) ctx.drawImage(tile, x, y);
-    if (!drew) E.rect(0, 0, PW, E.H, 'rgba(42,27,48,0.62)');
-    else if (lastBg.tint) E.rect(0, 0, PW, E.H, lastBg.tint);
+    if (!drew) E.rect(0, band, PW, E.H - band, 'rgba(42,27,48,0.62)');
+    else if (lastBg.tint) E.rect(0, band, PW, E.H - band, lastBg.tint);
     ctx.restore();
     // the scene's top and bottom bars, carried on across; a gold bar's run covers its own left end so the join is seamless
     const bars = edgeBars.frame === E.draws ? edgeBars.list : [];
     for (const bar of bars) {
+      if (bar.y < band) continue;
       if (bar.gold) {
         const x1 = PW + 3;
         E.rect(0, bar.y, x1, bar.h, '#000000');
