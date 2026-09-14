@@ -1329,10 +1329,9 @@
           const fr = b.timer < 40 ? ((b.anim >> 2) % 3) : ((b.anim >> 4) % 3);
           ctx.fillStyle = 'rgba(42,27,48,0.3)';
           ctx.fillRect(ox + b.x + 3, oy + b.y + 13, 10, 2);
-          const img = S.bomb[fr];
-          if (b.timer < 40 && (b.anim >> 1) % 2) {
-            ctx.save(); ctx.globalAlpha = 0.85; ctx.drawImage(img, ox + b.x, oy + b.y - 1); ctx.restore();
-          } else ctx.drawImage(img, Math.round(ox + b.x), Math.round(oy + b.y - 1));
+          // just before it goes off the bomb flashes orange, like the original's
+          const img = b.timer < 40 && (b.anim >> 2) % 2 ? S.bomb[3] : S.bomb[fr];
+          ctx.drawImage(img, Math.round(ox + b.x), Math.round(oy + b.y - 1));
         }
         for (let c = 0; c < COLS; c++) {
           const k = idx(c, r);

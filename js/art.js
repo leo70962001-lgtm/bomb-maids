@@ -1217,63 +1217,81 @@
     return hurt ? brightenBoss(out) : out;
   }
 
-  // ---------------------------------------------------------------- bomb (16x16), maid-cap cherry bomb
+  // ---------------------------------------------------------------- bomb (16x16) and blast fireballs, in the original's style
+  // The bomb is a two-lobed red heart with a pale crease, a short fuse and a flickering spark; frame 3 is the orange
+  // "about to go" look. The blast puts a round fireball on every tile: a dark red rim, a red disc and a leaning
+  // teardrop flame burning orange to yellow with a white-hot base (stages grow, peak and fade).
+  const BOMB_PAL = {
+    k: '#000000', n: '#5a3a2a', y: '#ffd23f', w: '#ffffff',
+    R: '#e8203c', r: '#ff5a6a', p: '#ffb8c4', h: '#9a1024', H: '#5a0a18',
+  };
+  const BOMB_HOT = { R: '#ff7a1a', r: '#ffa040', p: '#ffe0a0', h: '#c04a10', H: '#6a2408' };
+  const BOMB_BODY = [
+    '................',
+    '................',
+    '................',
+    '...kkkk..kkkk...',
+    '..kRrprkkrprRk..',
+    '.kRrpwprRrpprRk.',
+    '.kRrppRRRRrRRhk.',
+    '.kRRRRpRRpRRRhk.',
+    '.kRRRRRppRRRRhk.',
+    '.khRRRRRRRRRRhk.',
+    '..khRRRRRRRRhk..',
+    '..kHhRRRRRRhHk..',
+    '...kHhhhhhhHk...',
+    '....kkkkkkkk....',
+    '................',
+    '................',
+  ];
+  const BOMB_SPARK = [['.y.', 'ywy', '.y.'], ['y.y', '.w.', 'y.y'], ['.w.', 'wyw', '.w.']];
   function buildBomb(f) {
+    const pal = f === 3 ? Object.assign({}, BOMB_PAL, BOMB_HOT) : BOMB_PAL;
+    // frame 1 pulses the bomb down a pixel
+    const dy = f === 1 ? 1 : 0;
     const p = new Pix(16, 16);
-    const sq = f === 1;
-    ball(p, sq ? 1 : 2, sq ? 5 : 4, sq ? 14 : 12, sq ? 11 : 12, '#ffb3c1', '#ea3c5e', '#a51f40', 0.16);
-    // maid cap frill
-    const y = sq ? 4 : 3;
-    p.rect(5, y, 6, 2, '#ffffff');
-    p.set(4, y + 1, '#ffffff'); p.set(11, y + 1, '#ffffff');
-    p.set(6, y + 1, '#bdd2ef'); p.set(9, y + 1, '#bdd2ef');
-    // heart emblem
-    stamp(p, ['w.w', 'www', '.w.'], 8, sq ? 9 : 8, { w: '#ffd6de' });
-    let out = p.outlined(K);
-    // fuse + spark
-    out.set(8, y - 1, '#8a5a3c'); out.set(9, y - 2, '#8a5a3c');
-    const sparks = [
-      ['.y.', 'ywy', '.y.'],
-      ['y.y', '.w.', 'y.y'],
-      ['.w.', 'wyw', '.w.'],
-    ];
-    stamp(out, sparks[f % 3], 9, y - 5, { y: '#ffd23f', w: '#ffffff' });
-    return out;
+    p.blit(fromRows(BOMB_BODY, pal, 16), 0, dy);
+    const top = 3 + dy;
+    p.set(8, top - 1, pal.n); p.set(8, top, pal.n);
+    p.blit(fromRows(BOMB_SPARK[f % 3], pal), 7, top - 4);
+    return p;
   }
 
-  // ---------------------------------------------------------------- flames (16x16) by connection mask + stage
-  // mask bits: 1=up 2=right 4=down 8=left
-  const FLAME_R = [3.2, 6.4, 7.6, 6.2, 3.6];
+  // fireball radius by stage (grow, peak, fade) and the flame's colours
+  const FLAME_BALL_R = [3.4, 5.6, 7.3, 6.6, 4.6];
+  const FLAME_FIRE = { deep: '#5a0818', rim: '#a81028', red: '#e0182c', lit: '#ff4a3a', orange: '#ff8a1a', yellow: '#ffd23f', pale: '#fff4b0', white: '#ffffff' };
   function buildFlame(mask, stage) {
     const p = new Pix(16, 16);
     const c = 7.5;
-    const segs = [];
-    if (mask & 1) segs.push([c, -2]);
-    if (mask & 2) segs.push([17.5, c]);
-    if (mask & 4) segs.push([c, 17.5]);
-    if (mask & 8) segs.push([-2, c]);
-    const isCenter = segs.length !== 1 && !((mask === 5) || (mask === 10));
-    const R = FLAME_R[stage] + (isCenter ? 0.8 : 0);
+    const ends = [1, 2, 4, 8].includes(mask);
+    const R = FLAME_BALL_R[stage] - (ends && stage > 2 ? 0.6 : 0);
     for (let y = 0; y < 16; y++)
       for (let x = 0; x < 16; x++) {
-        let d = Math.hypot(x - c, y - c) * 0.94;
-        for (const s of segs) {
-          // distance to segment c->s
-          const vx = s[0] - c, vy = s[1] - c;
-          const t = Math.max(0, Math.min(1, ((x - c) * vx + (y - c) * vy) / (vx * vx + vy * vy)));
-          const bx = c + vx * t, by = c + vy * t;
-          d = Math.min(d, Math.hypot(x - bx, y - by) * 1.42);
+        const u = (x - c) / R, v = (y - c) / R;
+        const d = Math.hypot(u, v * 0.96);
+        if (d > 1) continue;
+        let col = d > 0.86 ? (u + v > 0.2 ? FLAME_FIRE.deep : FLAME_FIRE.rim) : u + v < -0.5 ? FLAME_FIRE.lit : FLAME_FIRE.red;
+        // teardrop flame inside: a round base low in the ball rising to a leaning point, with an orange tongue curling up
+        // its left side and a white-hot base
+        const vb = 0.25;
+        const half = v < vb ? 0.64 * Math.pow(Math.max(0, (v + 0.74) / (vb + 0.74)), 0.8) : 0.64 * Math.sqrt(Math.max(0, 1 - ((v - vb) / 0.5) ** 2));
+        const lean = v < vb ? (vb - v) * 0.3 : 0;
+        const t = half > 0 ? Math.abs(u - lean) / half : 9;
+        if (t < 1 && d < 0.9) {
+          col = t > 0.7 ? FLAME_FIRE.orange : t > 0.3 ? FLAME_FIRE.yellow : FLAME_FIRE.pale;
+          if (u - lean < -0.2 && v < 0.1 && t > 0.45 && t < 0.75) col = FLAME_FIRE.orange;
+          if (v > 0.3 && v < 0.62 && Math.abs(u) < 0.26) col = stage === 2 ? FLAME_FIRE.white : FLAME_FIRE.pale;
         }
-        const n = (hash(x, y, stage * 7 + mask) - 0.5) * 1.6;
-        const r = R + n;
-        if (d > r) continue;
-        const q = d / r;
-        let col = '#d8243c';
-        if (q < 0.3) col = stage === 2 ? '#ffffff' : '#fff6cc';
-        else if (q < 0.6) col = '#ffd23f';
-        else if (q < 0.84) col = '#ff7a1a';
         p.set(x, y, col);
       }
+    // licks of flame breaking out round the top edge, changing every stage
+    if (stage >= 1 && stage <= 3) {
+      for (let i = 0; i < 5; i++) {
+        const a = -Math.PI * (0.15 + 0.7 * hash(i, stage, mask + 3));
+        const lx = Math.round(c + Math.cos(a) * (R + 0.6)), ly = Math.round(c + Math.sin(a) * (R + 0.6));
+        p.set(lx, ly, FLAME_FIRE.red); p.set(lx, ly - 1, i % 2 ? FLAME_FIRE.lit : FLAME_FIRE.rim);
+      }
+    }
     return p;
   }
 
@@ -2422,7 +2440,7 @@
       bear: art.boss,
     };
     for (const t of Object.keys(THEMES)) art.themes[t] = buildTheme(t);
-    art.bomb = [buildBomb(0), buildBomb(1), buildBomb(2)];
+    art.bomb = [0, 1, 2, 3].map(buildBomb);
     art.flame = {};
     for (let mask = 0; mask < 16; mask++) art.flame[mask] = [0, 1, 2, 3, 4].map((s) => buildFlame(mask, s));
     art.decor = {};
