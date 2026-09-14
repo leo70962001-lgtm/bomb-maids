@@ -313,8 +313,8 @@
 
   // ------------------------------------------------------------------ Portrait panel (16:9 screen, left of the game)
   // The maid who matters on this screen stands beside the game with no frame and no caption: cut out of the
-  // illustration, on the scene's own wallpaper carried across, between the scene's top and bottom bars, which run on
-  // across the panel in front of her. Each moves in her own way (Berry bounces, Yoru breathes calmly, Honey fidgets,
+  // illustration, on the scene's own wallpaper carried across, in front of the scene's top and bottom bars (which run
+  // on across the panel behind her), her skirt going off the bottom of the screen. Each moves in her own way (Berry bounces, Yoru breathes calmly, Honey fidgets,
   // Yukino sways) and a newly shown maid rises up into place.
   // cut-outs of the plain-background illustration: pixel size, her face centre in it (she is placed by her face) and
   // the right-most pixel of her that shows on screen (the cake plate, a lock of hair), which decides how far she leans
@@ -324,8 +324,9 @@
     honey: { src: 'img/stand-honey.webp', w: 401, h: 549, face: [200, 147], right: 400 },
     yukino: { src: 'img/stand-yukino.webp', w: 403, h: 552, face: [222, 125], right: 402 },
   };
-  const STAND_SCALE = 0.33;
-  const STAND_TOP = 44; // where the top of her head sits, just under the tallest top bar (the room's status bar)
+  const STAND_SCALE = 0.36;
+  const STAND_TOP = 48; // where the top of her head sits: under the tallest top bar (the room's status bar), low enough
+  // that the bottom edge of the cut-out stays below the screen even at the top of Berry's bounce
   const STAND_LEAN = 6; // she may reach this far into the game area; past that she steps left and the screen edge crops her
   // load them all up front so switching maids never shows an empty panel
   if (typeof Image !== 'undefined') for (const k in STAND) new Image().src = STAND[k].src;
@@ -365,7 +366,6 @@
     ctx.restore();
     // the scene's top and bottom bars, carried on across; a gold bar's run covers its own left end so the join is seamless
     const bars = edgeBars.frame === E.draws ? edgeBars.list : [];
-    let top = 0, bottom = E.H;
     for (const bar of bars) {
       if (bar.gold) {
         const x1 = PW + 3;
@@ -377,10 +377,8 @@
         E.rect(0, bar.y, PW, bar.h, bar.color || '#000000');
         if (bar.rule != null) E.rect(0, bar.rule, PW, 1, '#f8b000');
       }
-      if (bar.y + bar.h / 2 < E.H / 2) top = Math.max(top, bar.y + bar.h);
-      else bottom = Math.min(bottom, bar.y);
     }
-    // her figure, shown only between the bars
+    // her figure, in front of everything on the panel
     if (shown.key !== k) { shown.key = k; shown.since = E.frame; }
     const S = STAND[k];
     const w = S.w * STAND_SCALE, h = S.h * STAND_SCALE;
@@ -388,11 +386,9 @@
     const [mx, my] = p.locked ? [0, 0] : (MOTION[k] || MOTION.yoru)(E.frame);
     const faceX = Math.min(PW / 2, PW + STAND_LEAN - (S.right - S.face[0]) * STAND_SCALE);
     const x = faceX - S.face[0] * STAND_SCALE + mx;
-    const y = STAND_TOP + my + rise * rise * 48; // the cut-outs fade out at the bottom, so she needs no bar to stand on
-    const y0 = Math.max(y, top), y1 = Math.min(y + h, bottom);
-    if (y1 - y0 < 1) return;
+    const y = STAND_TOP + my + rise * rise * 48;
     const filter = p.locked ? 'brightness(0) opacity(0.6)' : p.hurt ? 'sepia(0.6) brightness(0.55) contrast(1.2)' : null;
-    E.art('side-portrait', S.src, x, y0, w, y1 - y0, [0, (y0 - y) / STAND_SCALE, S.w, (y1 - y0) / STAND_SCALE, S.w, S.h], filter, true);
+    E.art('side-portrait', S.src, x, y, w, h, [0, 0, S.w, S.h, S.w, S.h], filter, true);
   }
   E.sidePanel = drawSidePanel;
 
