@@ -1324,12 +1324,15 @@
   }
 
   // strawberry-milk checker with tiny bunnies (menu backgrounds), 32x32
+  // menu backdrop like the original game's: a pink checkerboard with little white bunny heads
   function buildBgTile() {
     const p = new Pix(32, 32);
-    p.rect(0, 0, 32, 32, '#ffd9e5');
-    p.rect(0, 0, 16, 16, '#ffe9f0'); p.rect(16, 16, 16, 16, '#ffe9f0');
-    stamp(p, ['.w...w.', '.w...w.', 'wwwwwww', 'wkwwwkw', 'wwwpwww', '.wwwww.'], 4, 5, { w: '#ffffff', k: '#e27aa6', p: '#ff9fbb' });
-    stamp(p, ['.w...w.', '.w...w.', 'wwwwwww', 'wkwwwkw', 'wwwpwww', '.wwwww.'], 20, 21, { w: '#ffffff', k: '#e27aa6', p: '#ff9fbb' });
+    p.rect(0, 0, 32, 32, '#ffe8ef');
+    p.rect(0, 0, 16, 16, '#ffd0dd'); p.rect(16, 16, 16, 16, '#ffd0dd');
+    const bunny = ['.o...o.', 'oio.oio', 'oio.oio', 'owoooow', 'owwwwwo', 'owewewo', 'owwnwwo', '.owwwo.', '..ooo..'];
+    const pal = { o: '#e89ab4', i: '#ffb6cc', w: '#ffffff', e: '#6a3a50', n: '#ff8aa8' };
+    stamp(p, bunny, 4, 3, pal);
+    stamp(p, bunny, 20, 19, pal);
     return p;
   }
 

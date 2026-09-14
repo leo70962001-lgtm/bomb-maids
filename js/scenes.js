@@ -4,7 +4,7 @@
   const E = G.E;
   const A = E.audio;
   const C = {
-    plum: '#2a1b30', panel: '#3b2f52', panel2: '#4a3d66', paper: '#fff4f8', paper2: '#ffe0ea', pink: '#ff9fbb', red: '#ec3d5f',
+    plum: '#2a1b30', panel: '#1e3a78', panel2: '#2c4f94', paper: '#fffaf0', text: '#1a1020', paper2: '#ffe0ea', pink: '#ff9fbb', red: '#ec3d5f',
     gold: '#ffd23f', white: '#ffffff', mint: '#b8f28a', sky: '#8fc6ff', gray: '#a9a2c2', dim: '#8d86a8', ink: '#5a4470',
   };
   const SC = (G.SCENES = {});
@@ -95,27 +95,40 @@
       ctx.fillRect(x + i + 2, y + 2, 2, 1);
     }
   }
+  // menu pointer: the original's red triangle (kept under its old name)
   function heartCursor(x, y) {
     const bob = Math.round(Math.sin(E.frame * 0.25) * 1.5);
-    E.ctx.drawImage(E.spr.fx.heart, x + bob, y);
+    const ctx = E.ctx;
+    for (let i = 0; i < 5; i++) {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(x + bob + i - 1, y - 2 + i, 1, 10 - i * 2);
+      if (i < 4) { ctx.fillStyle = '#e8203c'; ctx.fillRect(x + bob + i, y - 1 + i, 1, 8 - i * 2); }
+    }
   }
+  // the original's status-bar frame: black outline, gold rim, cream inside
+  function goldBar(x, y, w, h) {
+    E.rect(x, y, w, h, '#000000');
+    E.rect(x + 1, y + 1, w - 2, h - 2, '#f8b000');
+    E.rect(x + 1, y + 1, w - 2, 1, '#ffe27a');
+    E.rect(x + 3, y + 3, w - 6, h - 6, '#fffaf0');
+  }
+  // bottom strip: black with a thin gold rule, like the original's soft-key bar
   function hint(text) {
-    E.rect(0, E.H - 16, E.W, 16, C.plum);
-    lace(0, E.H - 16, E.W, C.pink);
-    E.text(text, E.W / 2, E.H - 13, { color: C.paper, align: 'center' });
+    E.rect(0, E.H - 16, E.W, 16, '#000000');
+    E.rect(0, E.H - 16, E.W, 1, '#f8b000');
+    E.text(text, E.W / 2, E.H - 13, { color: C.white, align: 'center' });
   }
   function header(title, right) {
-    E.rect(0, 0, E.W, 18, C.plum);
-    lace(0, 18, E.W, C.plum);
-    E.text(title, 8, 3, { color: C.white });
-    if (right) E.text(right, E.W - 8, 3, { color: C.gold, align: 'right' });
+    goldBar(0, 0, E.W, 20);
+    E.text(title, 8, 4, { color: C.text });
+    if (right) E.text(right, E.W - 8, 4, { color: C.red, align: 'right' });
   }
   function coinLabel(x, y, n, align) {
     const s = String(n);
     const w = E.textWidth(s) + 9;
     const dx = align === 'right' ? x - w : x;
     E.ctx.drawImage(E.spr.ui.coin, dx, y);
-    E.text(s, dx + 9, y, { color: C.gold, outline: C.plum });
+    E.text(s, dx + 9, y, { color: C.gold, outline: '#000000' });
   }
   // maids who have not joined yet are only shown as silhouettes (a new save starts with the first maid in MAID_ORDER)
   function isLocked(key) {
@@ -170,8 +183,10 @@
     E.ctx.drawImage(img, 0, 0, 16, 16, x, y, 16 * scale, 16 * scale);
   }
   function rankColor(r) { return { S: C.gold, A: C.pink, B: C.sky, C: C.gray }[r] || C.gray; }
-  function paper(x, y, w, h) { E.panel(x, y, w, h, C.paper, C.pink, { shine: C.white }); }
-  function darkPanel(x, y, w, h) { E.panel(x, y, w, h, C.panel, C.panel2, { shine: '#6b5a8e' }); }
+  // cream sheet in an orange-red frame (the original's menu card)
+  function paper(x, y, w, h) { E.panel(x, y, w, h, C.paper, '#e8602c', { shine: '#ffb07a', outline: '#000000' }); }
+  // the original's blue clipboard, kept dark inside so light text stays readable
+  function darkPanel(x, y, w, h) { E.panel(x, y, w, h, C.panel, '#3a78e0', { shine: '#9ad0ff', outline: '#000000' }); }
   function statPips(x, y, icon, n, max, col) {
     E.ctx.drawImage(E.spr.ui[icon], x, y);
     for (let i = 0; i < max; i++) E.rect(x + 10 + i * 5, y + 2, 4, 4, i < n ? col : '#d9c9dd');
@@ -280,7 +295,7 @@
   G.outfitOf = (k) => (SAVE && SAVE.outfits && SAVE.outfits[k]) || 'maid';
   G.persist = persist;
   G.BOND = { getBond, affLevel, trainLevel, perks, maidStats, getRoom, roomHas, unlockPlan, syncUnlocks };
-  G.UI = { C, CG_ART, CG_CROP, bg, lace, heartCursor, hint, header, coinLabel, maidImg, drawHead, isLocked, silhouette, maidName, rankColor, paper, darkPanel, statPips, wrapLines, marquee };
+  G.UI = { C, CG_ART, CG_CROP, goldBar, bg, lace, heartCursor, hint, header, coinLabel, maidImg, drawHead, isLocked, silhouette, maidName, rankColor, paper, darkPanel, statPips, wrapLines, marquee };
 
   // ------------------------------------------------------------------ Title cast
   // The maids who have joined live on the title screen. Each one picks something to do: sweep up a dust bunny,
@@ -1478,14 +1493,14 @@
       E.rect(0, 0, E.W, E.H, C.plum);
       w.draw(E.ctx);
       // banner
-      E.rect(0, 0, 240, 16, C.plum);
+      E.rect(0, 0, 240, 16, '#000000'); E.rect(0, 15, 240, 1, '#f8b000');
       const idW = E.text(this.def.id, 6, 5, { color: C.pink });
       E.text(this.def.title, 12 + idW, 2, { color: C.white });
       const tl = Math.max(0, Math.ceil(w.timeLeft / 60));
       const mm = Math.floor(tl / 60), ss = String(tl % 60).padStart(2, '0');
       E.text(mm + ':' + ss, 234, 5, { color: tl <= 30 && (E.frame >> 4) % 2 ? C.red : C.gold, align: 'right' });
       // bottom strip
-      E.rect(0, 224, 240, 16, C.plum);
+      E.rect(0, 224, 240, 16, '#000000'); E.rect(0, 224, 240, 1, '#f8b000');
       if (w.boss && w.boss.alive) {
         const nameW = E.text(this.def.title, 6, 226, { color: C.gold, fit: 80 });
         E.bar(12 + nameW, 228, 222 - nameW, 8, w.boss.hp / w.boss.maxHp, w.boss.hitT > 0 && (E.frame >> 2) % 2 ? C.white : C.red);
@@ -1530,7 +1545,7 @@
     const D = G.MAID_DATA[m.maidKey];
     const x0 = 240;
     E.rect(x0, 0, 80, 240, C.panel);
-    for (let y = 0; y < 240; y += 6) { E.rect(x0, y + 1, 2, 4, C.white); E.rect(x0 + 2, y + 2, 1, 2, C.white); }
+    E.rect(x0, 0, 2, 240, '#f8b000'); E.rect(x0 + 2, 0, 1, 240, '#000000');
     // CG portrait: sooty and shaking for a moment when she gets blasted
     const hurt = m.burnT > 0;
     E.panel(x0 + 6, 4, 36, 36, '#ffe0ea', D.color, {});
@@ -1928,16 +1943,16 @@
       if (this.champion) return this.drawChampion();
       E.rect(0, 0, E.W, E.H, C.plum);
       w.draw(E.ctx);
-      E.rect(0, 0, 240, 16, C.plum);
+      E.rect(0, 0, 240, 16, '#000000'); E.rect(0, 15, 240, 1, '#f8b000');
       E.text('ROUND ' + this.round, 6, 5, { color: C.pink });
       const tl = Math.max(0, Math.ceil(w.timeLeft / 60));
       E.text(Math.floor(tl / 60) + ':' + String(tl % 60).padStart(2, '0'), 234, 5, { color: tl <= 45 && (E.frame >> 4) % 2 ? C.red : C.gold, align: 'right' });
       E.text(G.t('先贏 {n} 局的女僕獲勝', { n: this.cfg.wins }), 120, 2, { color: C.gray, align: 'center' });
-      E.rect(0, 224, 240, 16, C.plum);
+      E.rect(0, 224, 240, 16, '#000000'); E.rect(0, 224, 240, 1, '#f8b000');
       E.text(G.t(w.sudden ? '外圈開始封鎖！往中間移動！' : '最後站著的女僕就是贏家'), 120, 226, { color: w.sudden ? C.pink : C.gray, align: 'center' });
       // side panel
       E.rect(240, 0, 80, 240, C.panel);
-      for (let y = 0; y < 240; y += 6) { E.rect(240, y + 1, 2, 4, C.white); E.rect(242, y + 2, 1, 2, C.white); }
+      E.rect(240, 0, 2, 240, '#f8b000'); E.rect(242, 0, 1, 240, '#000000');
       w.maids.forEach((m, i) => {
         const y = 6 + i * 56;
         const p = this.lineup[i];

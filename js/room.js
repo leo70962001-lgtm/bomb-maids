@@ -1423,30 +1423,28 @@
       const k = maidKey();
       const b = bond(k);
       const D = G.MAID_DATA[k];
-      E.rect(0, 0, E.W, 36, C.plum);
-      UI.lace(0, 36, E.W, C.plum);
-      E.panel(3, 2, 32, 32, '#ffe0ea', D.color, {});
-      // CG face (the diary covers this corner with its own portrait)
-      if (!(this.panel && this.panel.kind === 'diary')) E.art('hud-portrait', UI.CG_ART, 5, 4, 28, 28, UI.CG_CROP.head[k]);
-      E.text(D.name, 40, 3, { color: C.white });
+      // status bar in the original's style: gold frame with her CG face strip on the left
+      UI.goldBar(0, 0, E.W, 37);
+      if (!(this.panel && this.panel.kind === 'diary')) E.art('hud-portrait', UI.CG_ART, 3, 3, 46, 31, UI.CG_CROP.face[k]);
+      E.text(D.name, 54, 4, { color: C.text, fit: 50 });
       const ai = affInfo(k);
-      E.text('Lv' + (ai.lv + 1) + ' ' + ai.name, 40, 19, { color: C.pink });
-      ctx.drawImage(E.spr.ui.heart, 90, 5);
-      E.bar(99, 6, 44, 6, ai.t, C.pink);
-      E.text(G.t('體力'), 152, 3, { color: C.paper });
-      E.bar(178, 6, 42, 7, b.stamina / 100, b.stamina < G.JOB_STAMINA ? C.red : C.mint);
-      E.text(G.t('心情'), 152, 19, { color: C.paper });
-      E.bar(178, 22, 42, 7, b.mood / 100, b.mood >= 80 ? C.gold : b.mood < 30 ? '#8fc6ff' : '#ffb45c');
+      E.text('Lv' + (ai.lv + 1) + ' ' + ai.name, 54, 20, { color: C.red, fit: 56 });
+      ctx.drawImage(E.spr.ui.heart, 112, 6);
+      E.bar(121, 7, 36, 6, ai.t, C.pink);
+      E.text(G.t('體力'), 164, 4, { color: C.text });
+      E.bar(190, 7, 38, 7, b.stamina / 100, b.stamina < G.JOB_STAMINA ? C.red : C.mint);
+      E.text(G.t('心情'), 164, 20, { color: C.text });
+      E.bar(190, 23, 38, 7, b.mood / 100, b.mood >= 80 ? C.gold : b.mood < 30 ? '#8fc6ff' : '#ffb45c');
       const coinX = 314 - E.textWidth(String(S.coins)) - 9;
-      E.text(moodName(b.mood), 224, 19, { color: C.gray, fit: coinX - 227 });
-      E.text(G.t('第 {n} 天', { n: S.day }), 314, 3, { color: C.gold, align: 'right' });
-      UI.coinLabel(314, 21, S.coins, 'right');
+      E.text(moodName(b.mood), 232, 20, { color: C.ink, fit: coinX - 235 });
+      E.text(G.t('第 {n} 天', { n: S.day }), 314, 4, { color: C.red, align: 'right' });
+      UI.coinLabel(314, 22, S.coins, 'right');
       // tabs (hidden while decorating, the room uses that space)
       if (this.decor) return;
       TABS.forEach((tb, i) => {
         const r = tabRect(i);
         const hv = (this.mode === 'tabs' && this.tab === i) || (this.hover && this.hover.kind === 'tab' && this.hover.i === i && this.mode === 'free');
-        E.panel(r.x, r.y, r.w, r.h, hv ? '#fff' : C.paper, hv ? C.red : C.pink, {});
+        E.panel(r.x, r.y, r.w, r.h, '#ffffff', hv ? C.red : '#f8b000', { outline: '#000000' });
         const cx = r.x + r.w / 2;
         switch (tb.id) {
           case 'diary': ctx.drawImage(E.spr.room.book, cx - 5, r.y + 6); break;
@@ -1465,14 +1463,19 @@
       });
       if (this.mode === 'tabs') {
         const r = tabRect(this.tab);
-        E.text(G.t(TABS[this.tab].label), r.x + r.w / 2, r.y + 22, { color: C.white, outline: C.plum, align: 'center' });
+        // a white name label with a black rim, like the original's tags
+        const label = G.t(TABS[this.tab].label);
+        const lw = E.textWidth(label) + 10;
+        const lx = Math.max(2, Math.min(E.W - lw - 2, Math.round(r.x + r.w / 2 - lw / 2)));
+        E.panel(lx, r.y + 21, lw, 16, '#ffffff', '#000000', { outline: '#000000' });
+        E.text(label, lx + lw / 2, r.y + 23, { color: C.text, align: 'center' });
       }
     },
     drawHint() {
       const S = save();
       const step = G.GUIDE[S.guide];
-      E.rect(0, E.H - 16, E.W, 16, C.plum);
-      UI.lace(0, E.H - 16, E.W, C.pink);
+      E.rect(0, E.H - 16, E.W, 16, '#000000');
+      E.rect(0, E.H - 16, E.W, 1, '#f8b000');
       if (step) {
         const pulse = (this.t >> 5) % 2 === 0;
         E.text('★', 6, E.H - 13, { color: pulse ? C.gold : C.pink });
