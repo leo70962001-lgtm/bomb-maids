@@ -2194,170 +2194,517 @@
   }
 
   // ---------------------------------------------------------------- room: furniture (drawn with the bottom edge on the footprint)
+  // ---------------------------------------------------------------- room furniture
+  // Drawn in the style of the original's room and café props: seen from above at three-quarters (a lit top over a
+  // shaded front), black outlines, four-tone ramps lit from the upper left, and material detail — wood grain, fabric
+  // tufting and folds, glazed bands, glass glints. Wide pieces mirror a left half and shade the right a step darker.
+  // Sizes follow each piece's footprint (w x h tiles) plus how far it rises above it.
+  const FURNITURE = (function () {
+
+    const K = '#000000';
+    const PAL = {
+      k: K,
+      // wood
+      Y: '#ffe0a8', L: '#f4ac62', M: '#d8843e', D: '#a05a26', X: '#643214',
+      // linen
+      W: '#ffffff', w: '#eef0fa', g: '#cdd0e4', G: '#9496b4',
+      // pink fabric
+      P: '#ffe4ee', p: '#ffb4cc', q: '#ff86ae', Q: '#d65a8c', R: '#9a3664',
+      // red
+      f: '#ffc0c0', r: '#ff5a66', e: '#d8203c', E: '#8a0f28',
+      // gold
+      y: '#ffe666', o: '#e8a41a', O: '#9a6200',
+      // blue
+      a: '#eaf8ff', b: '#9cd6ff', B: '#4c9ae8', n: '#2c5aa6',
+      // green
+      v: '#b4ec7c', V: '#62c24c', h: '#2e8a2c', H: '#1a5418',
+      // dark wood / iron
+      c: '#7a4a2c', C: '#4a2a1a', s: '#b8b8c8', S: '#6c6c84',
+    };
+    const T = (rows) => fromRows(rows, PAL);
+    const F = {};
+
+    // single wooden bed: knobbed posts, a headboard with a carved heart, a plump pillow, the sheet folded over a quilted
+    // pink blanket, and a footboard rail
+    F.bed = () => T([
+      '.kk..........kk.',
+      'kyok.kkkkkk.kyok',
+      'koOkkYLLLLMkkoOk',
+      '.kLkLLeLLeMMkDk.',
+      '.kLkLeeeeeeMkDk.',
+      '.kMkLMeeeeMMkDk.',
+      '.kMkLMMeeMMDkDk.',
+      '.kMkDDDDDDDDkDk.',
+      '.kkWWWWWWWWWWgkk',
+      '.kwWWWWWWWWWWggk',
+      '.kwWWWWWWWWWggGk',
+      '.kgwWWWWWWWggGGk',
+      '.kggwwwwwwgGGGGk',
+      '.kWWWWWWWWWWWWgk',
+      '.kggggggggggggGk',
+      '.kPppppppppppqQk',
+      '.kpppqpppqpppqQk',
+      '.kppqpqpqpqppqQk',
+      '.kpqpppqpppqpqQk',
+      '.kqpppqpppqppqQk',
+      '.kppppprrprrpqQk',
+      '.kpppprrrrrrpqQk',
+      '.kqppprrrrrrpqQk',
+      '.kpqppprrrrppqQk',
+      '.kppqpppprrppqQk',
+      '.kpppqpppqpppqQk',
+      '.kppqpqpqpqppqQk',
+      '.kpqpppqpppqpqQk',
+      '.kqpppqpppqppqQk',
+      '.kppppppppppqqQk',
+      '.kqqqqqqqqqqqQRk',
+      '.kQQQQQQQQQQQRRk',
+      'kyokkkkkkkkkkyok',
+      'kLLLLLLLLLLLLLDk',
+      'kMDDDDDDDDDDDDXk',
+      '.kk..........kk.',
+    ]);
+
+    // study desk like the original's: a warm wood top with an open book, a red dome lamp glowing on its gold stand,
+    // a drawer with a brass pull and sturdy legs
+    F.desk = () => T([
+      '..........kkk...',
+      '.........krfrk..',
+      '........krfrrek.',
+      '........krrreek.',
+      '........kkkkkkk.',
+      '..........kok...',
+      'kkkkkkkkkkkokkkk',
+      'kYYLLLLLLkyoykDk',
+      'kLWWWkWWWkoOokDk',
+      'kLWgWkWgWLkkkLDk',
+      'kLWWWkWWWLLLLLDk',
+      'kMMMMMMMMMMMMMXk',
+      'kDDDDDDDDDDDDDXk',
+      'kLMMMMMMMMMMMDXk',
+      'kLMkkkkkkkkkMDXk',
+      'kLMkLLLyLLLkMDXk',
+      'kLMkDDDDDDDkMDXk',
+      'kLMMMMMMMMMMMDXk',
+      'kMDDDDDDDDDDDDXk',
+      'kkkkkkkkkkkkkkkk',
+      'kLDk........kDXk',
+      'kLDk........kDXk',
+      'kMXk........kDXk',
+      'kkkk........kkkk',
+    ]);
+
+    // wardrobe: a moulded crown, two panelled doors with brass knobs and a centre seam, a plinth on feet
+    F.wardrobe = () => T([
+      'kkkkkkkkkkkkkkkk',
+      'kYYYLLLLLLLLLLDk',
+      'kLLLLLLLLLLLLDXk',
+      'kkkkkkkkkkkkkkkk',
+      '.kLMMMMkkMMMMDk.',
+      '.kLkkkkMkLkkkkDk'.slice(0, 16),
+      '.kLkLLMMkLLMDkDk',
+      '.kLkLMMDkLMMDkDk',
+      '.kLkLMMDkLMMDkDk',
+      '.kLkLMMDkLMMDkDk',
+      '.kLkLMMDkLMMDkDk',
+      '.kLkDDDDkDDDDkDk',
+      '.kLMMMyMkMyMMMDk',
+      '.kLMMMoMkMoMMMDk',
+      '.kLkkkkMkMkkkkDk',
+      '.kLkLMMDkLMMDkDk',
+      '.kLkLMMDkLMMDkDk',
+      '.kLkLMMDkLMMDkDk',
+      '.kLkLMMDkLMMDkDk',
+      '.kLkLMMDkLMMDkDk',
+      '.kLkDDDDkDDDDkDk',
+      '.kLMMMMMkMMMMMDk',
+      '.kDDDDDDkDDDDDXk',
+      'kkkkkkkkkkkkkkkk',
+      'kLLLLLLLLLLLLLDk',
+      'kDDDDDDDDDDDDDXk',
+      'kXkk........kkXk',
+      'kkk..........kkk',
+    ].map((r) => (r.length < 16 ? r + '.'.repeat(16 - r.length) : r.slice(0, 16))));
+
+    // tea table like the original's café table: a round white cloth with a lace hem hanging over a wood rim, a little
+    // vase of pink flowers in the middle, and a turned leg on a round foot
+    F.teatable = () => T([
+      '......kkkk......',
+      '....kkqPqkkk....',
+      '..kkWkpqpkWWkk..',
+      '.kWWWWkhkWWWwgk.',
+      'kWWWWkbabkWWwwgk',
+      'kWWWWkbbBkWwwggk',
+      'kwWWWWkkkWWwwggk',
+      'kwwWWWWWWWwwggGk',
+      '.kwwwwwwwwwggGk.',
+      '.kgWkgWkgWkgWGk.',
+      'kMkgkMkgkMkgkMDk',
+      'kLMkkLMkkLMkkMXk',
+      '.kLMk.kMk.kMkDk.',
+      '..kk..kMDk..kk..',
+      '......kMDk......',
+      '......kMDk......',
+      '.....kLMDXk.....',
+      '....kLMMDDXk....',
+      '....kkkkkkkk....',
+      '................',
+    ]);
+
+    // bookshelf: a crowned frame, three shelves of books with lit spines and dark gaps, a little gold trophy, a stack lying
+    // flat and a box, on a plinth
+    const shelfRow = (inner) => 'kL' + inner + 'Dk';
+    F.bookshelf = () => T([
+      'kkkkkkkkkkkkkkkk',
+      'kYYLLLLLLLLLLLDk',
+      'kLMMMMMMMMMMMMXk',
+      'kkkkkkkkkkkkkkkk',
+      shelfRow('CCCCCCCCCCCC'),
+      shelfRow('rCbBCCVhCpqC'),
+      shelfRow('reabBCVhypqC'),
+      shelfRow('reabBsVhyoqy'),
+      shelfRow('reabBsVhyoqo'),
+      shelfRow('EEnnnSHHOOQO'),
+      'kLkkkkkkkkkkkkDk',
+      shelfRow('CCCCCCCCCCCC'),
+      shelfRow('CyCCCbBCrCVC'),
+      shelfRow('yyyCCbBreCVh'),
+      shelfRow('CoCBbbBreeVh'),
+      shelfRow('CoCBbbBreeVh'),
+      shelfRow('OOOnnnnEEEHH'),
+      'kLkkkkkkkkkkkkDk',
+      shelfRow('CCCCCCCCCCCC'),
+      shelfRow('CCCCCCCkkkkC'),
+      shelfRow('ppppppqkyyok'),
+      shelfRow('VVVVVVhkoooO'),
+      shelfRow('bbbbbbBkoooO'),
+      shelfRow('QQQnnnnkkkkk'),
+      'kLkkkkkkkkkkkkDk',
+      'kLLLLLLLLLLLLLDk',
+      'kDDDDDDDDDDDDDXk',
+      'kkkkkkkkkkkkkkkk',
+    ]);
+
+    // potted plant like the original's rose: a leafy bush in clustered leaves with two pink blooms, in a glazed white
+    // pot with an orange band on a saucer
+    F.plant = () => T([
+      '......kkk.......',
+      '....kkvVVkkk....',
+      '...kvVVhkvVVk...',
+      '..kvVkkVVVVhVk..',
+      '.kvVkqPqkVhVVhk.',
+      '.kVVkqyqkVVkVhk.',
+      'kvVhVkqkVVhkkVhk',
+      'kVVVhVVVhVVkqPqk',
+      'kVhVVVhVVhVkqyqk',
+      'kVVhVVVhVVhVkqkk',
+      '.khVVhVVVhVVhHk.',
+      '.kHhhHhhhHhhHHk.',
+      '..kkHkkhkkHkkk..',
+      '....kkkhkkk.....',
+      '...kWWWWWWWWk...',
+      '..kWwwwwwwwwgk..',
+      '..kkkkkkkkkkkk..',
+      '...kWWwwwwwgk...',
+      '...koyoooooOk...',
+      '...kOOOOOOOOk...',
+      '...kwwwwwwgGk...',
+      '....kggggGGk....',
+      '..kkWWWWWWWgkk..',
+      '..kkkkkkkkkkkk..',
+    ]);
+
+    // bunny cushion: a round plush with long pink-lined ears, stitched eyes and cheeks, a red bow by one ear, soft shading
+    F.plush = () => withBow(T([
+      '....kk....kk....',
+      '...kWPk..kPWk...',
+      '...kWpk..kpWk...',
+      '...kWpk..kpWk...',
+      '...kWpkkkkpgk...',
+      '..kkWWWWWWWggk..',
+      '.kWWWWWWWWWwwgk.',
+      'kWWWWWWWWWWWwwgk',
+      'kWWWkWWWWkWWwwgk',
+      'kWWWkWWWWkWWwggk',
+      'kWpWWWWqWWWpwggk',
+      'kWWWWWkkWWWWwggk',
+      'kwWWWWWWWWWwwgGk',
+      'kwWWWWWWWWWwwgGk',
+      '.kwWWWWWWWwwgGk.',
+      '.kwwwwwwwwwggGk.',
+      '..kgwwkkwwggGk..',
+      '...kkgggggGkk...',
+      '.....kkkkkk.....',
+      '................',
+    ]));
+    function withBow(p) { p.blit(fromRows(['kk.kk', 'krkek', 'kfkrk', 'kk.kk'], PAL), 10, 3); return p; }
+
+    // floor lamp like the original's red dome lamp: a pleated shade with a lit top and gold trim, a glowing bulb, a gold
+    // pole with a knot, a round weighted base
+    F.lamp = () => T([
+      '.....kkkkkk.....',
+      '....kfffrrek....',
+      '...kfrrrrreek...',
+      '...kfrkrrkrek...',
+      '..kfrrkrrkreEk..',
+      '..kfrrkrrkreEk..',
+      '.kfrrrkrrkrreEk.',
+      '.kyyyyyyyyyyooOk',
+      '..kkkkyWykkkkkk.',
+      '......kyk.......',
+      '......kok.......',
+      '......kok.......',
+      '......kok.......',
+      '.....kyooOk.....',
+      '......kok.......',
+      '......kok.......',
+      '......kok.......',
+      '......kok.......',
+      '......kok.......',
+      '......kok.......',
+      '......kok.......',
+      '......kok.......',
+      '.....kyooOk.....',
+      '...kkLLLLDDkk...',
+      '..kLLMMMMMMDXk..',
+      '..kMDDDDDDDDXk..',
+      '...kkkkkkkkkk...',
+      '................',
+    ]);
+
+    // goldfish bowl: a round glass bowl with a lip, clear glass above a lighter water line, a goldfish swimming sideways
+    // with a flicking tail, bubbles and glints, on a little wood stand
+    F.fishbowl = () => T([
+      '....kkkkkkkk....',
+      '...kWaaaaaagk...',
+      '..kkkkkkkkkkkk..',
+      '.kaWaaaaaaaagGk.',
+      'kaWaaaaaaaaaaggk',
+      'kaaaaaaWaaaaaggk',
+      'kWbbbbbbbbbbbbBk',
+      'kbbbbbbbWbbbbBBk',
+      'kbbbWbbbbbbbbBBk',
+      'kbbbbOOOObbOBBnk',
+      'kbbbOyoooOOoOBnk',
+      'kbbbOkoooooOBBnk',
+      'kbBbbOOOObbOBBnk',
+      'kaBBBBBBBBBBBnnk',
+      '.kBBBBBBBBBBBnk.',
+      '..knnBBBBBBnnk..',
+      '...kkkkkkkkkk...',
+      '..kYLLLLLLLLDk..',
+      '..kkDkkkkkkDkk..',
+      '...kkk....kkk...',
+    ]);
+
+
+    const DARKER = { P: 'p', p: 'q', q: 'Q', Q: 'R', Y: 'L', L: 'M', M: 'D', D: 'X', W: 'w', w: 'g', g: 'G', y: 'o', o: 'O', a: 'b', b: 'B', v: 'V', V: 'h', h: 'H', f: 'r', r: 'e', e: 'E' };
+    // mirror a left half into a full row; columns from shadeFrom rightwards take one step darker
+    const sym = (half, shadeFrom) => {
+      const right = half.split('').reverse().join('');
+      const full = half + right;
+      return full.split('').map((ch, x) => (x >= shadeFrom && DARKER[ch] ? DARKER[ch] : ch)).join('');
+    };
+
+    // vanity dresser: an oval gold-framed mirror with a glint, a perfume bottle and a lipstick on the lacquered top,
+    // two drawers with gold pulls, turned feet
+    F.dresser = () => T([
+      '.....kkkkkk.....',
+      '....kyyyyyyk....',
+      '...kyoaWaaaok...',
+      '...kyaWaaabok...',
+      '..kyoaaaaabbOk..',
+      '..kyoaaaabbbOk..',
+      '..kyoaaabbbbOk..',
+      '...kyabbbbbOk...',
+      '.k.koobbbbOOk...',
+      'kqk.kOOOOOOk.kk.',
+      'kPpk..kook..kek.',
+      'kppk.kkookk.kEk.',
+      'kWWWWWWWWWWWWWgk',
+      'kwwwwwwwwwwwwggk',
+      'kkkkkkkkkkkkkkkk',
+      'kPpkkkkkkkkkkqQk',
+      'kpkPppppppppqkQk',
+      'kpkppppyyppqqkQk',
+      'kpkQQQQQQQQQQkQk',
+      'kpkkkkkkkkkkkkQk',
+      'kpkPppppppppqkQk',
+      'kpkppppyyppqqkQk',
+      'kpkQQQQQQQQQQkQk',
+      'kpkkkkkkkkkkkkQk',
+      'kQQQQQQQQQQQQQRk',
+      'kkkkkkkkkkkkkkkk',
+      '.kPk........kQk.',
+      '.kkk........kkk.',
+    ]);
+
+    // loveseat like the original's tufted armchair, in pink: an arched back with a gold trim and buttoned tufting, rolled
+    // arms, two plump seat cushions, a pleated skirt and gold feet
+    F.sofa = () => {
+      const p = T([
+        sym('................', 20),
+        sym('................', 20),
+        sym('......kkkkkkkkkk', 20),
+        sym('....kkyyyyyyyyyy', 20),
+        sym('...kPPPPPPPPPPPP', 20),
+        sym('..kPppQpppppQppp', 20),
+        sym('..kPpppppQpppppp', 20),
+        sym('..kppQpppppQpppp', 20),
+        sym('kkkpppppQppppppQ', 20),
+        sym('kPPkppQpppppQppp', 20),
+        sym('kPpkqqqqqqqqqqqq', 20),
+        sym('kPpkkkkkkkkkkkkk', 20),
+        sym('kPpkPPPPPPPPPPPk', 20),
+        sym('kppkPpppppppppqk', 20),
+        sym('kppkppppppppppqk', 20),
+        sym('kqqkqqqqqqqqqqqk', 20),
+        sym('kQQkkkkkkkkkkkkk', 20),
+        sym('kQQpqpqpqpqpqpqp', 20),
+        sym('kRQQQQQQQQQQQQQQ', 20),
+        sym('kkkkkkkkkkkkkkkk', 20),
+        sym('..kyok..........', 20),
+        sym('..kkkk..........', 20),
+      ]);
+      // the heart on the back that gives the sofa its name
+      p.blit(fromRows(['.kk..kk.', 'kfrkkrrk', 'krrrrrek', '.krrrek.', '..krek..', '...kk...'], PAL), 12, 4);
+      return p;
+    };
+
+    // gramophone like the original's: a flower-shaped gold horn with a dark throat, a black record with a red label and a
+    // silver tone arm on a wooden cabinet with a brass crank, standing on legs
+    F.gramophone = () => T([
+      '..kkkkkkkkkkkk..',
+      '.kyYyyYyyYyyyok.',
+      'kyooyoOOOoyoooOk',
+      'kyoOCCCCCCCOooOk',
+      'kyoOCCCCCCCOooOk',
+      '.kyoOCCCCCOooOk.',
+      '..kyooOOOoooOk..',
+      '...kkyooooOkk...',
+      '.....kkyoOk.....',
+      '.......kyok.....',
+      '.......kook.....',
+      '..kkkkkkookkkk..',
+      '.kYLLLLLLLLLLLDk',
+      '.kLkkkkkkkkkMDXk',
+      '.kLkCCCCCCCkSDXk',
+      '.kLkCCeeeCCSkDXk',
+      '.kLkCCeWeCSkMDXk',
+      '.kLkCCCCCCkkMDXk',
+      '.kLkkkkkkkkkMDXk',
+      '.kMMMMMMMMMMMDXk',
+      '.kLDDDDDDDDDDDXk',
+      '.kLMMkyyyykMMDXkk',
+      '.kLMMkoOOOkMMDkyk',
+      '.kDDDDDDDDDDDDXkk',
+      '.kkkkkkkkkkkkkkk',
+      '..kLk......kDk..',
+      '..kMk......kDk..',
+      '..kkk......kkk..',
+    ].map((r) => r.slice(0, 16)));
+
+    // upright piano: polished dark wood with highlight streaks, a music stand with a sheet of notes, candle sconces, the
+    // keyboard with black keys, a carved front panel and gold pedals
+    F.piano = () => T([
+      sym('kkkkkkkkkkkkkkkk', 22),
+      sym('kcccccccccccccCC', 22),
+      sym('kcsCCCCCCCCCCCCC', 22),
+      sym('kcCCCCCCCCCCCCCC', 22),
+      sym('kcCykCCCkkkkkkkk', 22),
+      sym('kcCokCCCkWWWWWWW', 22),
+      sym('kcCCCCCCkWkWkWkW', 22),
+      sym('kcsCCCCCkWWWWWWW', 22),
+      sym('kcCCCCCCkWkWkWkW', 22),
+      sym('kcCCCCCCkkkkkkkk', 22),
+      sym('kcCCCCCCCCCCCCCC', 22),
+      sym('kkkkkkkkkkkkkkkk', 22),
+      sym('kcccccccccccccCC', 22),
+      sym('kkkkkkkkkkkkkkkk', 22),
+      sym('kWkWkkWkkWkWkkWk', 22),
+      sym('kWkWkkWkkWkWkkWk', 22),
+      sym('kWWWWWWWWWWWWWWW', 22),
+      sym('kggggggggggggggg', 22),
+      sym('kkkkkkkkkkkkkkkk', 22),
+      sym('kcCCCCCCCCCCCCCC', 22),
+      sym('kcCkkkkkkkkkkkkk', 22),
+      sym('kcCkcccccccccccc', 22),
+      sym('kcCkCCCCCCCCCCCC', 22),
+      sym('kCCCCCCCCCCCkyok', 22),
+      sym('kkkkkkkkkkkkkkkk', 22),
+      sym('.kCk............', 22),
+    ]);
+
+    // princess bed: a canopy with a gold crown, pink drapes tied at the posts, a gold headboard, two lace pillows, a quilt
+    // with a big heart and a lace hem, a gold footboard
+    const princessRows = [
+      '..............kk',
+      '.............kyo',
+      '............kyYy',
+      '..........kkkyoy',
+      '......kkkkPPkkyo',
+      '....kkPPPPPpppkk',
+      '..kkPPPppppppppp',
+      '.kPPppppqppppqpp',
+      'kPppqppppqppppqp',
+      'kppppqQqppqQqppq',
+      'kkQQkkkQQQkkkQQQ',
+      'kpqkyyyyyyyyyyyy',
+      'kpqkyoooooooooyo',
+      'kpqkkWWWWWWWkkWW',
+      'kpqkWPWWWWWWWkWW',
+      'kpqkWWWWWWWwwkWW',
+      'kpqkwWWWWWwwgkwW',
+      'kpqkkgggggggkkgg',
+      'kpqkPppppppppppp',
+      'kpqkpppppqpppppp',
+      'kpqkppppqpqpppqp',
+      'kpqkpppqpppqppqq',
+      'kpqkppqpppppqrrp',
+      'kppkpqpppppprrrr',
+      'kppkqppppppprrrr',
+      'kqpkpqpppppprrrr',
+      'kqpkppqpppppprrr',
+      'kqqkpppqpppppprr',
+      'kqqkppppqpppppqp',
+      'kqqkpppppqpppqpq',
+      'kQqkppppppqpqppp',
+      'kQqkpppppppqpppp',
+      'kQqkppppppppppqp',
+      'kQQkWkWkWkWkWkWk',
+      'kQQkwWwWwWwWwWwW',
+      'kRQkkkkkkkkkkkkk',
+      'kRRkyyyyyyyyyyyy',
+      'kkkkyooooooooooo',
+      '.kyoOOOOOOOOOOOO',
+      '.kkkkkkkkkkkkkkk',
+      '..kyk...........',
+      '..kkk...........',
+    ];
+    F.princess = () => T(princessRows.map((r) => sym(r, 18)));
+
+    // round rug: a scalloped lace border, a pink body with a dotted ring, and a heart with a glint in the middle
+    F.rug = () => {
+      const p = new Pix(32, 32);
+      const col = (ch) => PAL[ch];
+      for (let y = 0; y < 32; y++)
+        for (let x = 0; x < 32; x++) {
+          const dx = x - 15.5, dy = y - 15.5, d = Math.hypot(dx, dy);
+          const ang = Math.atan2(dy, dx);
+          const scallop = 14.6 + Math.cos(ang * 16) * 0.9;
+          if (d > scallop + 0.6) continue;
+          let c = d > scallop - 0.6 ? 'k' : d > 13.2 ? (Math.cos(ang * 16) > 0 ? 'W' : 'w') : d > 12.4 ? 'q' : 'p';
+          if (c === 'p' && Math.abs(d - 9.5) < 0.7 && Math.round(((ang + Math.PI) / (Math.PI * 2)) * 24) % 2 === 0) c = 'P';
+          if (c === 'p' && dx + dy > 10) c = 'q';
+          p.set(x, y, col(c));
+        }
+      p.blit(fromRows(['..kkk..kkk..', '.kfrrkkrrrk.', 'kfWrrrrrrrek', 'krrrrrrrrrek', 'krrrrrrrreEk', '.krrrrrrreEk', '..krrrrrreEk', '...krrrrEk..', '....krrEk...', '.....kEk....', '......k.....'].map((r) => r.padEnd(12, '.')), PAL), 10, 10);
+      return p;
+    };
+    return F;
+  })();
   function buildFurniture(id) {
-    let p;
-    switch (id) {
-      case 'bed': {
-        p = new Pix(16, 36);
-        p.rect(1, 1, 14, 8, '#a8683c'); p.hline(1, 1, 14, '#d99058'); p.rect(3, 3, 10, 4, '#8c5530');
-        p.rect(1, 9, 14, 24, '#ffffff');
-        ball(p, 3, 9, 10, 7, '#ffffff', '#f4f0fa', '#d8d0e8');
-        p.rect(1, 16, 14, 17, '#ff9fbb'); p.hline(1, 16, 14, '#ffffff'); p.hline(1, 17, 14, '#ffd6e2');
-        stamp(p, ['w.w', 'www', '.w.'], 4, 21, { w: '#ffd6e2' });
-        stamp(p, ['w.w', 'www', '.w.'], 9, 26, { w: '#ffd6e2' });
-        p.rect(1, 32, 14, 3, '#a8683c'); p.hline(1, 32, 14, '#d99058');
-        return p.outlined(K);
-      }
-      case 'princess': {
-        p = new Pix(32, 42);
-        p.rect(1, 9, 2, 30, '#ffd23f'); p.rect(29, 9, 2, 30, '#ffd23f');
-        p.rect(3, 12, 26, 24, '#ffffff');
-        ball(p, 5, 12, 10, 7, '#ffffff', '#f4f0fa', '#d8d0e8'); ball(p, 17, 12, 10, 7, '#ffffff', '#f4f0fa', '#d8d0e8');
-        p.rect(3, 19, 26, 17, '#ffc2d8'); p.hline(3, 19, 26, '#ffffff'); p.hline(3, 20, 26, '#ffe0ea');
-        stamp(p, ['.rr.rr.', 'rrrrrrr', 'rrrrrrr', '.rrrrr.', '..rrr..', '...r...'], 12, 25, { r: '#ff6f91' });
-        p.rect(1, 36, 30, 4, '#ffd23f'); p.hline(1, 36, 30, '#fff0a0');
-        p.rect(1, 1, 30, 9, '#ff9fbb'); p.hline(1, 1, 30, '#ffd23f'); p.hline(1, 2, 30, '#ffd6e2');
-        for (let x = 1; x < 31; x += 4) { p.rect(x, 10, 3, 2, '#ffffff'); p.set(x + 1, 12, '#ffffff'); }
-        return p.outlined(K);
-      }
-      case 'desk': {
-        p = new Pix(16, 24);
-        tri(p, 1, 1, 8, 5, '#ec3d5f'); p.hline(2, 5, 6, '#a51f40');
-        p.rect(4, 6, 1, 4, '#6d4a36');
-        p.rect(1, 9, 14, 6, '#e0a262'); p.hline(1, 9, 14, '#f5c48a');
-        p.rect(9, 10, 5, 3, '#3d86f0'); p.hline(9, 10, 5, '#ffffff');
-        p.rect(1, 15, 14, 8, '#b8763c'); p.rect(4, 17, 8, 3, '#9c5f3a'); p.set(8, 18, '#ffd23f');
-        return p.outlined(K);
-      }
-      case 'wardrobe': {
-        p = new Pix(16, 28);
-        p.rect(1, 1, 14, 3, '#a8683c'); p.hline(1, 1, 14, '#d99058');
-        p.rect(1, 4, 14, 22, '#c98a5a');
-        p.rect(3, 6, 4, 17, '#b8763c'); p.rect(9, 6, 4, 17, '#b8763c'); p.vline(8, 4, 22, '#8c5530');
-        p.set(7, 14, '#ffd23f'); p.set(9, 14, '#ffd23f');
-        p.rect(1, 26, 14, 1, '#8c5530');
-        return p.outlined(K);
-      }
-      case 'teatable': {
-        p = new Pix(16, 20);
-        p.rect(7, 14, 2, 5, '#8c5530');
-        ball(p, 1, 7, 14, 10, '#fff4f8', '#ffc2d4', '#e2769c');
-        for (let x = 2; x < 14; x += 2) p.set(x, 15 + (x % 4 === 0 ? 1 : 0), '#ffffff');
-        ball(p, 3, 3, 6, 6, '#ffffff', '#ffffff', '#b8cdeb'); p.set(5, 5, '#3d86f0'); p.set(6, 6, '#3d86f0'); p.set(2, 5, '#b8cdeb'); p.rect(5, 2, 2, 1, '#b8cdeb');
-        p.rect(10, 8, 3, 3, '#ffffff'); p.set(11, 8, '#c98a5a');
-        return p.outlined(K);
-      }
-      case 'bookshelf': {
-        p = new Pix(16, 28);
-        p.rect(1, 1, 14, 26, '#8c5530'); p.rect(2, 2, 12, 24, '#5e3423');
-        const cols = ['#ec3d5f', '#3d86f0', '#4cb84c', '#ffd23f', '#ff9fbb', '#9b87c9'];
-        for (let s = 0; s < 3; s++) {
-          const y = 3 + s * 8;
-          let x = 2;
-          let n = s * 2;
-          while (x < 13) {
-            const w = 1 + ((n * 7) % 2);
-            p.rect(x, y + ((n * 3) % 2), w, 6 - ((n * 3) % 2), cols[n % cols.length]);
-            x += w + (n % 3 === 0 ? 1 : 0);
-            n++;
-          }
-          p.hline(2, y + 6, 12, '#a8683c');
-        }
-        return p.outlined(K);
-      }
-      case 'plant': {
-        p = new Pix(16, 24);
-        ball(p, 2, 2, 12, 12, '#8ee27a', '#4cb84c', '#2c7a33');
-        ball(p, 5, 0, 6, 6, '#a6ee8e', '#5cc65a', null);
-        stamp(p, ['.p.', 'pyp', '.p.'], 9, 3, { p: '#ff6f91', y: '#ffd23f' });
-        for (let j = 0; j < 8; j++) p.rect(4 + (j >> 3), 14 + j, 8 - (j >> 3) * 2, 1, j === 0 ? '#e07a44' : '#c9602c');
-        return p.outlined(K);
-      }
-      case 'plush': {
-        p = new Pix(16, 20);
-        p.rect(4, 1, 3, 7, '#ffffff'); p.rect(9, 1, 3, 7, '#ffffff'); p.vline(5, 2, 5, '#ffc2d4'); p.vline(10, 2, 5, '#ffc2d4');
-        ball(p, 2, 6, 12, 12, '#ffffff', '#f7f3fb', '#d8d0e8');
-        p.set(5, 11, K); p.set(10, 11, K); p.set(7, 13, '#ff9fbb'); p.set(8, 13, '#ff9fbb');
-        p.rect(5, 16, 6, 2, '#ec3d5f'); p.set(8, 15, '#ec3d5f');
-        return p.outlined(K);
-      }
-      case 'rug': {
-        p = new Pix(32, 32);
-        ball(p, 1, 1, 30, 30, '#ffe0ea', '#ff9fbb', '#e2769c');
-        ball(p, 6, 6, 20, 20, null, '#ffc2d4', null);
-        stamp(p, ['.rr.rr.', 'rrrrrrr', 'rrrrrrr', '.rrrrr.', '..rrr..', '...r...'], 12, 13, { r: '#ec3d5f' });
-        for (let i = 0; i < 16; i++) {
-          const a = (i / 16) * Math.PI * 2;
-          p.set(Math.round(15.5 + Math.cos(a) * 13.5), Math.round(15.5 + Math.sin(a) * 13.5), '#ffffff');
-        }
-        return p.outlined('#b8557c');
-      }
-      case 'piano': {
-        p = new Pix(32, 26);
-        p.rect(1, 1, 30, 16, '#2e2440'); p.hline(1, 1, 30, '#5b4c78');
-        p.rect(9, 4, 14, 6, '#4a3d66'); p.rect(11, 5, 10, 4, '#ffffff');
-        for (let x = 12; x < 20; x += 2) p.set(x, 6, K);
-        p.rect(1, 17, 30, 6, '#ffffff');
-        for (let x = 3; x < 30; x += 4) p.rect(x, 17, 2, 3, '#1c1526');
-        p.rect(1, 23, 30, 2, '#2e2440');
-        return p.outlined(K);
-      }
-      case 'lamp': {
-        p = new Pix(16, 28);
-        for (let j = 0; j < 8; j++) p.rect(5 - (j >> 2), 1 + j, 6 + (j >> 2) * 2, 1, j < 2 ? '#fff6cc' : '#ffe38a');
-        p.rect(7, 9, 2, 14, '#6d4a36');
-        ball(p, 4, 22, 8, 5, null, '#8c5530', '#5e3423');
-        return p.outlined(K);
-      }
-      case 'fishbowl': {
-        p = new Pix(16, 20);
-        p.rect(3, 15, 10, 3, '#c98a5a'); p.hline(3, 15, 10, '#e0a262'); p.rect(4, 18, 2, 1, '#8c5530'); p.rect(10, 18, 2, 1, '#8c5530');
-        ball(p, 1, 2, 14, 13, '#ffffff', '#dff3ff', '#a9d8f5', 0.2);
-        ball(p, 2, 6, 12, 8, null, '#7cc8f7', '#4fa6e0');
-        p.hline(3, 6, 10, '#bfe6ff');
-        p.rect(5, 2, 6, 1, '#ffffff'); p.hline(4, 1, 8, '#a9d8f5');
-        stamp(p, ['.oo..o', 'ooooo.', '.oo..o'], 5, 8, { o: '#ff8a2e' });
-        p.set(6, 9, K); p.set(7, 8, '#ffd23f');
-        p.set(4, 5, '#ffffff'); p.set(11, 4, '#ffffff');
-        return p.outlined(K);
-      }
-      case 'dresser': {
-        p = new Pix(16, 28);
-        ball(p, 3, 1, 10, 11, null, '#ffd23f', '#e0a014');
-        ball(p, 5, 3, 6, 7, '#ffffff', '#d6efff', '#a9d8f5');
-        p.set(6, 4, '#ffffff'); p.rect(7, 11, 2, 2, '#e0a014');
-        p.rect(1, 13, 14, 2, '#ffffff'); p.hline(1, 14, 14, '#f0d6e2');
-        p.rect(2, 11, 1, 2, '#ec3d5f'); p.set(2, 10, '#ffd23f'); p.rect(12, 11, 2, 2, '#ff9fbb');
-        p.rect(2, 15, 12, 11, '#ffe0ea'); p.vline(2, 15, 11, '#ffffff');
-        p.hline(2, 20, 12, '#e2a0bc'); p.set(8, 17, '#ffd23f'); p.set(8, 23, '#ffd23f');
-        p.rect(2, 26, 2, 1, '#c98a5a'); p.rect(12, 26, 2, 1, '#c98a5a');
-        return p.outlined(K);
-      }
-      case 'sofa': {
-        p = new Pix(32, 22);
-        ball(p, 3, 1, 26, 13, '#ffe0ea', '#ff9fbb', '#e2769c');
-        stamp(p, ['.rr.rr.', 'rrrrrrr', '.rrrrr.', '..rrr..', '...r...'], 13, 4, { r: '#ec3d5f' });
-        p.rect(4, 11, 24, 5, '#ffc2d4'); p.hline(4, 11, 24, '#ffe0ea'); p.vline(16, 12, 4, '#ff9fbb');
-        ball(p, 0, 8, 7, 10, '#ffe0ea', '#ff9fbb', '#e2769c');
-        ball(p, 25, 8, 7, 10, '#ffe0ea', '#ff9fbb', '#e2769c');
-        p.rect(3, 16, 26, 3, '#e2769c'); p.hline(3, 16, 26, '#f28fb0');
-        p.rect(4, 19, 2, 2, '#8c5530'); p.rect(26, 19, 2, 2, '#8c5530');
-        return p.outlined(K);
-      }
-      case 'gramophone': {
-        p = new Pix(16, 28);
-        ball(p, 1, 1, 12, 10, '#fff6cc', '#ffd23f', '#e0a014');
-        ball(p, 3, 3, 7, 5, null, '#a86f12', null);
-        p.rect(8, 10, 2, 4, '#e0a014'); p.set(9, 10, '#fff0a0');
-        p.rect(3, 13, 10, 1, K); p.set(8, 13, '#ec3d5f');
-        p.rect(3, 14, 10, 6, '#a8683c'); p.hline(3, 14, 10, '#d99058'); p.rect(5, 16, 6, 2, '#8c5530');
-        p.set(13, 16, '#ffd23f'); p.set(14, 15, '#ffd23f');
-        p.rect(3, 20, 10, 2, '#8c5530');
-        p.rect(4, 22, 1, 5, '#6d4a36'); p.rect(11, 22, 1, 5, '#6d4a36');
-        return p.outlined(K);
-      }
-    }
-    return null;
+    return FURNITURE[id] ? FURNITURE[id]() : null;
   }
 
   // wallpaper strips (16x24) and floors (16x16)
