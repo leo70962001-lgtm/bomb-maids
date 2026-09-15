@@ -129,58 +129,404 @@
   }
 
   // ------------------------------------------------------------------ opening narration
+  // ------------------------------------------------------------------ opening
+  // A short animated opening across the whole screen (the portrait panel steps aside while it plays): one shot per
+  // narration line, cross-fading between letterbox bars — the dusty town where dust monsters sit on the roofs, the
+  // mansion on the hill where one small window lights up, the empty little room where the last coins drop, and the
+  // hiring poster with the first maid popping in. Lines type out and move on by themselves; Z or a tap moves on
+  // sooner, START or the skip button jumps to the end.
+  const OP_FADE = 24; // frames of cross-fade between shots
+  const opHash = (n) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+  function opSky(L, FW, bands) {
+    const h = Math.ceil((E.H - 10) / bands.length);
+    bands.forEach((c, i) => {
+      E.rect(L, i * h, FW, h + 1, c);
+      // a two-row checker into the next band, so the sky has no hard stripes
+      if (i + 1 < bands.length) for (let y = (i + 1) * h - 2; y < (i + 1) * h; y++) for (let x = L + ((y + i) % 2); x < L + FW; x += 2) E.rect(x, y, 1, 1, bands[i + 1]);
+    });
+  }
+  // a crescent: the lit disc minus a second, offset disc
+  function opCrescent(cx, cy, r, ox, oy, col) {
+    for (let dy = -r; dy <= r; dy++) {
+      const w = Math.round(Math.sqrt(r * r - dy * dy));
+      for (let dx = -w; dx <= w; dx++) {
+        const ex = dx - ox, ey = dy - oy;
+        if (ex * ex + ey * ey > r * r) E.rect(cx + dx, cy + dy, 1, 1, col);
+      }
+    }
+  }
+  function opDisc(cx, cy, r, col) {
+    for (let dy = -r; dy <= r; dy++) {
+      const w = Math.round(Math.sqrt(r * r - dy * dy));
+      E.rect(Math.round(cx - w), Math.round(cy + dy), w * 2 + 1, 1, col);
+    }
+  }
+  function opCloud(cx, cy, s, col) {
+    for (const [dx, dy, r] of [[-13, 3, 7], [-4, -1, 9], [7, 0, 8], [16, 4, 6], [-21, 6, 5], [2, 6, 8]]) opDisc(cx + dx * s, cy + dy * s, Math.max(2, Math.round(r * s)), col);
+  }
+  function opStars(L, FW, t, maxY, seed) {
+    for (let k = 0; k < 48; k++) {
+      const x = L + Math.floor(opHash(k + seed) * FW), y = 20 + Math.floor(opHash(k + seed + 50) * maxY);
+      if (Math.sin(t * 0.05 + k * 1.7) > -0.4) E.rect(x, y, 1, 1, k % 6 ? '#8e7fb0' : '#fff4d6');
+    }
+  }
+  // a townhouse: body, stepped gable, chimney and two windows; some are lit, some have a dust monster on the ridge
+  function opHouse(x, base, k, t) {
+    const ctx = E.ctx;
+    const w = 42 + Math.floor(opHash(k + 3) * 16), h = 28 + Math.floor(opHash(k + 5) * 20);
+    const top = base - h, rh = Math.floor(w / 2.6);
+    E.rect(x + Math.floor(w * 0.68), top - rh - 3, 5, rh + 3, '#1a1126');
+    E.rect(x + Math.floor(w * 0.68) - 1, top - rh - 4, 7, 2, '#2c1f3c');
+    for (let r = 0; r < rh; r++) {
+      const half = Math.round(((r + 1) * (w / 2 + 3)) / rh);
+      E.rect(x + Math.floor(w / 2) - half, top - rh + r, half * 2, 1, '#241834');
+      E.rect(x + Math.floor(w / 2) - half, top - rh + r, 1, 1, '#3d2b52');
+    }
+    E.rect(x, top, w, h, '#1d1329');
+    E.rect(x, top, w, 1, '#2c1f3c');
+    for (let i = 0; i < 2; i++) {
+      const wx = x + 7 + i * (w - 20), wy = top + 8;
+      const lit = opHash(k * 7 + i) > 0.62 && Math.sin(t * 0.03 + k + i) > -0.7;
+      E.rect(wx - 1, wy - 1, 8, 9, '#130c1c');
+      E.rect(wx, wy, 6, 7, lit ? '#ffc66b' : '#2f2342');
+      if (lit) E.rect(wx + 1, wy + 1, 2, 3, '#fff0c0');
+    }
+    E.rect(x + Math.floor(w / 2) - 4, base - 11, 8, 11, '#120b1a');
+    if (k % 3 === 0) {
+      const f = E.spr.monsters.dustcat.frames[((t >> 4) + k) % 2];
+      const bob = Math.round(Math.abs(Math.sin(t * 0.09 + k)) * 2);
+      ctx.drawImage(f, x + Math.floor(w / 2) - 8, top - rh - f.height + 3 - bob);
+    }
+  }
+
   SC.intro = {
+    wide: true, // the whole screen: the panel steps aside
     enter() {
       this.t = 0;
       this.i = 0;
       this.chars = 0;
-      this.motes = Array.from({ length: 36 }, (_, i) => ({ x: (i * 67) % 320, y: (i * 41) % 240, s: 0.2 + ((i * 7) % 5) * 0.1 }));
+      this.hold = 0;
+      this.shotT = 0;
+      this.prev = null; // the shot fading out: { i, t, at }
+      this.leaving = false;
       A.playMusic('room');
+    },
+    // the band the opening draws in: the whole screen beside the portrait panel, else the game's width
+    band() { const L = -E.sideW; return { L, FW: E.W - L }; },
+    skipRect() { const { L, FW } = this.band(); return { x: L + FW - 64, y: 2, w: 60, h: 15 }; },
+    next() {
+      if (this.i >= G.INTRO_LINES.length - 1) return this.finish();
+      this.prev = { i: this.i, t: this.shotT, at: this.t };
+      this.i++;
+      this.chars = 0;
+      this.hold = 0;
+      this.shotT = 0;
+      A.sfx('select');
+    },
+    finish() {
+      if (this.leaving) return;
+      this.leaving = true;
+      A.sfx('confirm');
+      E.go(SC.select, { mode: 'first' });
     },
     update() {
       this.t++;
+      this.shotT++;
       const line = G.INTRO_LINES[this.i];
       if (this.chars < line.length) {
-        this.chars += 0.5;
+        this.chars = Math.min(line.length, this.chars + 0.5);
         if (Math.floor(this.chars) % 3 === 0 && this.chars % 1 === 0) A.sfx('blip');
-      }
-      const go = E.menuPressed('a') || E.pointer.pressed || E.menuPressed('b');
-      if (go) {
+      } else this.hold++;
+      // sound cues inside the shots
+      if (this.i === 1 && this.shotT === 72) A.sfx('door');
+      if (this.i === 2 && this.shotT >= 56 && this.shotT <= 56 + 34 * 4 && (this.shotT - 56) % 34 === 0) A.sfx('coin'); // as each coin lands
+      if (this.i === 3 && this.shotT === 16) A.sfx('drop');
+      if (this.i === 3 && this.shotT === 46) A.sfx('levelup');
+      if (this.leaving) return;
+      const p = E.pointer, r = this.skipRect();
+      if (E.menuPressed('start') || (p.pressed && p.x >= r.x && p.x < r.x + r.w && p.y >= r.y && p.y < r.y + r.h)) return this.finish();
+      if (E.menuPressed('a') || E.menuPressed('b') || p.pressed) {
         if (this.chars < line.length) this.chars = line.length;
-        else if (this.i < G.INTRO_LINES.length - 1) { this.i++; this.chars = 0; A.sfx('select'); }
-        else { A.sfx('confirm'); E.go(SC.select, { mode: 'first' }); }
-      }
-      if (E.menuPressed('start')) E.go(SC.select, { mode: 'first' });
+        else this.next();
+      } else if (this.hold > (this.i === G.INTRO_LINES.length - 1 ? 220 : 150)) this.next();
     },
     draw() {
       const ctx = E.ctx;
-      E.rect(0, 0, E.W, E.H, '#1f1426');
-      for (const m of this.motes) {
-        const y = (m.y + this.t * m.s) % 240;
-        E.rect((m.x + Math.sin((this.t + m.x) * 0.02) * 6 + 320) % 320, y, 1, 1, '#6b5a8e');
-      }
-      // little mansion silhouette with one warm window
-      E.rect(96, 128, 128, 60, '#2a1b30');
-      for (let i = 0; i < 64; i++) E.rect(160 - i, 128 - Math.floor(i / 2), 1, Math.floor(i / 2) + 1, '#2a1b30');
-      for (let i = 0; i < 64; i++) E.rect(160 + i, 128 - Math.floor((63 - i) / 2) - 1, 1, Math.floor((63 - i) / 2) + 2, '#2a1b30');
-      E.rect(0, 188, 320, 52, '#2a1b30');
-      UI.edgeBar({ y: 188, h: 52, color: '#2a1b30' });
-      for (const [x, y, on] of [[112, 140, 0], [136, 140, 1], [176, 140, 0], [200, 140, 0], [148, 104, 0]]) {
-        E.rect(x, y, 10, 12, on ? '#ffd23f' : '#3b2f52');
-        if (on) E.rect(x + 1, y + 1, 8, 4, '#fff0a0');
-      }
-      if (this.i >= 3) {
-        const hop = Math.abs(Math.sin(this.t * 0.1)) * 4;
-        // maids who have not joined yet stay out of the opening
-        const shown = G.MAID_ORDER.filter((k) => !UI.isLocked(k));
-        const left = 160 - ((shown.length - 1) * 28 + 16) / 2;
-        shown.forEach((k, i) => ctx.drawImage(E.spr.maids[k].down[0], Math.round(left + i * 28), 168 - hop * (i % 2)));
-      }
+      const { L, FW } = this.band();
+      // the shot fading out underneath, the current one on top
+      const fadeIn = this.prev ? Math.min(1, (this.t - this.prev.at) / OP_FADE) : 1;
+      if (this.prev && fadeIn < 1) this.shot(this.prev.i, this.prev.t + (this.t - this.prev.at), L, FW, 1 - fadeIn);
+      else this.prev = null;
+      ctx.globalAlpha = fadeIn;
+      this.shot(this.i, this.shotT, L, FW, fadeIn);
+      ctx.globalAlpha = 1;
+      // letterbox bars slide in, the narration types out in the bottom one
+      const open = E.ease.outCubic(Math.min(1, this.t / 30));
+      const topH = Math.round(18 * open), botH = Math.round(42 * open);
+      E.rect(L, 0, FW, topH, '#000000');
+      E.rect(L, E.H - botH, FW, botH, '#000000');
+      if (open < 1) return;
+      E.rect(L, E.H - 43, FW, 1, '#f8b000');
       const line = G.INTRO_LINES[this.i];
-      E.panel(16, 194, 288, 42, C.panel, C.panel2, {});
-      typewriter(line, this.chars, 26, 201, 268, C.paper);
-      if (this.chars >= line.length && (this.t >> 5) % 2 === 0) E.text('▼', 292, 224, { color: C.pink });
-      E.text((this.i + 1) + '/' + G.INTRO_LINES.length, 312, 6, { color: C.dim, align: 'right' });
+      typewriter(line, this.chars, L + 22, E.H - 36, FW - 64, C.paper);
+      if (this.chars >= line.length && (this.t >> 5) % 2 === 0) E.text('▼', L + FW - 22, E.H - 16, { color: C.pink });
+      for (let k = 0; k < G.INTRO_LINES.length; k++) E.rect(L + 8 + k * 9, 7, 6, 3, k === this.i ? C.pink : k < this.i ? C.ink : '#2e2640');
+      const r = this.skipRect();
+      E.text(G.t('跳過 ▶▶'), r.x + r.w, 3, { color: C.gray, align: 'right' });
+    },
+    shot(i, t, L, FW, alpha) {
+      if (i === 0) this.shotTown(t, L, FW);
+      else if (i === 1) this.shotMansion(t, L, FW);
+      else if (i === 2) this.shotRoom(t, L, FW);
+      else this.shotHire(t, L, FW, alpha);
+    },
+    // 「蕾絲町」: a dusky town under drifting dust, dust monsters on the roofs; the camera drifts along the street
+    shotTown(t, L, FW) {
+      const ctx = E.ctx;
+      opSky(L, FW, ['#140c1e', '#1b1128', '#241632', '#301c3e', '#40254a', '#553152']);
+      opStars(L, FW, t, 90, 0);
+      const mx = L + Math.round(FW * 0.74), my = 52;
+      opDisc(mx, my, 18, '#efdcb2');
+      opDisc(mx - 3, my - 3, 14, '#fff4d8');
+      E.rect(mx + 5, my + 5, 4, 3, '#e3cc9c'); E.rect(mx - 9, my + 8, 3, 2, '#e3cc9c'); E.rect(mx + 1, my - 10, 3, 2, '#e3cc9c');
+      const a0 = ctx.globalAlpha;
+      // dust haze crossing the moon
+      ctx.globalAlpha = a0 * 0.45;
+      for (let k = 0; k < 4; k++) {
+        const cx = L + ((k * 140 + t * (0.22 + k * 0.05)) % (FW + 120)) - 60;
+        opCloud(cx, 44 + k * 17, 1.3 + (k % 2) * 0.5, k % 2 ? '#7c6c8e' : '#9a8aa8');
+      }
+      ctx.globalAlpha = a0;
+      // far skyline
+      const P1 = 26 * 40, far = t * 0.12;
+      for (let k = 0; k < 40; k++) {
+        const bw = 14 + Math.floor(opHash(k + 7) * 18), bh = 22 + Math.floor(opHash(k + 9) * 38);
+        const x = Math.round(L + ((((k * 26 - far) % P1) + P1) % P1) - 30);
+        if (x > L + FW || x + bw < L) continue;
+        E.rect(x, 152 - bh, bw, bh + 30, '#261a36');
+        for (let wy = 156 - bh; wy < 146; wy += 8) if (opHash(k * 13 + wy) > 0.74) E.rect(x + 3 + ((wy >> 3) % 2) * 5, wy, 2, 3, '#4d3c66');
+      }
+      // near houses with the dust monsters
+      const P2 = 62 * 12, near = t * 0.35;
+      for (let k = 0; k < 12; k++) {
+        const x = Math.round(L + ((((k * 62 - near) % P2) + P2) % P2) - 62);
+        if (x > L + FW + 4 || x < L - 64) continue;
+        opHouse(x, 180, k, t);
+      }
+      // a dust monster riding a cloud across the sky
+      const fx = L + ((t * 0.7) % (FW + 80)) - 40, fy = 96 + Math.round(Math.sin(t * 0.05) * 5);
+      ctx.globalAlpha = a0 * 0.8;
+      opCloud(fx, fy + 12, 0.8, '#a898b6');
+      ctx.globalAlpha = a0;
+      ctx.drawImage(E.spr.monsters.dustcat.frames[(t >> 5) % 2], Math.round(fx - 8), fy - 10);
+      // street
+      E.rect(L, 180, FW, 60, '#140d1d');
+      for (let x = L - ((near | 0) % 14); x < L + FW; x += 14) E.rect(x, 186, 9, 1, '#261b33');
+      ctx.globalAlpha = a0 * 0.3;
+      for (let k = 0; k < 4; k++) {
+        const px = L + ((k * 113 + t * 0.9) % (FW + 30)) - 15;
+        ctx.drawImage(E.spr.fx.puff[((t >> 4) + k) % 4], Math.round(px), 178 + (k % 3) * 5);
+      }
+      ctx.globalAlpha = a0;
+    },
+    // the mansion on the hill: the camera climbs the path and one small window lights up
+    shotMansion(t, L, FW) {
+      const ctx = E.ctx;
+      opSky(L, FW, ['#110a19', '#180e23', '#20132d', '#2a1938', '#372143', '#472a4f']);
+      opStars(L, FW, t, 110, 90);
+      const mx = L + Math.round(FW * 0.22);
+      opCrescent(mx, 42, 12, 6, -4, '#fff2cc');
+      const rise = Math.round(E.ease.inOut(Math.min(1, t / 160)) * 56);
+      ctx.save();
+      ctx.translate(0, 56 - rise);
+      const cx = L + Math.round(FW / 2);
+      // hill and the winding path with its lamps
+      for (let y = 150; y < 320; y++) {
+        const hw = Math.round(Math.sqrt((y - 150) * 900));
+        E.rect(cx - hw, y, hw * 2, 1, y < 153 ? '#2c1f3c' : '#1a1026');
+      }
+      for (let y = 154; y < 300; y += 2) {
+        const px = cx + Math.round(Math.sin((y - 150) * 0.045) * (y - 150) * 0.35);
+        E.rect(px - 3, y, 7, 2, '#33264a');
+      }
+      [[0, 176], [1, 206], [2, 238], [3, 270]].forEach(([k, y]) => {
+        const px = cx + Math.round(Math.sin((y - 150) * 0.045) * (y - 150) * 0.35) + (k % 2 ? 12 : -13);
+        const on = t > 24 + k * 16;
+        E.rect(px, y - 12, 1, 12, '#0f0916');
+        E.rect(px - 1, y - 14, 3, 3, on ? '#ffd27a' : '#3b2f52');
+        if (on) { const a1 = ctx.globalAlpha; ctx.globalAlpha = a1 * 0.25; opDisc(px, y - 13, 5, '#ffcf70'); ctx.globalAlpha = a1; }
+      });
+      // the mansion: two wings, a tower, rows of windows, lace along the eaves
+      const base = 152;
+      E.rect(cx - 58, base - 40, 116, 40, '#140c1d');
+      for (const side of [-1, 1]) {
+        const wx = cx + side * 36;
+        for (let r = 0; r < 14; r++) {
+          E.rect(wx - 24 + r, base - 54 + r, 48 - r * 2, 1, '#120a1a');
+          E.rect(wx - 24 + r, base - 54 + r, 1, 1, '#5a4474');
+          E.rect(wx + 23 - r, base - 54 + r, 1, 1, '#2e2242');
+        }
+      }
+      E.rect(cx - 13, base - 74, 26, 74, '#170e21');
+      E.rect(cx - 13, base - 74, 1, 74, '#3a2c50');
+      for (let r = 0; r < 20; r++) {
+        const inset = Math.floor(r * 0.65);
+        E.rect(cx - 13 + inset, base - 94 + r, 26 - inset * 2, 1, '#120a1a');
+        E.rect(cx - 13 + inset, base - 94 + r, 1, 1, '#5a4474');
+      }
+      E.rect(cx, base - 100, 1, 6, '#7a6494');
+      E.rect(cx - 58, base - 40, 116, 1, '#3a2c50');
+      for (let x = cx - 58; x < cx + 58; x += 4) E.rect(x, base - 39, 2, 1, '#5a4474');
+      for (const row of [base - 32, base - 18]) for (let k = 0; k < 8; k++) {
+        const wx = cx - 52 + k * 14 + (k >= 4 ? 8 : 0);
+        if (Math.abs(wx + 3 - cx) < 16) continue;
+        E.rect(wx - 1, row - 1, 8, 10, '#140d1d');
+        E.rect(wx, row, 6, 8, '#2f2346');
+      }
+      E.rect(cx - 7, base - 16, 14, 16, '#130b1b');
+      E.rect(cx - 6, base - 15, 12, 15, t > 90 ? '#6b4a2a' : '#1c1228');
+      // her window: the little one high in the tower lights up
+      const lit = t > 70;
+      E.rect(cx - 5, base - 64, 10, 12, '#140d1d');
+      E.rect(cx - 4, base - 63, 8, 10, lit ? '#ffd23f' : '#2f2346');
+      if (lit) {
+        E.rect(cx - 3, base - 62, 6, 4, '#fff0a0');
+        E.rect(cx - 4, base - 58, 8, 1, '#c98f24');
+        const a1 = ctx.globalAlpha;
+        const glow = 0.18 + Math.sin(t * 0.08) * 0.05;
+        ctx.globalAlpha = a1 * glow;
+        opDisc(cx, base - 58, 18, '#ffcf70');
+        ctx.globalAlpha = a1 * glow * 0.6;
+        opDisc(cx, base - 58, 30, '#ffb347');
+        ctx.globalAlpha = a1;
+      }
+      // her suitcase cart rolls up the path
+      const p = Math.min(1, t / 130);
+      const cy = 292 - p * 138, ccx = cx + Math.round(Math.sin((cy - 150) * 0.045) * (cy - 150) * 0.35);
+      if (p < 1) {
+        E.rect(ccx - 7, cy - 8, 14, 6, '#8a5a36'); E.rect(ccx - 6, cy - 7, 12, 1, '#b07a4a');
+        E.rect(ccx - 4, cy - 13, 9, 5, '#d64a6a'); E.rect(ccx - 1, cy - 15, 3, 2, '#1a1026');
+        E.rect(ccx - 6, cy - 2, 3, 3, '#0f0916'); E.rect(ccx + 4, cy - 2, 3, 3, '#0f0916');
+      }
+      ctx.restore();
+    },
+    // the empty little room: dust bunnies, a broom, moonlight — and the last few coins dropping onto the floor
+    shotRoom(t, L, FW) {
+      const ctx = E.ctx;
+      const S = E.spr;
+      const wall = S.room.walls.night, floor = S.room.floors.wood;
+      // the wallpaper strip is 17 rows of starry paper over a wooden wainscot: tile the paper, then run the wainscot once
+      for (let x = L; x < L + FW; x += 16) {
+        const strip = wall[((x - L) >> 4) % 2];
+        for (let y = 10; y < 125; y += 16) ctx.drawImage(strip, 0, 0, 16, 16, x, y, 16, 16);
+        ctx.drawImage(strip, 0, 16, 16, 8, x, 124, 16, 8);
+      }
+      E.rect(L, 18, FW, 4, '#5a3a22');
+      E.rect(L, 22, FW, 1, '#2e1c10');
+      for (let x = L; x < L + FW; x += 16) for (let y = 132; y < E.H; y += 16) ctx.drawImage(floor[(((x - L) >> 4) + (y >> 4)) % 2], x, y);
+      E.rect(L, 130, FW, 3, '#3a2415');
+      E.rect(L, 133, FW, 1, '#1d120a');
+      const cx = L + Math.round(FW / 2);
+      const a0 = ctx.globalAlpha;
+      // a dim room: shade, then the moonlit window and its beam on the floor
+      ctx.globalAlpha = a0 * 0.45;
+      E.rect(L, 10, FW, E.H - 10, '#140c20');
+      ctx.globalAlpha = a0;
+      ctx.drawImage(S.room.window, cx + 30, 44, 36, 28);
+      ctx.globalAlpha = a0 * 0.14;
+      ctx.fillStyle = '#dfe8ff';
+      ctx.beginPath(); ctx.moveTo(cx + 32, 72); ctx.lineTo(cx + 64, 72); ctx.lineTo(cx + 40, 200); ctx.lineTo(cx - 10, 200); ctx.closePath(); ctx.fill();
+      ctx.globalAlpha = a0;
+      // cobweb in the corner, a broom against the wall
+      for (let k = 0; k < 14; k++) E.rect(L + k, 10 + Math.floor(k * 0.8), 1, 1, '#b8b0c8');
+      for (let k = 0; k < 10; k++) E.rect(L + k * 2, 10 + k, 1, 1, '#8d86a8');
+      ctx.drawImage(S.room.broom, L + 30, 114, 8, 18);
+      // dust bunnies hopping about
+      for (let k = 0; k < 7; k++) {
+        const x = Math.round(L + 16 + opHash(k + 20) * (FW - 40));
+        const y = 150 + (k % 3) * 14;
+        const hop = Math.round(Math.max(0, Math.sin(t * 0.09 + k * 1.3)) * 5);
+        ctx.drawImage(S.items.dust[((t >> 5) + k) % 3], x, y - hop);
+      }
+      // the last coins drop onto the floor, one after another
+      for (let c = 0; c < 5; c++) {
+        const t0 = 38 + c * 34;
+        if (t < t0) continue;
+        const f = Math.min(1, (t - t0) / 18);
+        const px = cx - 12 + ((c * 7) % 5) * 5, py = 158 - (c % 3) * 3;
+        const y = Math.round(18 + (py - 18) * f * f);
+        ctx.drawImage(S.items.coin[f < 1 ? (t >> 2) % 4 : 0], px, y);
+        if (f >= 1 && t - t0 < 30) ctx.drawImage(S.fx.sparkle[((t - t0) >> 3) % 3], px + 12, py - 2);
+      }
+      // a bare bulb swaying from the ceiling
+      const sway = Math.sin(t * 0.04) * 6;
+      ctx.strokeStyle = '#1a1026';
+      ctx.beginPath(); ctx.moveTo(cx - 40, 10); ctx.lineTo(cx - 40 + sway, 44); ctx.stroke();
+      ctx.globalAlpha = a0 * 0.2;
+      opDisc(cx - 40 + sway, 48, 16, '#ffe2a0');
+      ctx.globalAlpha = a0;
+      opDisc(cx - 40 + sway, 48, 3, '#ffe9b8');
+    },
+    // "hire a maid!": a bright burst, the hiring poster slaps down and the first maid pops in beside it
+    shotHire(t, L, FW, alpha) {
+      const ctx = E.ctx;
+      const tile = E.spr.bgTile;
+      const off = Math.floor(t * 0.5) % 32;
+      for (let y = off - 32; y < E.H; y += 32) for (let x = L + off - 32; x < L + FW; x += 32) ctx.drawImage(tile, x, y);
+      const cx = L + Math.round(FW * 0.34), cy = 104;
+      const a0 = ctx.globalAlpha;
+      ctx.globalAlpha = a0 * 0.4;
+      ctx.fillStyle = '#ffffff';
+      for (let k = 0; k < 12; k++) {
+        const a = t * 0.008 + (k * Math.PI) / 6;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + Math.cos(a) * 420, cy + Math.sin(a) * 420);
+        ctx.lineTo(cx + Math.cos(a + 0.2) * 420, cy + Math.sin(a + 0.2) * 420);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.globalAlpha = a0;
+      // the poster drops in with a bounce
+      const land = 16;
+      const py = t < land ? cy - Math.pow(1 - t / land, 2) * 170 : cy - Math.abs(Math.sin((t - land) * 0.45)) * Math.max(0, 8 - (t - land) * 0.5);
+      ctx.save();
+      ctx.translate(cx, Math.round(py));
+      ctx.rotate(-0.07);
+      E.rect(-50, -38, 100, 76, '#000000');
+      E.rect(-49, -37, 98, 74, '#fff6e6');
+      E.rect(-49, -37, 98, 16, '#e8305a');
+      E.rect(-49, -21, 98, 1, '#a51f40');
+      E.text('MAID WANTED', 0, -36, { color: '#ffffff', align: 'center' });
+      // an apron with a frill, and a few lines of small print
+      E.rect(-30, -16, 1, 8, '#1a1020'); E.rect(-11, -16, 1, 8, '#1a1020');
+      E.rect(-27, -12, 14, 12, '#1a1020'); E.rect(-26, -11, 12, 11, '#ffffff');
+      E.rect(-33, 0, 26, 4, '#1a1020'); E.rect(-32, 1, 24, 2, '#ff9fbb');
+      E.rect(-37, 4, 34, 16, '#1a1020'); E.rect(-36, 4, 32, 15, '#ffffff'); E.rect(-36, 4, 32, 3, '#e8e2f0');
+      for (let x = -37; x < -3; x += 4) { E.rect(x, 19, 4, 3, '#1a1020'); E.rect(x + 1, 19, 2, 2, '#ffe0ea'); }
+      E.rect(-23, -2, 6, 8, '#1a1020'); E.rect(-22, -1, 4, 6, '#ec3d5f');
+      for (let k = 0; k < 4; k++) E.rect(2, -8 + k * 8, 36 - (k % 2) * 8, 3, '#d8c8b4');
+      E.rect(14, 22, 22, 11, '#ec3d5f'); E.rect(15, 23, 20, 9, '#ffe0ea');
+      ctx.drawImage(E.spr.fx.heart, 22, 25);
+      ctx.drawImage(E.spr.fx.heart, -3, -44);
+      ctx.restore();
+      // the first maid pops in with her happiest picture
+      const first = G.MAID_ORDER.find((k) => !UI.isLocked(k)) || G.MAID_ORDER[0];
+      if (t >= 40) {
+        const P = UI.portraitPicture(first, 'joy');
+        const k = Math.min(1, (t - 40) / 18);
+        const h = 186, w = (P.w * h) / P.h;
+        const x = L + FW - w - 8 + (1 - E.ease.outBack(k)) * 70;
+        E.art('opening-maid', P.src, x, 14, w, h, [0, 0, P.w, P.h, P.w, P.h], null, { opacity: Math.min(1, (t - 40) / 10) * alpha, fadeBottom: [0.86, 1] });
+        // a burst of sparkles and hearts around her
+        for (let s = 0; s < 10; s++) {
+          const life = (t - 40 - s * 3) / 40;
+          if (life <= 0 || life >= 1) continue;
+          const ang = s * 2.4;
+          const sx = L + FW - w / 2 - 8 + Math.cos(ang) * (20 + life * 70), sy = 90 + Math.sin(ang) * (16 + life * 54) - life * 10;
+          ctx.drawImage(s % 3 ? E.spr.fx.sparkle[(t >> 3) % 3] : E.spr.fx.heart, Math.round(sx), Math.round(sy));
+        }
+      }
     },
   };
 

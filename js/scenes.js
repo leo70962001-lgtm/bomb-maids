@@ -9,7 +9,7 @@
   };
   const SC = (G.SCENES = {});
   // the character illustration: the four maids in a 2x2 grid (Berry TL, Yoru TR, Honey BL, Yukino BR;
-  // dividers at x 477-482 and y 557-562 of the 960x1113 image)
+  // gutters at x 461-466 and y 573-578 of the 928x1152 image)
   const CG_ART = 'img/maids-cg2.jpg';
   // crops of it as [sx, sy, sw, sh, imageWidth, imageHeight] (see E.art), one set per frame shape.
   // The illustration shows each maid's personality: Berry pumping her fists, Yoru carrying tea, Honey flustered with
@@ -387,6 +387,8 @@
   // the room's expressions as feelings
   const FACE_EMOTION = { happy: 'joy', blush: 'joy', surprise: 'fun', angry: 'anger', tired: 'sorrow' };
   G.UI.FACE_EMOTION = FACE_EMOTION;
+  // a maid's whole picture for a feeling: { src, w, h, eye, right } (the opening shows it)
+  G.UI.portraitPicture = (k, emo) => { const set = STAND[k] || STAND.berry; return set[emo] || set.normal; };
   const RANK_EMOTION = { S: 'fun', A: 'fun', B: 'joy', C: 'normal' };
   function moodEmotion(k) {
     const b = SAVE && SAVE.bond && SAVE.bond[k];

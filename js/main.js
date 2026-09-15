@@ -20,7 +20,8 @@
     };
     const fromPoint = (e) => {
       const r = dpad.getBoundingClientRect();
-      const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+      let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+      if (E.rotated) [dx, dy] = [dy, -dx]; // the pad is turned with the game
       if (Math.hypot(dx, dy) < r.width * 0.12) return null;
       return Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
     };
@@ -77,6 +78,30 @@
     });
   }
 
+  // sideways play: some browsers (in-app ones especially) keep a phone upright, so the game can turn itself instead.
+  // The choice is remembered; really turning the phone to landscape drops it.
+  function setupRotate() {
+    const btn = document.getElementById('rotate');
+    if (!btn) return;
+    const KEY = 'bomb-maids-sideways';
+    const landscape = window.matchMedia && window.matchMedia('(orientation: landscape)');
+    const apply = (on) => {
+      document.body.classList.toggle('rot', on);
+      E.rotated = on;
+      try { localStorage.setItem(KEY, on ? '1' : ''); } catch (err) { /* private mode */ }
+      E.fit();
+    };
+    btn.addEventListener('click', () => { E.audio.unlock(); apply(!E.rotated); E.canvas.focus(); });
+    if (landscape) {
+      const drop = () => { if (landscape.matches && E.rotated) apply(false); };
+      if (landscape.addEventListener) landscape.addEventListener('change', drop);
+      else if (landscape.addListener) landscape.addListener(drop);
+    }
+    let saved = '';
+    try { saved = localStorage.getItem(KEY); } catch (err) { /* private mode */ }
+    if (saved === '1' && !(landscape && landscape.matches)) apply(true);
+  }
+
   function boot() {
     const canvas = document.getElementById('screen');
     E.holder = document.getElementById('holder');
@@ -88,6 +113,7 @@
     G.initSave();
     setupTouch();
     setupFullscreen();
+    setupRotate();
     canvas.addEventListener('pointerdown', () => { canvas.focus(); E.audio.unlock(); E.input.tapped = true; });
     E.go(G.SCENES.title, null, true);
     E.run();

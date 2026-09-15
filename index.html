@@ -200,6 +200,41 @@
     touch-action: manipulation;
   }
   #fullscreen:hover { background: rgba(255, 248, 252, 0.22); }
+  /* play sideways: a phone held upright whose browser will not turn can turn the game (body.rot) instead */
+  #rotate {
+    position: fixed;
+    top: calc(8px + env(safe-area-inset-top));
+    right: calc(58px + env(safe-area-inset-right));
+    z-index: 5;
+    width: 42px;
+    height: 42px;
+    display: none;
+    place-items: center;
+    border: 0;
+    border-radius: 8px;
+    color: var(--lace);
+    background: rgba(255, 248, 252, 0.12);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  @media (orientation: portrait) { body.touch #rotate { display: grid; } }
+  body.rot #rotate { display: grid; background: rgba(255, 159, 187, 0.35); }
+  body.rot {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vh;
+    width: 100dvh;
+    height: 100vw;
+    height: 100dvw;
+    transform-origin: 0 0;
+    transform: translateX(100vw) rotate(90deg);
+  }
+  /* turned sideways the page is a landscape one: the same layout as a phone held that way */
+  body.rot.touch { grid-template-rows: 1fr; }
+  body.rot.touch #holder { place-items: center; padding: 6px; }
+  body.rot.touch #pad { position: fixed; inset: auto 0 0 0; pointer-events: none; padding: 0 10px 10px; align-self: auto; }
+  body.rot.touch #dpad, body.rot.touch .btns { pointer-events: auto; opacity: 0.85; }
   #fullscreen:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--gold); }
   #fullscreen .exit, #fullscreen.is-full .enter { display: none; }
   #fullscreen.is-full .exit { display: inline; }
@@ -246,6 +281,9 @@
 <button id="fullscreen" type="button" data-i18n-label="全螢幕" aria-label="全螢幕">
   <svg class="enter" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 9V3h6M15 3h6v6M21 15v6h-6M9 21H3v-6" fill="none" stroke="currentColor" stroke-width="2.5"/></svg>
   <svg class="exit" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M9 3v6H3M21 9h-6V3M15 21v-6h6M3 15h6v6" fill="none" stroke="currentColor" stroke-width="2.5"/></svg>
+</button>
+<button id="rotate" type="button" data-i18n-label="橫向遊玩" aria-label="橫向遊玩">
+  <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="3" y="7" width="18" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M8 3.5h5.5a4 4 0 0 1 4 4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 5.5l2 2.2 2.2-2" fill="none" stroke="currentColor" stroke-width="2"/></svg>
 </button>
 <div id="toast" role="status" hidden></div>
 

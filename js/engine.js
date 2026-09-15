@@ -36,6 +36,9 @@
     artLayer.el = document.getElementById('art');
     E.fit();
     window.addEventListener('resize', E.fit);
+    // a phone turning: some browsers still report the old size when the event fires, so fit again once it settles
+    window.addEventListener('orientationchange', () => { E.fit(); setTimeout(E.fit, 150); setTimeout(E.fit, 600); });
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', E.fit);
   };
   // show or fold away the portrait panel (the canvas widens to 16:9 or narrows to the 4:3 game)
   E.setWide = function (on) {
@@ -113,10 +116,13 @@
     }
     artLayer.used.clear();
   }
+  // what the fit depends on: the window's size and whether the game is turned sideways (see E.rotated)
+  const fitKey = () => window.innerWidth + 'x' + window.innerHeight + (E.rotated ? 'r' : '');
   E.fit = function () {
     const c = E.canvas;
     const holder = E.holder || c.parentElement;
     const pad = E.holderPad || 0;
+    E.fitKey = fitKey();
     // measure with the canvas collapsed: the holder grows around its content, so a wide canvas would otherwise keep
     // it (and the next fit) wider than a phone held upright
     c.style.width = '0px';
@@ -437,8 +443,11 @@
   E.bindPointer = function (canvas) {
     const pos = (e) => {
       const r = canvas.getBoundingClientRect();
-      Pointer.x = ((e.clientX - r.left) * E.SW) / r.width - E.sideW;
-      Pointer.y = ((e.clientY - r.top) * H) / r.height;
+      // how far across and down the canvas, in its own orientation; turned sideways it runs down the screen
+      const u = E.rotated ? (e.clientY - r.top) / r.height : (e.clientX - r.left) / r.width;
+      const v = E.rotated ? (r.right - e.clientX) / r.width : (e.clientY - r.top) / r.height;
+      Pointer.x = u * E.SW - E.sideW;
+      Pointer.y = v * H;
     };
     canvas.addEventListener('pointermove', (e) => { pos(e); Pointer.moved = true; Pointer.inside = true; });
     canvas.addEventListener('pointerdown', (e) => { pos(e); Pointer.down = true; Pointer.pressed = true; Pointer.moved = true; Pointer.inside = true; });
@@ -714,13 +723,14 @@
   function drawFade() {
     if (fade.t <= 0) return;
     const t = fade.t / fade.dur;
-    // diamond wipe in plum
+    // diamond wipe in plum (over the whole screen for a scene that draws there)
     const ctx = E.ctx;
     ctx.fillStyle = '#2a1b30';
     const size = 20;
+    const x0 = E.scene && E.scene.wide ? -E.sideW : 0;
     for (let y = 0; y < H + size; y += size)
-      for (let x = 0; x < W + size; x += size) {
-        const local = E.clamp(t * 2.2 - ((x + y) / (W + H)) * 1.2, 0, 1);
+      for (let x = x0; x < W + size; x += size) {
+        const local = E.clamp(t * 2.2 - ((x - x0 + y) / (W - x0 + H)) * 1.2, 0, 1);
         const r = Math.ceil(local * size * 0.75);
         if (r <= 0) continue;
         ctx.beginPath();
@@ -737,19 +747,21 @@
     E.draws = (E.draws || 0) + 1; // counts drawn frames (a fast screen can draw the same update twice)
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.imageSmoothingEnabled = false;
+    // a wide scene (the opening) draws across the whole screen, at x from -E.sideW, and the portrait panel steps aside
+    const wideScene = E.sideW > 0 && E.scene && E.scene.wide;
     ctx.save();
     ctx.beginPath();
-    ctx.rect(E.sideW, 0, W, H);
+    ctx.rect(wideScene ? 0 : E.sideW, 0, wideScene ? E.SW : W, H);
     // a scene with wideTop draws a band that far down across the whole screen, over the portrait panel (the room's
     // status bar); it draws it at x from -E.sideW
-    if (E.sideW > 0 && E.scene && E.scene.wideTop) ctx.rect(0, 0, E.sideW, E.scene.wideTop);
+    if (E.sideW > 0 && !wideScene && E.scene && E.scene.wideTop) ctx.rect(0, 0, E.sideW, E.scene.wideTop);
     ctx.clip();
     ctx.translate(E.sideW, 0);
     if (E.scene && E.scene.draw) E.scene.draw(ctx);
     drawFade();
     ctx.restore();
     // the panel comes after the scene so it can carry on the wallpaper and bars the scene just drew
-    if (E.sideW > 0) {
+    if (E.sideW > 0 && !wideScene) {
       const band = (E.scene && E.scene.wideTop) || 0; // left as the scene drew it
       ctx.fillStyle = '#2a1b30';
       ctx.fillRect(0, band, E.sideW, H - band);
@@ -772,6 +784,8 @@
       let n = 0;
       if (E.hold) acc = 0; // automated checks drive the simulation with E.step instead
       while (acc >= STEP && n < 5) { update(); acc -= STEP; n++; }
+      // in case a resize went unannounced (it happens on phones turning), check the size now and then
+      if ((E.frame & 15) === 0 && E.fitKey !== fitKey()) E.fit();
       if (n === 5) acc = 0;
       drawFrame();
       requestAnimationFrame(loop);

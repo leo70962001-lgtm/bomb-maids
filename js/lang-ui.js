@@ -19,6 +19,7 @@
 
     // ---- title
     '開始冒險': ['ぼうけん開始', 'Start'],
+    '跳過 ▶▶': ['スキップ ▶▶', 'Skip ▶▶'],
     '女僕對決': ['メイド対決', 'Maid Battle'],
     '卡片圖鑑': ['カード図鑑', 'Card Album'],
     '設定': ['設定', 'Settings'],
@@ -353,6 +354,7 @@
 
     // ---- page (outside the canvas)
     '全螢幕': ['全画面', 'Fullscreen'],
+    '橫向遊玩': ['横向きで遊ぶ', 'Play sideways'],
     '無法切換成全螢幕。': ['全画面にできませんでした。', 'Couldn\'t switch to fullscreen.'],
     '這個瀏覽器不支援全螢幕。iPhone 請點「分享」→「加入主畫面」，從主畫面打開就能全螢幕遊玩。': ['このブラウザは全画面に対応していません。iPhoneは「共有」→「ホーム画面に追加」から開くと全画面で遊べます。', 'This browser can\'t go fullscreen. On iPhone, tap Share → Add to Home Screen, then open the game from the home screen.'],
     '炸彈女僕 遊戲畫面，使用方向鍵移動、Z 放炸彈、X 使用特技': ['爆弾メイドのゲーム画面。十字キーで移動、Zでボム、Xで特技', 'BOMB MAIDS game screen. Arrow keys move, Z drops a bomb, X uses a skill'],
