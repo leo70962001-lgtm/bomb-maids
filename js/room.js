@@ -1987,27 +1987,27 @@
         // patting: pressed down on her hair, lifted, pressed again
         const up = (gl.pat % 16) < 7;
         const wiggle = Math.round(Math.sin(gl.pat * 0.35) * 2);
-        ctx.drawImage(G2.pat[up ? 1 : 0], ms.x - 5 + wiggle, ms.y - 18 - hop - (up ? 3 : 0));
+        ctx.drawImage(G2.pat[up ? 1 : 0], ms.x - 5 + wiggle, ms.y - 22 - hop - (up ? 2 : 0));
         return;
       }
       const act = gl.act;
       if (act && act.kind === 'poke') {
         // reach in, press her cheek, draw back
         const reach = act.t < 8 ? 8 - act.t : act.t < 22 ? 0 : Math.min(10, act.t - 22);
-        ctx.drawImage(G2.poke, ms.x + 11 + reach, ms.y - 2 - hop);
+        ctx.drawImage(G2.poke, ms.x + 11 + reach, ms.y - 6 - hop);
         return;
       }
       if (act && act.kind === 'highfive') {
         // the palm comes down to meet her raised hand, then lifts away
         const down = act.t < 16 ? E.ease.outCubic(act.t / 16) : 1 - Math.max(0, (act.t - 30) / 26);
-        ctx.drawImage(G2.open, ms.x + 11, Math.round(ms.y - 40 + down * 14) - (act.t >= 16 && act.t < 22 ? 1 : 0));
+        ctx.drawImage(G2.open, ms.x + 10, Math.round(ms.y - 46 + down * 14) - (act.t >= 16 && act.t < 22 ? 1 : 0));
         return;
       }
       if (act && act.kind === 'tickle') {
-        ctx.drawImage(G2.tickle[(act.t >> 3) % 2], ms.x + 8 + ((act.t >> 2) % 2), ms.y + 1 - hop);
+        ctx.drawImage(G2.tickle[(act.t >> 3) % 2], ms.x + 6 + ((act.t >> 2) % 2), ms.y - 1 - hop);
         return;
       }
-      ctx.drawImage(G2.point, Math.round(gl.x) - 5, Math.round(gl.y));
+      ctx.drawImage(G2.point, Math.round(gl.x) - 6, Math.round(gl.y));
       if (this.mode === 'free' && this.hover && !this.menu) {
         const label = this.hoverLabel(this.hover);
         if (label && this.hover.kind !== 'tab') {
