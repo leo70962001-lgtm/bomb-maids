@@ -2087,21 +2087,143 @@
   };
 
   // ---------------------------------------------------------------- room: cursor, emotes, props
-  const GLOVE_PAL = { k: K, w: '#ffffff', c: '#d9dcea', p: '#ff9fbb' };
+  // The glove, in the original's style: black outline, white shaded in four greys lit from the top-left, a rolled cuff
+  // with its dark opening. point is the pointer (fingertip hot spot at x 5); pat0/pat1 pat her hair from the upper
+  // right with the fingers curling over it; poke reaches for her cheek; open is the high-five palm; tickle0/1 wiggle.
+  const GLOVE_PAL = { k: '#000000', w: '#ffffff', l: '#e1e1e1', m: '#c0bebe', d: '#989898', D: '#555555' };
   const GLOVE = {
-    point: [
-      '....kk..........', '...kwwk.........', '...kwwk.........', '...kwwkkk.......',
-      '.kkkwwkwwkk.....', 'kwwkwwkwwkwk....', 'kwwkwwkwwkwwk...', 'kwwwwwwwwwwwk...',
-      'kwwwcwwwwwwwk...', '.kwwwwwwwwwk....', '.kwwwwwwwwk.....', '..kwwwwwwwk.....',
-      '..kkkkkkkkk.....', '..kpppppppk.....', '..kkkkkkkkk.....', '................',
+    pat0: [
+      '.........kkkk...........',
+      '.......kkwwllkkk........',
+      '.....kkwwwlmkwwlkk......',
+      '...kkwwwllmkwwwwwlkk....',
+      '..kwwwllmkkwwwwwwwwlk...',
+      '..kwllmkwwwwwwwwwwwwlk..',
+      '...kkkwwwllmkwwwwwwwlk..',
+      '..kkwwwllmkkwwwwwwwwwlk.',
+      '.kwwwllmkwwwwwwwwwwwwlk.',
+      '.kwllmkkwwwwwwwwwwwkkkkk',
+      '..kkkwwwwwwwwwwwwkkwwwlk',
+      '..kwwwwlllwwwwwwkwwwwllk',
+      '..kwwllmkmwwwwwkwwwllmmk',
+      '..kmlmmk.kmllwkwwllmmdk.',
+      '...kmmk...kmmkkkkkkkkkk.',
+      '....kk.....kk..kDDDDDk..',
+      '...............kkkkkk...',
     ],
-    pat: [
-      '................', '...kkkkkkk......', '..kpppppppk.....', '..kkkkkkkkk.....',
-      '.kwwwwwwwwwk....', 'kwwwwwwwwwwwk...', 'kwwwwwwwwwwwkk..', 'kwwwwwwwwwwwkwk.',
-      'kwwcwwcwwcwwkwk.', 'kwwkwwkwwkwwkwk.', 'kwwkwwkwwkwwkk..', 'kwwkwwkwwkwwk...',
-      '.kk.kk.kk.kk....', '................', '................', '................',
+    pat1: [
+      '..........kkkk..........',
+      '........kkwwllkkk.......',
+      '......kkwwwlmkwwlkk.....',
+      '....kkwwwllmkwwwwwlkk...',
+      '..kkwwwllmkkwwwwwwwwlk..',
+      '.kwwwllmkwwwwwwwwwwwwlk.',
+      '.kwllkkkwwwllmkwwwwwwlk.',
+      '..kkwwwwllmkkwwwwwwwwwlk',
+      '.kwwwllmkwwwwwwwwwwwkkkk',
+      '.kwllmkkwwwwwwwwwwkkwwlk',
+      '..kkkwwwwwwwwwwwkkwwwllk',
+      '..kwwwllllwwwwwkwwwllmmk',
+      '..kmlmmkkmwwwwkwwllmmdk.',
+      '...kmmk..kmllkkkkkkkkkk.',
+      '....kk....kkk..kDDDDDk..',
+      '...............kkkkkk...',
+      '........................',
+    ],
+    point: [
+      '....kkk...........',
+      '...kwwlk..........',
+      '...kwwlk..........',
+      '...kwwlk..........',
+      '...kwwlk..........',
+      '...kwwlkkkk.......',
+      '...kwwlkwwlkkk....',
+      '..kkwwlkwwlkwlk...',
+      '.kwlkwwlkwlkwwlk..',
+      '.kwwlwwwlwwlkwwlk.',
+      '.kwwwwwwwwwwwwwlk.',
+      '.kwwwwwwwwwwwwllk.',
+      '.kmwwwwwwwwwwwlmk.',
+      '..kmwwwwwwwwwllmk.',
+      '..kmmwwwwwwwlllk..',
+      '...kmmlllllllmmk..',
+      '....kmmmmmmmmmk...',
+      '....kkkkkkkkkkk...',
+      '....kwwwwwwwwlk...',
+      '....kllllllmmdk...',
+      '....kkkkkkkkkkk...',
+    ],
+    poke: [
+      '..........kkkkkk.......',
+      '.........kwwwwllkk.....',
+      'kkkkkkkkkwwwwwwwlkkkk..',
+      'kwwwwwwwwwwwwwwwlkwwlk.',
+      'kwwwwwwwwkkwwwwwlkwwlk.',
+      '.kmmmmmmkwwwwwwwlkwllkk',
+      '..kkkkkkkwwwwwwlkwwlmdk',
+      '........kwwwlllkwwllmdk',
+      '........kmwlkkkkwwlmmdk',
+      '.........kmkwwlkwllmddk',
+      '..........kkmmmkwlmmdDk',
+      '............kkkkkkkkkk.',
+    ],
+    open: [
+      '.....kk..kk..........',
+      '....kwlkkwlk..kk.....',
+      '.kk.kwlkkwlk.kwlk....',
+      'kwlkkwlkkwlk.kwlk....',
+      'kwlkkwlkkwlk.kwlk....',
+      'kwlkkwlkkwlkkkwlk....',
+      'kwlkkwlkkwlkkwwlk....',
+      'kwlkwwlkwwlkwwlk.kk..',
+      'kwwwwwwwwwwwwwlkkwlk.',
+      'kwwwwwwwwwwwwwlkwwlk.',
+      'kwwwwwwwwwwwwwwwwlk..',
+      'kmwwwwwwwwwwwwwwllk..',
+      '.kmwwwwwwwwwwwwllk...',
+      '.kmmwwwwwwwwwwlmk....',
+      '..kmmllllllllmmk.....',
+      '...kkkkkkkkkkkk......',
+      '...kwwwwwwwwwlk......',
+      '...klllllllmmdk......',
+      '...kkkkkkkkkkkk......',
+    ],
+    tickle0: [
+      '....kkkkkkkkkk....',
+      '....kwwwwwwwwlk...',
+      '....kllllllmmdk...',
+      '....kkkkkkkkkkk...',
+      '...kwwwwwwwwwwlk..',
+      '..kwwwwwwwwwwwwlk.',
+      '.kwwwwwwwwwwwwwlk.',
+      '.kwwwwwwwwwwwwwllk',
+      'kwlwwwwwwwwwwwwlmk',
+      'kwlkwlkwlkwlkwlmk.',
+      'kwlkwlkwlkwlkkkk..',
+      '.kkkwlkkkkwlk.....',
+      '....kwlk..kwlk....',
+      '....kwlk..kwlk....',
+      '.....kk....kk.....',
+    ],
+    tickle1: [
+      '....kkkkkkkkkk....',
+      '....kwwwwwwwwlk...',
+      '....kllllllmmdk...',
+      '....kkkkkkkkkkk...',
+      '...kwwwwwwwwwwlk..',
+      '..kwwwwwwwwwwwwlk.',
+      '.kwwwwwwwwwwwwwlk.',
+      '.kwwwwwwwwwwwwwllk',
+      'kwlwwwwwwwwwwwwlmk',
+      'kwlkwlkwlkwlkwlmk.',
+      'kwlkwlkwlkwlkwlk..',
+      '.kkkwlkkkwlkkwlk..',
+      '...kwlk.kwlk.kk...',
+      '...kwlk.kwlk......',
+      '....kk...kk.......',
     ],
   };
+  const glovePose = (k) => fromRows(rowsW(GLOVE[k], 'glove ' + k, GLOVE[k][0].length), GLOVE_PAL);
   const EMOTE_BUBBLE = ['.kkkkkkkkk.', 'kwwwwwwwwwk', 'kwwwwwwwwwk', 'kwwwwwwwwwk', 'kwwwwwwwwwk', 'kwwwwwwwwwk', 'kwwwwwwwwwk', '.kkkkwkkkk.', '....kwk....', '.....k.....'];
   const EMOTES = {
     heart: ['.rr.rr.', 'rrrrrrr', 'rrwrrrr', '.rrrrr.', '..rrr..', '...r...'],
@@ -2820,7 +2942,7 @@
     art.fx.puff = [0, 1, 2, 3].map(buildPuff);
     art.fx.slash = [0, 1, 2].map(buildSlash);
     art.room = {
-      glove: { point: fromRows(rows16(GLOVE.point, 'glove point'), GLOVE_PAL), pat: fromRows(rows16(GLOVE.pat, 'glove pat'), GLOVE_PAL) },
+      glove: { point: glovePose('point'), pat: [glovePose('pat0'), glovePose('pat1')], poke: glovePose('poke'), open: glovePose('open'), tickle: [glovePose('tickle0'), glovePose('tickle1')] },
       emotes: {},
       furniture: {},
       walls: {},
@@ -2894,7 +3016,8 @@
       nl();
       for (const m of Object.keys(art.maids)) for (const f of Object.keys(art.maids[m].faces)) put(art.maids[m].faces[f]);
       nl();
-      put(art.room.glove.point); put(art.room.glove.pat);
+      const gl = art.room.glove;
+      for (const s of [gl.point, ...gl.pat, gl.poke, gl.open, ...gl.tickle]) put(s);
       for (const k of Object.keys(art.room.emotes)) put(art.room.emotes[k]);
       put(art.room.broom); put(art.room.book); put(art.room.cup); put(art.room.mat); put(art.room.window);
       for (const k of Object.keys(art.room.gifts)) put(art.room.gifts[k]);
