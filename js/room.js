@@ -1817,8 +1817,7 @@
       const ms = this.maidScreen();
       const S = E.spr.maids[maidKey()];
       const hop = Math.round(m.hop);
-      ctx.fillStyle = 'rgba(42,27,48,0.25)';
-      ctx.fillRect(ms.x + 3, ms.y + 13, 10, 3);
+      E.groundShadow(ms.x + 2, ms.y + 13, 12, 3, 0.25);
       let img;
       // idle, she turns to look at the glove when it comes close (her mood face waits until it goes)
       const look = this.lookDir();

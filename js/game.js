@@ -1414,10 +1414,7 @@
       // boss shadow + missile targets
       if (this.boss && (this.boss.alive || this.boss.deadT < 110)) {
         const B = this.boss;
-        ctx.fillStyle = 'rgba(42,27,48,0.3)';
-        ctx.beginPath();
-        ctx.ellipse(ox + B.x, oy + B.y + 14, 16, 5, 0, 0, Math.PI * 2);
-        ctx.fill();
+        E.groundShadow(ox + B.x - 16, oy + B.y + 9, 32, 10, 0.3);
       }
       const blink = (this.frame >> 3) % 2 === 0;
       if (this.boss) for (const [c, r] of this.boss.targets) this.drawTarget(ox + c * T, oy + r * T, blink);
@@ -1444,8 +1441,7 @@
         for (const b of this.bombs) {
           if (Math.round(b.y / T) !== r) continue;
           const fr = b.timer < 40 ? ((b.anim >> 2) % 3) : ((b.anim >> 4) % 3);
-          ctx.fillStyle = 'rgba(42,27,48,0.3)';
-          ctx.fillRect(ox + b.x + 3, oy + b.y + 13, 10, 2);
+          E.groundShadow(ox + b.x + 3, oy + b.y + 12, 10, 3, 0.3);
           // just before it goes off the bomb flashes orange, like the original's
           const img = b.timer < 40 && (b.anim >> 2) % 2 ? S.bomb[3] : S.bomb[fr];
           ctx.drawImage(img, Math.round(ox + b.x), Math.round(oy + b.y - 1));
@@ -1558,8 +1554,7 @@
       if (it.type === 'dust') { ctx.drawImage(S.items.dust[(this.frame >> 5) % 3], x, y); return; }
       if (it.type === 'coin') { ctx.drawImage(S.items.coin[(this.frame >> 3) % 4], x, y - 2); return; }
       const bob = Math.round(Math.sin((this.frame + x) * 0.1) * 1);
-      ctx.fillStyle = 'rgba(42,27,48,0.25)';
-      ctx.fillRect(x + 3, y + 13, 10, 2);
+      E.groundShadow(x + 3, y + 12, 10, 3, 0.25);
       if (it.age < 20 && (it.age >> 1) % 2) return;
       ctx.drawImage(S.items[it.type], x, y - 2 + bob);
     }
@@ -1584,8 +1579,7 @@
         ctx.restore();
         return;
       }
-      ctx.fillStyle = 'rgba(42,27,48,0.3)';
-      ctx.fillRect(x + 3, y + 13, 10, 3);
+      E.groundShadow(x + 2, y + 13, 12, 3, 0.3);
       if (m.inv > 0 && m.burnT <= 0 && (m.inv >> 2) % 2 === 0) return;
       let img;
       if (m.burnT > 0) img = S.burnt;
@@ -1657,8 +1651,7 @@
         if (e.deadT < 10) ctx.drawImage(S.white[0], x, y + 16 - S.white[0].height);
         return;
       }
-      ctx.fillStyle = 'rgba(42,27,48,0.3)';
-      ctx.fillRect(x + 3, y + 13, 10, 3);
+      E.groundShadow(x + 2, y + 13, 12, 3, 0.3);
       const f = (e.animT >> 4) % 2;
       const frozen = this.freezeT > 0;
       let img = (e.dir === 'right' ? S.flipped : S.frames)[frozen || e.charm > 0 ? 0 : f];

@@ -25,12 +25,12 @@
   // a black dress with grey sheen, hair in four tones (H dark, h base, l light, L shine) and two-tone eyes (E over e).
   // keys: k outline, w/c white + shade, s/t skin + shade, p blush, m mouth, d/D dress + sheen, r/R collar bow,
   // b/B socks, x/X hair ribbon; per maid H/h/l/L hair dark..shine and E/e iris top/bottom
-  const MAID_BASE = { k: '#000000', w: '#ffffff', c: '#c3dff5', s: '#ffe3ce', t: '#f5bbaf', p: '#ff9fb0', m: '#b93753', d: '#000000', D: '#555555', r: '#000000', R: '#555555', b: '#ffffff', B: '#c3dff5', x: '#ffffff', X: '#c3dff5' };
+  const MAID_BASE = { k: '#000000', w: '#ffffff', c: '#c3dff5', s: '#ffe3ce', t: '#f5bbaf', p: '#ff9fb0', m: '#b93753', d: '#2a2137', D: '#5b5070', r: '#2a2137', R: '#5b5070', b: '#ffffff', B: '#c3dff5', x: '#ffffff', X: '#c3dff5' };
   const MAIDS = {
     // salmon-pink bob, blue eyes, red bow
     berry: { H: '#b8405e', h: '#f2748a', l: '#ffb0bb', L: '#ffe8eb', E: '#004e7d', e: '#0682cd', r: '#e3334f', R: '#9e1b35' },
     // black hair, grey-blue eyes, black bow with an amber brooch, black rose and dark red ribbon
-    yoru: { H: '#000000', h: '#1b181e', l: '#4f4650', L: '#948892', E: '#2f4557', e: '#6d8fa5', r: '#000000', R: '#b8642a', x: '#8a2430', X: '#521018', O: '#120c10' },
+    yoru: { H: '#110d17', h: '#2b2433', l: '#584e66', L: '#a093b0', E: '#2f4557', e: '#6d8fa5', r: '#2a2137', R: '#b8642a', x: '#8a2430', X: '#521018', O: '#1c141c' },
     // golden twin tails, green eyes, orange bow, white thigh-highs
     honey: { H: '#c98000', h: '#ffc01e', l: '#ffdd5a', L: '#ffefaa', E: '#0e7900', e: '#29c515', r: '#f5921e', R: '#b35a08' },
     // steel-blue long hair, blue eyes behind red glasses, blue bow
@@ -93,11 +93,11 @@
           '....|cwcw|wcwc|kHkH',
           '...k|cHHH|HHHc|khkk',
           '...c|HhhH|hhhH|chk.',
-          '..kH|hhHh|hlLh|Hhk.',
-          '..cH|hHhh|hllh|hHk.',
+          '..kH|hhHl|lLlh|Hhk.',
+          '..cH|lHhh|hhhl|hHk.',
           '.kHh|Hhhh|Hhhh|hHk.',
           '..kH|HhHH|hHhH|Hk..',
-          '..kH|skks|skks|Hk..',
+          '..kH|tkkt|tkkt|Hk..',
           '..kH|kcEs|sEck|Hk..',
           '.khH|swes|sews|Hhk.',
           'khhH|Htss|sstH|Hhhk',
@@ -154,7 +154,7 @@
           '..ch|lhhl|lhhl|hxXk',
           '.khl|hhlh|hlhh|lhxk',
           'khhh|hhhh|hhhh|hhXk',
-          '.kHk|skks|skks|kHk.',
+          '.kHk|tkkt|tkkt|kHk.',
           '.khk|kcEs|sEck|khk.',
           '.khk|swes|sews|khk.',
           '.khk|ktss|sstk|khk.',
@@ -214,7 +214,7 @@
           '..ch|hlHh|hHlh|hc..',
           '.kHh|hlHh|hHlh|hHk.',
           '..kH|hHhH|HhHh|Hk..',
-          '..kH|skks|skks|Hk..',
+          '..kH|tkkt|tkkt|Hk..',
           '..sH|kcEs|sEck|Hs..',
           '..tH|swes|sews|Ht..',
           '...k|Htss|sstH|k...',
@@ -274,7 +274,7 @@
           '..kH|hhlh|hhhl|hk..',
           '.kHh|Hhhh|hlhh|hHk.',
           '.kHh|hhHh|HhHh|hHk.',
-          '.kHk|skks|skks|kHk.',
+          '.kHk|tkkt|tkkt|kHk.',
           '.kHk|kcEs|sEck|kHk.',
           '.kHk|swes|sews|kHk.',
           '.kHk|Htss|sstH|kHk.',
@@ -421,12 +421,12 @@
   }
   // expressions replace the eye block (columns 4-11) of head rows 9-12; null keeps the row
   const FACES = {
-    happy: ['ssssssss', 'skksskks', 'ksskkssk', '?psmmsp?'],
+    happy: ['tssttsst', 'skksskks', 'ksskkssk', '?psmmsp?'],
     blush: [null, null, null, '?ppsspp?'],
-    angry: ['kksssskk', 'skEssEks', 'swessews', '?tskkst?'],
-    tired: ['ssssssss', 'skksskks', 'sEessEes', null],
-    sleep: ['ssssssss', 'ssssssss', 'skksskks', null],
-    surprise: ['skksskks', 'kwEssEwk', 'swessews', '?tsmmst?'],
+    angry: ['kksttskk', 'skEssEks', 'swessews', '?tskkst?'],
+    tired: ['tssttsst', 'skksskks', 'sEessEes', null],
+    sleep: ['tssttsst', 'ssssssss', 'skksskks', null],
+    surprise: ['tkkttkkt', 'kwEssEwk', 'swessews', '?tsmmst?'],
   };
 
   // ---------------------------------------------------------------- painters
@@ -1373,14 +1373,15 @@
         const p = new Pix(16, 16);
         const base = i ? '#dc9a5a' : '#e2a262';
         p.rect(0, 0, 16, 16, base);
-        for (let r = 0; r < 4; r++) {
-          const y = r * 4;
-          p.hline(0, y + 3, 16, '#b87440');
+        for (let r = 0; r < 2; r++) {
+          const y = r * 8;
           p.hline(0, y, 16, '#eab47a');
-          const j = Math.floor(hash(r, i, 3) * 12) + 2;
-          p.vline(j, y, 3, '#b87440');
-          p.set((j + 6) % 16, y + 1, '#c78448');
-          if (hash(r, i, 9) > 0.6) p.set((j + 3) % 16, y + 1, '#8c5230');
+          p.hline(0, y + 7, 16, '#b87440');
+          const j = Math.floor(hash(r, i, 3) * 10) + 3;
+          p.vline(j, y, 7, '#b87440'); p.vline(j + 1, y + 1, 6, '#eab47a');
+          // grain: short streaks a shade darker than the plank
+          const g = Math.floor(hash(r, i, 5) * 8) + 1;
+          p.hline((j + 3) % 16, y + 3, 4, '#d08e52'); p.hline((g + 9) % 16, y + 5, 3, '#d08e52');
         }
         return p;
       },
@@ -1435,23 +1436,29 @@
     },
     garden: {
       name: '花園', bg: '#1d3b24',
-      floor(i) { // two-tone grass checker with blades
+      floor(i) { // two-tone grass checker with little tufts
         const p = new Pix(16, 16);
-        p.rect(0, 0, 16, 16, i ? '#4aa83c' : '#5cbc48');
-        for (let n = 0; n < 7; n++) {
-          const x = Math.floor(hash(n, i, 21) * 15), y = Math.floor(hash(n, i, 22) * 14) + 1;
-          p.set(x, y, i ? '#2e7a2a' : '#3a8e30'); p.set(x + 1, y - 1, i ? '#6ad04a' : '#86e060');
+        p.rect(0, 0, 16, 16, i ? '#74bd52' : '#82c95c');
+        for (let n = 0; n < 5; n++) {
+          const x = Math.floor(hash(n, i, 21) * 13) + 1, y = Math.floor(hash(n, i, 22) * 12) + 2;
+          p.set(x, y, i ? '#5aa543' : '#66b04b'); p.set(x + 2, y, i ? '#5aa543' : '#66b04b'); p.set(x + 1, y - 1, i ? '#5aa543' : '#66b04b');
+          p.set(x + 1, y - 2, i ? '#9ed576' : '#a8de80');
         }
-        p.hline(0, 15, 16, i ? '#3a8e30' : '#48a038'); p.vline(15, 0, 16, i ? '#3a8e30' : '#48a038');
+        p.hline(0, 15, 16, i ? '#68b34c' : '#74bd54'); p.vline(15, 0, 16, i ? '#68b34c' : '#74bd54');
         return p;
       },
-      hard() { // trimmed hedge cube
+      hard() { // trimmed hedge cube: a lit top, a deep green front with leaf clumps
         const p = new Pix(16, 20);
-        p.rect(0, 0, 16, 6, '#5dbf55'); p.rect(0, 6, 16, 14, '#2f8a3c');
-        for (let n = 0; n < 16; n++) {
-          const x = Math.floor(hash(n, 1, 21) * 16), y = Math.floor(hash(n, 2, 21) * 18);
-          p.set(x, y, y < 6 ? '#86dd72' : '#246e30');
+        p.rect(0, 0, 16, 6, '#3f9e4e'); p.rect(0, 6, 16, 14, '#22683a');
+        for (let n = 0; n < 9; n++) {
+          const x = Math.floor(hash(n, 1, 21) * 14), y = Math.floor(hash(n, 2, 21) * 4);
+          p.set(x, y, '#6cc96a'); p.set(x + 1, y, '#6cc96a'); p.set(x + 1, y + 1, '#55b45a');
         }
+        for (let n = 0; n < 9; n++) {
+          const x = Math.floor(hash(n, 3, 21) * 15), y = 8 + Math.floor(hash(n, 4, 21) * 9);
+          p.set(x, y, '#18502d'); p.set(x + 1, y, '#18502d'); p.set(x, y - 1, '#2f7d45');
+        }
+        p.hline(0, 6, 16, '#1c5a33');
         p.hline(0, 19, 16, '#6b4a2c');
         return p.outlined(K);
       },
@@ -1500,11 +1507,11 @@
       },
       hard() { // ice block
         const p = new Pix(16, 20);
-        p.rect(0, 0, 16, 6, '#dcf7ff'); p.rect(0, 6, 16, 14, '#8fd8f2');
-        p.hline(0, 6, 16, '#4aa3c8');
+        p.rect(0, 0, 16, 6, '#c2eeff'); p.rect(0, 6, 16, 14, '#6cc2ea');
+        p.hline(0, 6, 16, '#3a8fc0'); p.rect(0, 15, 16, 4, '#58b0de');
         for (let n = 0; n < 5; n++) p.set(3 + n, 13 - n, '#e6fbff');
         p.set(11, 9, '#e6fbff'); p.set(12, 8, '#e6fbff');
-        p.hline(0, 19, 16, '#4aa3c8');
+        p.hline(0, 19, 16, '#3a8fc0');
         return p.outlined('#2c5d85');
       },
       hard2() { // snow-covered pine
@@ -1625,8 +1632,8 @@
       },
       wall(i) {
         const p = new Pix(16, 16);
-        p.rect(0, 0, 16, 16, '#ffc53a');
-        for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) if (((x + y) >> 3) % 2) p.set(x, y, '#2a2b40');
+        p.rect(0, 0, 16, 16, '#d8a940');
+        for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) if (((x + y) >> 3) % 2) p.set(x, y, '#3a3c52');
         return p;
       },
     },
@@ -1687,9 +1694,9 @@
       name: '寶石宮殿', bg: '#2b1a12',
       floor(i) { // gold tiles with inset gems
         const p = new Pix(16, 16);
-        p.rect(0, 0, 16, 16, i ? '#f0bd4a' : '#f7cb5c');
-        p.hline(0, 0, 16, '#ffe38a'); p.hline(0, 15, 16, '#c98f24'); p.vline(15, 0, 16, '#c98f24');
-        stamp(p, ['.y.', 'yoy', '.y.'], 6, 6, { y: '#ffe38a', o: i ? '#ec3d5f' : '#3d86f0' });
+        p.rect(0, 0, 16, 16, i ? '#dcc08a' : '#e6cd98');
+        p.hline(0, 0, 16, '#f2e0b4'); p.hline(0, 15, 16, '#c2a064'); p.vline(15, 0, 16, '#c2a064');
+        if (!i) stamp(p, ['.y.', 'yoy', '.y.'], 6, 6, { y: '#f2e0b4', o: '#b0506a' });
         return p;
       },
       hard() { // blue orb on a gold pedestal
@@ -1777,16 +1784,36 @@
 
   // the originals outline their blocks in pure black
   const inkOutline = (pix) => pix.map((c) => (c[0] === 0x2a && c[1] === 0x1b && c[2] === 0x30 ? [0, 0, 0, 255] : c));
+  // Stage finishing, after the pixel-art references: the ground and the border recede (contrast pulled toward each tile's
+  // own average, so maids, monsters and blocks read first) and every block gets a bevel — the rim just inside its outline
+  // lit where it faces the top-left light and shaded where it faces away — so it stands up off the floor.
+  function calm(pix, amt) {
+    let r = 0, g = 0, b = 0, n = 0;
+    for (let i = 0; i < pix.d.length; i += 4) if (pix.d[i + 3]) { r += pix.d[i]; g += pix.d[i + 1]; b += pix.d[i + 2]; n++; }
+    const avg = [r / n, g / n, b / n];
+    return pix.map((c) => [0, 1, 2].map((k) => Math.round(c[k] + (avg[k] - c[k]) * amt)).concat(255));
+  }
+  function bevel(pix) {
+    const edge = (x, y) => pix.solid(x, y) && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => !pix.solid(x + dx, y + dy));
+    return pix.map((c, x, y) => {
+      if (edge(x, y)) return c;
+      const lit = edge(x - 1, y) || edge(x, y - 1), shade = edge(x + 1, y) || edge(x, y + 1);
+      if (lit && !shade) return mix(c, '#ffffff', 0.28);
+      if (shade && !lit) return mix(c, '#2a1b30', 0.24);
+      return c;
+    });
+  }
+  const block = (pix) => bevel(inkOutline(pix));
   function buildTheme(key) {
     const T = THEMES[key];
     return {
       key, name: T.name, bg: T.bg,
-      floor: [T.floor(0), T.floor(1)],
-      hard: inkOutline(T.hard()),
-      hard2: T.hard2 ? inkOutline(T.hard2()) : null,
-      soft: [T.soft(0), T.soft(1), T.soft(2)].map(inkOutline),
+      floor: [calm(T.floor(0), 0.4), calm(T.floor(1), 0.4)],
+      hard: block(T.hard()),
+      hard2: T.hard2 ? block(T.hard2()) : null,
+      soft: [T.soft(0), T.soft(1), T.soft(2)].map(block),
       wallTop: [T.wallTop(0), T.wallTop(1)],
-      wall: T.wall(0),
+      wall: calm(T.wall(0), 0.3),
     };
   }
 
@@ -2904,6 +2931,7 @@
         p.set(3 + (i * 5) % 10, 4, '#ffffff'); p.set(10 - (i * 3) % 8, 11, '#fff0a0'); p.set(6, 16, '#9fb8e6');
         break;
     }
+    for (let x = 0; x < 16; x++) p.set(x, 16, mix(p.get(x, 16) || [255, 255, 255, 255], '#2a1b30', 0.12));
     p.rect(0, 17, 16, 7, '#b8763c'); p.hline(0, 17, 16, '#e0a262'); p.hline(0, 23, 16, '#8c5530');
     return p;
   }
@@ -2965,7 +2993,7 @@
     art.flame = {};
     for (let mask = 0; mask < 16; mask++) art.flame[mask] = [0, 1, 2, 3, 4].map((s) => buildFlame(mask, s));
     art.decor = {};
-    for (const k of ['treehouse', 'igloo', 'castle', 'podium', 'cane', 'stage', 'egg']) art.decor[k] = buildDecor(k);
+    for (const k of ['treehouse', 'igloo', 'castle', 'podium', 'cane', 'stage', 'egg']) art.decor[k] = bevel(buildDecor(k));
     art.bgTile = buildBgTile();
     for (const k of Object.keys(ICONS)) art.items[k] = buildItem(k);
     art.items.coin = [0, 1, 2, 3].map(buildCoin);
@@ -2991,7 +3019,7 @@
       bunny: BUNNY.map((rows) => fromRows(rows, BUNNY_PAL, 9)),
     };
     for (const k of Object.keys(EMOTES)) art.room.emotes[k] = buildEmote(k);
-    for (const k of ['bed', 'princess', 'desk', 'wardrobe', 'teatable', 'bookshelf', 'plant', 'plush', 'rug', 'piano', 'lamp', 'fishbowl', 'dresser', 'sofa', 'gramophone']) art.room.furniture[k] = buildFurniture(k);
+    for (const k of ['bed', 'princess', 'desk', 'wardrobe', 'teatable', 'bookshelf', 'plant', 'plush', 'rug', 'piano', 'lamp', 'fishbowl', 'dresser', 'sofa', 'gramophone']) art.room.furniture[k] = bevel(buildFurniture(k));
     for (const k of ['bunny', 'stripe', 'strawberry', 'night']) art.room.walls[k] = [buildWall(k, 0), buildWall(k, 1)];
     for (const k of ['wood', 'carpet', 'checker']) art.room.floors[k] = [buildFloor(k, 0), buildFloor(k, 1)];
     for (const k of ['daifuku', 'matcha', 'honeycake', 'icecream', 'bouquet', 'ribbon']) art.room.gifts[k] = buildGift(k);

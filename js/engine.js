@@ -381,6 +381,17 @@
     E.ctx.fillStyle = col;
     E.ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
   };
+  // the oval shadow an actor casts on the ground, in whole pixels (rows narrow toward the top and bottom)
+  E.groundShadow = function (x, y, w, h, alpha) {
+    const ctx = E.ctx;
+    ctx.fillStyle = 'rgba(42,27,48,' + (alpha == null ? 0.3 : alpha) + ')';
+    x = Math.round(x); y = Math.round(y);
+    for (let j = 0; j < h; j++) {
+      const t = ((j + 0.5) / h) * 2 - 1;
+      const inset = Math.round((1 - Math.sqrt(1 - t * t)) * (w / 2));
+      ctx.fillRect(x + inset, y + j, w - inset * 2, 1);
+    }
+  };
   // pixel-styled panel: dark outline, fill, top highlight
   E.panel = function (x, y, w, h, fill, edge, o) {
     o = o || {};

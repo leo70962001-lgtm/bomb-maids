@@ -794,8 +794,7 @@
         if (it.m) this.drawMember(it.m, t);
         else {
           const img = E.spr.room.furniture.teatable;
-          ctx.fillStyle = 'rgba(42,27,48,0.18)';
-          ctx.fillRect(Math.round(it.tb.x - 12), Math.round(it.tb.y - 3), 24, 4);
+          E.groundShadow(it.tb.x - 12, it.tb.y - 3, 24, 4, 0.18);
           ctx.drawImage(img, Math.round(it.tb.x - img.width), Math.round(it.tb.y - img.height * 2 + 2), img.width * 2, img.height * 2);
         }
       }
@@ -821,8 +820,7 @@
       }
       const hop = Math.round(m.hop);
       const x = Math.round(m.x - 16), y = Math.round(m.y - 48 - hop);
-      ctx.fillStyle = 'rgba(42,27,48,0.18)';
-      ctx.fillRect(Math.round(m.x - 10), Math.round(m.y - 3), 20, 4);
+      E.groundShadow(m.x - 10, m.y - 3, 20, 4, 0.18);
       if (m.key === 'honey') {
         const jig = m.petJig > 0 ? Math.round(Math.sin(m.petJig) * 2) : 0;
         // the bunny (drawn at the maids' 2x scale) hops while it follows her and sits still for petting
