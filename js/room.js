@@ -800,7 +800,7 @@
         m.hop = 4;
         this.emote('heart', 80);
         this.speak(E.pick(L.pat), n === 0 ? 'blush' : 'happy');
-        this.hearts(this.maidScreen().x + 8, this.maidScreen().y - 10, 4);
+        this.hearts(this.maidScreen().x + 8, this.maidScreen().y - 18, 4);
         A.sfx('pat');
       } else if (n < 6) {
         this.gain('aff', 1);
@@ -877,7 +877,7 @@
           A.sfx('kick');
           for (let i = 0; i < 8; i++) {
             const ang = (i / 8) * Math.PI * 2;
-            this.particles.push({ kind: 'sparkle', x: ms.x + 15, y: ms.y - 13, vx: Math.cos(ang) * 1.3, vy: Math.sin(ang) * 1.3 - 0.4, t: 0, life: 26 });
+            this.particles.push({ kind: 'sparkle', x: ms.x + 16, y: ms.y - 21, vx: Math.cos(ang) * 1.3, vy: Math.sin(ang) * 1.3 - 0.4, t: 0, life: 26 });
           }
           if (a.n < 3) { this.gain('aff', 2); this.gain('mood', 4); }
           this.emote('sparkle', 80);
@@ -885,7 +885,7 @@
         }
       } else if (a.kind === 'tickle') {
         if (a.t % 14 === 0) m.hop = 2;
-        if (a.t % 22 === 0) this.particles.push({ kind: 'note', x: ms.x + E.rand(-4, 14), y: ms.y - 12, vy: -0.6, t: 0, life: 36 });
+        if (a.t % 22 === 0) this.particles.push({ kind: 'note', x: ms.x + E.rand(-4, 14), y: ms.y - 20, vy: -0.6, t: 0, life: 36 });
         if (a.t === 10) {
           if (a.n < 3) {
             this.emote('note', 90);
@@ -938,7 +938,7 @@
       const fav = g.fav === k;
       const amount = fav ? 20 : g.aff;
       this.emote(fav || g.fav === 'all' ? 'heart' : 'sparkle', 120);
-      this.hearts(this.maidScreen().x + 8, this.maidScreen().y - 8, fav ? 10 : 5);
+      this.hearts(this.maidScreen().x + 8, this.maidScreen().y - 16, fav ? 10 : 5);
       A.sfx('gift');
       this.say([{ who: k, face: fav ? 'surprise' : 'happy', text: fav ? L.giftLike : L.giftNormal }], () => {
         this.gain('aff', amount);
@@ -1144,7 +1144,7 @@
       S.outfits[maidKey()] = o.id;
       A.sfx('gift');
       this.emote('sparkle', 100);
-      this.hearts(this.maidScreen().x + 8, this.maidScreen().y - 6, 4);
+      this.hearts(this.maidScreen().x + 8, this.maidScreen().y - 14, 4);
       // the first change of the day cheers her up
       if (!this.daily('outfit')) { this.bumpDaily('outfit'); this.gain('mood', 5); }
       this.speak(G.t('換好了！主人，好看嗎？'), 'blush');
@@ -1187,7 +1187,7 @@
           this.bumpDaily('hug');
           this.gain('mood', 5);
           this.emote('heart', 90);
-          this.hearts(this.maidScreen().x + 8, this.maidScreen().y - 6, 3);
+          this.hearts(this.maidScreen().x + 8, this.maidScreen().y - 14, 3);
           A.sfx('pat');
           this.speak(G.t('借我抱一下兔兔嘛～'), 'blush');
           G.persist();
@@ -1244,7 +1244,7 @@
       this.mode = 'dialog';
       const first = queue[0];
       if (first && first.who) this.setFace(first.face || 'normal', 9999);
-      if (first && first.levelUp) this.hearts(this.maidScreen().x + 8, this.maidScreen().y - 8, 8);
+      if (first && first.levelUp) this.hearts(this.maidScreen().x + 8, this.maidScreen().y - 16, 8);
     },
     updateDialog() {
       const d = this.dialog;
@@ -1260,7 +1260,7 @@
           d.chars = 0;
           const nx = d.queue[d.i];
           if (nx.who) this.setFace(nx.face || 'normal', 9999);
-          if (nx.levelUp) this.hearts(this.maidScreen().x + 8, this.maidScreen().y - 8, 8);
+          if (nx.levelUp) this.hearts(this.maidScreen().x + 8, this.maidScreen().y - 16, 8);
           A.sfx('select');
         } else {
           this.dialog = null;
@@ -1520,8 +1520,8 @@
       const ms = this.maidScreen();
       const mhop = Math.round(this.maid.hop);
       // her hair is for patting, her face for a poke on the cheek, the rest opens her menu
-      if (this.maid.state !== 'sleep' && x >= ms.x + 1 && x < ms.x + 15 && y >= ms.y - 8 - mhop && y < ms.y + 16) {
-        return { kind: 'maid', head: y < ms.y + 1 - mhop, face: y >= ms.y + 1 - mhop && y < ms.y + 6 - mhop };
+      if (this.maid.state !== 'sleep' && x >= ms.x - 2 && x < ms.x + 18 && y >= ms.y - 16 - mhop && y < ms.y + 16) {
+        return { kind: 'maid', head: y < ms.y - 5 - mhop, face: y >= ms.y - 5 - mhop && y < ms.y + 2 - mhop };
       }
       const room = B.getRoom();
       const objs = room.placed.slice().sort((a, b) => {
@@ -1615,7 +1615,7 @@
         gl.stroke = (gl.stroke || 0) + 1;
         if (gl.stroke % 48 === 0) {
           const ms = this.maidScreen();
-          this.hearts(ms.x + 8, ms.y - 12, 2);
+          this.hearts(ms.x + 8, ms.y - 20, 2);
           this.setFace('happy', 60);
           if (this.daily('stroke') < 6) { this.bumpDaily('stroke'); this.gain('mood', 1); }
         }
@@ -1674,7 +1674,7 @@
       }
       if (an.kind === 'tea') {
         if (an.t % 18 === 0) this.particles.push({ kind: 'steam', x: ms.x + 12, y: ms.y + 2, vx: 0, vy: -0.4, t: 0, life: 30 });
-        if (an.t === 40) { this.emote('heart', 60); this.hearts(ms.x + 8, ms.y - 8, 3); }
+        if (an.t === 40) { this.emote('heart', 60); this.hearts(ms.x + 8, ms.y - 16, 3); }
         if (an.t >= an.dur) {
           this.anim = null;
           this.maid.state = 'idle';
@@ -1690,7 +1690,7 @@
           const f = melody[(an.t / 20) % melody.length];
           if (A.ctx && A.sound) { A.sfx('tick'); }
           this.emote('note', 18);
-          this.particles.push({ kind: 'note', x: ms.x + E.randi(0, 16), y: ms.y - 12, vx: E.rand(-0.3, 0.3), vy: -0.6, t: 0, life: 40, f });
+          this.particles.push({ kind: 'note', x: ms.x + E.randi(0, 16), y: ms.y - 20, vx: E.rand(-0.3, 0.3), vy: -0.6, t: 0, life: 40, f });
         }
         if (an.t >= an.dur) {
           this.anim = null;
@@ -1807,7 +1807,7 @@
       const img = E.spr.room.furniture[p.id];
       const hx = p.id === 'princess' ? x + 8 : x;
       const hy = p.id === 'princess' ? y + 8 : y + 3;
-      ctx.drawImage(face, 0, 0, 16, 14, hx, hy, 16, 14);
+      ctx.drawImage(face, 4, 1, 18, 17, hx - 1, hy - 3, 18, 17);
       const cut = p.id === 'princess' ? 19 : 16;
       ctx.drawImage(img, 0, cut, img.width, img.height - cut, x, y + cut, img.width, img.height - cut);
     },
@@ -1830,27 +1830,27 @@
       const broom = maidKey() === 'berry' ? E.spr.room.vacuum : E.spr.room.broom;
       const by = maidKey() === 'berry' ? ms.y - 6 - hop : ms.y - 2 - hop + ((this.t >> 3) % 2);
       if (maidKey() === 'honey' && m.state !== 'sleep') {
-        const side = m.dir === 'left' ? 15 : -9;
+        const side = m.dir === 'left' ? 18 : -12;
         const air = Math.round(Math.abs(Math.sin(this.t * 0.1)) * 3);
         const bunny = E.spr.room.bunny[air > 1 ? 1 : 0];
         ctx.drawImage(bunny, ms.x + side, ms.y + 16 - bunny.height - air);
       }
-      if (m.prop === 'broom' && m.dir !== 'right') ctx.drawImage(broom, ms.x + 12, by);
+      if (m.prop === 'broom' && m.dir !== 'right') ctx.drawImage(broom, ms.x + 14, by);
       const act = this.glove.act;
       const sx = act && act.kind === 'poke' && act.t >= 8 && act.t < 22 ? -1 : act && act.kind === 'tickle' ? ((act.t >> 2) % 2 ? 1 : -1) : 0;
-      ctx.drawImage(img, ms.x + sx, ms.y - 8 - hop);
+      ctx.drawImage(img, ms.x - 5 + sx, ms.y - 16 - hop);
       if (act && act.kind === 'highfive' && act.t >= 10 && act.t < 40) {
         // her hand up to meet the glove
-        E.rect(ms.x + 12 + sx, ms.y - 4 - hop, 3, 5, '#000000');
-        E.rect(ms.x + 13 + sx, ms.y - 3 - hop, 1, 3, '#ffe3ce');
+        E.rect(ms.x + 15 + sx, ms.y - 8 - hop, 3, 6, '#241f33');
+        E.rect(ms.x + 16 + sx, ms.y - 7 - hop, 1, 4, '#fde5d8');
       }
-      if (m.prop === 'broom' && m.dir === 'right') ctx.drawImage(broom, ms.x - 6, by);
-      if (m.prop === 'book') ctx.drawImage(E.spr.room.book, ms.x + 3, ms.y + 2 - hop);
-      if (m.prop === 'cup') ctx.drawImage(E.spr.room.cup, ms.x + 9, ms.y + 3 - hop);
-      if (face === 'blush' || m.face === 'blush') { E.rect(ms.x + 3, ms.y + 4 - hop, 2, 1, '#ff6f91'); E.rect(ms.x + 11, ms.y + 4 - hop, 2, 1, '#ff6f91'); }
+      if (m.prop === 'broom' && m.dir === 'right') ctx.drawImage(broom, ms.x - 8, by);
+      if (m.prop === 'book') ctx.drawImage(E.spr.room.book, ms.x + 3, ms.y + 3 - hop);
+      if (m.prop === 'cup') ctx.drawImage(E.spr.room.cup, ms.x + 10, ms.y + 4 - hop);
+      if (face === 'blush' || m.face === 'blush') { E.rect(ms.x + 2, ms.y - hop, 2, 1, '#ff6f91'); E.rect(ms.x + 12, ms.y - hop, 2, 1, '#ff6f91'); }
       const hv = this.hover && this.hover.kind === 'maid' && this.mode === 'free';
       if (hv && this.hover.head && this.glove.pat <= 0) {
-        ctx.drawImage(E.spr.fx.sparkle[(this.t >> 4) % 3], ms.x - 3, ms.y - 12 - hop);
+        ctx.drawImage(E.spr.fx.sparkle[(this.t >> 4) % 3], ms.x - 5, ms.y - 20 - hop);
       }
     },
     // idle and awake, she turns towards the glove when it comes close (not while it is on her)
@@ -1869,7 +1869,7 @@
       const m = this.maid;
       const ms = this.maidScreen();
       const hop = Math.round(m.hop);
-      let headY = ms.y - 8 - hop;
+      let headY = ms.y - 16 - hop;
       if (m.state === 'sleep' && m.bed) {
         const g = geom();
         const F = G.FURNITURE[m.bed.id];
@@ -1986,24 +1986,24 @@
         // patting: pressed down on her hair, lifted, pressed again
         const up = (gl.pat % 16) < 7;
         const wiggle = Math.round(Math.sin(gl.pat * 0.35) * 2);
-        ctx.drawImage(G2.pat[up ? 1 : 0], ms.x - 5 + wiggle, ms.y - 22 - hop - (up ? 2 : 0));
+        ctx.drawImage(G2.pat[up ? 1 : 0], ms.x - 6 + wiggle, ms.y - 29 - hop - (up ? 2 : 0));
         return;
       }
       const act = gl.act;
       if (act && act.kind === 'poke') {
         // reach in, press her cheek, draw back
         const reach = act.t < 8 ? 8 - act.t : act.t < 22 ? 0 : Math.min(10, act.t - 22);
-        ctx.drawImage(G2.poke, ms.x + 11 + reach, ms.y - 6 - hop);
+        ctx.drawImage(G2.poke, ms.x + 13 + reach, ms.y - 10 - hop);
         return;
       }
       if (act && act.kind === 'highfive') {
         // the palm comes down to meet her raised hand, then lifts away
         const down = act.t < 16 ? E.ease.outCubic(act.t / 16) : 1 - Math.max(0, (act.t - 30) / 26);
-        ctx.drawImage(G2.open, ms.x + 10, Math.round(ms.y - 46 + down * 14) - (act.t >= 16 && act.t < 22 ? 1 : 0));
+        ctx.drawImage(G2.open, ms.x + 13, Math.round(ms.y - 52 + down * 14) - (act.t >= 16 && act.t < 22 ? 1 : 0));
         return;
       }
       if (act && act.kind === 'tickle') {
-        ctx.drawImage(G2.tickle[(act.t >> 3) % 2], ms.x + 6 + ((act.t >> 2) % 2), ms.y - 1 - hop);
+        ctx.drawImage(G2.tickle[(act.t >> 3) % 2], ms.x + 6 + ((act.t >> 2) % 2), ms.y - 5 - hop);
         return;
       }
       ctx.drawImage(G2.point, Math.round(gl.x) - 6, Math.round(gl.y));
