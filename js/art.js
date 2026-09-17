@@ -21,19 +21,23 @@
     y: '#ffd23f', // gold
   };
 
-  // Maids (16x24), refined after the chibi sprite sheets the user sent (Eagle Union, DEAD OR ALIVE): a round head whose
-  // outline takes a dark hair hue, the fringe split into clumps under a lit crown, two-pixel eyes (a lash tip under the fringe,
-  // a dark lid row, the iris with a light outer pixel), a touch of blush, and a fuller maid dress with puffed sleeves.
-  // keys: k outline, w/c white + shade, s/t skin + shade, p blush, m mouth, q eye dark, d/D dress + light, r/R collar bow,
-  // u/a/A sleeve (shoulder, arm, arm shade), j legs, z shoes; per maid H/h/l/L hair dark..shine, e/E iris + light,
-  // x/X/O ribbon and rose, G glasses
-  const MAID_BASE = { k: '#000000', w: '#ffffff', c: '#c3dff5', s: '#ffe3ce', t: '#f5bbaf', p: '#ff9fb0', m: '#d9566e', q: '#231a2c', d: '#2a2137', D: '#5b5070', r: '#2a2137', R: '#5b5070', z: '#1a1420', b: '#ffffff', B: '#c3dff5', x: '#ffffff', X: '#c3dff5' };
+  // Maids keep the 16x24 shapes and take their colours from the Genshin chibi sheet the user chose as the standard:
+  // warm white with a lavender-grey shade, peach skin, a violet-grey dress, muted hair ramps lit from the top left
+  // (H dark, h base, l light, L shine), soft irises (E over e), and inks instead of black (see inkHair).
+  // keys: k outline, w/c white + shade, s/t skin + shade, p blush, m mouth, d/D dress + sheen, r/R collar bow,
+  // b/B socks, x/X hair ribbon; per maid H/h/l/L hair dark..shine, E/e iris top/bottom, hairInk and lash
+  const MAID_BASE = { k: '#000000', w: '#fbf8f4', c: '#dcdde8', s: '#fde5d8', t: '#f0bdab', p: '#f6adb0', m: '#c46a6e', d: '#403a54', D: '#6e6886', r: '#2a2137', R: '#5b5070', b: '#fbf8f4', B: '#dcdde8', x: '#fbf8f4', X: '#dcdde8', bodyInk: '#241f33', skinInk: '#b07868', whiteInk: '#6c6c8a' };
   const MAIDS = {
-    berry: { H: '#b8405e', h: '#f2748a', l: '#ffb0bb', L: '#ffe8eb', e: '#2f8fe0', E: '#9ad4ff', r: '#e3334f', R: '#9e1b35' },
-    yoru: { H: '#110d17', h: '#2b2433', l: '#584e66', L: '#a093b0', e: '#7fa3bb', E: '#c3d6e3', r: '#2a2137', R: '#b8642a', x: '#b02a3e', X: '#6a1426', O: '#1c141c' },
-    honey: { H: '#c98000', h: '#ffc01e', l: '#ffdd5a', L: '#ffefaa', e: '#35b52a', E: '#a8ee8c', r: '#f5921e', R: '#b35a08' },
-    yukino: { H: '#2c4f86', h: '#5b89c4', l: '#8fb9e6', L: '#d0e6fa', e: '#4d93d6', E: '#a6d2ff', r: '#2e8fd8', R: '#185592', G: '#c02c3c' },
+    // salmon-pink bob, blue eyes, red bow
+    berry: { H: '#a8466e', h: '#f38aa2', l: '#ffb8c4', L: '#fff0ec', E: '#2c5a8c', e: '#6aa2d2', r: '#e0435c', R: '#9e2238', hairInk: '#5e2044', lash: '#4a2434' },
+    // black hair, grey-blue eyes, black bow with an amber brooch, black rose and dark red ribbon
+    yoru: { H: '#1a182a', h: '#2a2840', l: '#3e3c5a', L: '#62608a', E: '#445a6e', e: '#8aa2b6', r: '#2e2840', R: '#e0a040', x: '#b02a3e', X: '#6a1426', O: '#2a2030', hairInk: '#100e1a', lash: '#241c2a' },
+    // golden twin tails, green eyes, orange bow, white thigh-highs
+    honey: { H: '#b07a3e', h: '#e8b964', l: '#f7dc94', L: '#fff6d8', E: '#3a6a4c', e: '#7ab08a', r: '#f39a3c', R: '#b8641c', hairInk: '#5e3a26', lash: '#5a2e2a' },
+    // steel-blue long hair, blue eyes behind red glasses, blue bow
+    yukino: { H: '#3a5a90', h: '#74a2d8', l: '#a8d0f4', L: '#e6f4ff', E: '#2a4e86', e: '#6a96d0', r: '#3a90d8', R: '#1f5a9a', G: '#a8404a', hairInk: '#1e2e56', lash: '#1e2a42' },
   };
+
   function pal(maid) {
     return Object.assign({}, BASE, MAID_BASE, MAIDS[maid] || {});
   }
@@ -57,425 +61,308 @@
   }
 
   // ---------------------------------------------------------------- maid bodies (rows 14..23)
-  // frames: standing, step A, step B (front and back share the legs; the side view strides)
-  const DOWN0 = [
-    '....|.kwr|rwk.|....',
-    '...k|kDdR|RdDk|k...',
-    '..kD|Dddw|wddD|Dk..',
-    '..kk|addw|wdda|kk..',
-    '...k|sddw|wdds|k...',
-    '..kd|ddww|wwdd|dk..',
-    '.kdd|ddww|wwdd|ddk.',
-    '.kDd|Dcww|wwcD|dDk.',
-  ];
-  const UP0 = [
-    '....|.kdd|ddk.|....',
-    '...k|kDdd|ddDk|k...',
-    '..kD|Dwdd|ddwD|Dk..',
-    '..kk|adwd|dwda|kk..',
-    '...k|sddw|wdds|k...',
-    '..kd|dwwc|cwwd|dk..',
-    '.kdd|dcwd|dwcd|ddk.',
-    '.kDd|Dddd|dddD|dDk.',
-  ];
-  const SIDE0 = [
-    '....|.krw|k...|....',
-    '....|kDdd|Dk..|....',
-    '....|kwDD|dk..|....',
-    '....|kwad|dk..|....',
-    '....|kwsd|dk..|....',
-    '...k|wwdd|dwk.|....',
-    '...k|wddd|dck.|....',
-    '..kD|wDdD|dDk.|....',
-  ];
-  const LEGS = [
-    ['....|kjjk|kjjk|....', '....|kzzk|kzzk|....'],
-    ['....|kjjk|kzzk|....', '....|kzzk|.kk.|....'],
-    ['....|kzzk|kjjk|....', '....|.kk.|kzzk|....'],
-  ];
+  // frames: standing, step A, step B
   const BODY = {
-    down: LEGS.map((l) => DOWN0.concat(l)),
-    up: LEGS.map((l) => UP0.concat(l)),
+    down: [
+      ['...k|wrrR|Rrrw|k...', '....|kurD|Druk|....', '....|kacw|wcAk|....', '....|kadw|wdAk|....', '....|kwsd|dswk|....', '...k|dDdw|wcdd|k...', '...k|wdcw|wcdw|k...', '....|.kjk|kjk.|....', '....|.kck|kck.|....', '....|.kkk|kkk.|....'],
+      ['...k|wrrR|Rrrw|k...', '....|kurD|Druk|....', '....|kacw|wcAk|....', '....|kadw|wdAk|....', '....|kwsd|dswk|....', '...k|dDdw|wcdd|k...', '...k|wdcw|wcdw|k...', '....|.kjk|kjk.|....', '....|.kck|.kk.|....', '....|.kkk|....|....'],
+      ['...k|wrrR|Rrrw|k...', '....|kurD|Druk|....', '....|kacw|wcAk|....', '....|kadw|wdAk|....', '....|kwsd|dswk|....', '...k|dDdw|wcdd|k...', '...k|wdcw|wcdw|k...', '....|.kjk|kjk.|....', '....|.kk.|kck.|....', '....|....|kkk.|....'],
+    ],
+    up: [
+      ['...k|cddd|dddc|k...', '....|kudd|dduk|....', '....|kadd|ddak|....', '....|kAww|wwAk|....', '....|kwwk|kwwk|....', '...k|dDdw|wdDd|k...', '...k|wcdd|ddcw|k...', '....|.kjk|kjk.|....', '....|.kck|kck.|....', '....|.kkk|kkk.|....'],
+      ['...k|cddd|dddc|k...', '....|kudd|dduk|....', '....|kadd|ddak|....', '....|kAww|wwAk|....', '....|kwwk|kwwk|....', '...k|dDdw|wdDd|k...', '...k|wcdd|ddcw|k...', '....|.kjk|kjk.|....', '....|.kck|.kk.|....', '....|.kkk|....|....'],
+      ['...k|cddd|dddc|k...', '....|kudd|dduk|....', '....|kadd|ddak|....', '....|kAww|wwAk|....', '....|kwwk|kwwk|....', '...k|dDdw|wdDd|k...', '...k|wcdd|ddcw|k...', '....|.kjk|kjk.|....', '....|.kk.|kck.|....', '....|....|kkk.|....'],
+    ],
+    // facing left; right is the mirror image
     side: [
-      SIDE0.concat(['....|.kjj|k...|....', '....|kzzz|k...|....']),
-      SIDE0.concat(['...k|jk..|kjk.|....', '..kz|zk..|kzk.|....']),
-      SIDE0.concat(['....|kjkk|jk..|....', '...k|zzkk|zk..|....']),
+      ['....|krwk|....|....', '....|kkud|k...|....', '....|kcad|k...|....', '....|kwAd|k...|....', '....|kcsd|k...|....', '...k|wdDd|wk..|....', '...k|cwdc|wk..|....', '....|kjk.|....|....', '....|kck.|....|....', '...k|kkk.|....|....'],
+      ['....|krwk|....|....', '....|kkud|k...|....', '....|kcda|k...|....', '....|kwdA|k...|....', '....|kcds|k...|....', '...k|wdDd|wk..|....', '...k|cwdc|wk..|....', '...k|jk.k|jk..|....', '..kc|k...|kck.|....', '.kkk|....|kkk.|....'],
+      ['....|krwk|....|....', '....|kkud|k...|....', '...k|acdd|k...|....', '...k|Acdd|k...|....', '...k|scdd|k...|....', '...k|wdDd|wk..|....', '...k|cwdc|wk..|....', '....|.kjk|....|....', '....|.kck|....|....', '....|kkkk|....|....'],
     ],
   };
 
   // ---------------------------------------------------------------- maid heads (rows 0..13) and hair layers
-  // head rows: lace frill 0-2, crown 3-5, fringe 6-9 (lash tips on 9), lids 10, irises 11, mouth 12, chin 13.
-  // under / over: hair drawn behind / in front of the body (24 rows); bare: head rows used instead when headwear replaces
-  // the frill (Yoru's rose comes off with it)
-  const FRILL = ['....|..kk|kk..|....', '....|.kww|wwk.|....', '....|kwcw|wcwk|....'];
+  // head rows: lace headdress 0-2, hair 3-8, eyelids 9, eyes 10-11, cheeks 12, chin 13 (the side view's headdress is edge-on).
+  // Front eyes are two-pixel coloured irises with a catchlight (chibi pixel sprites read by their eyes); the cheek row carries
+  // each maid's everyday face from the CG: Berry's open smile, Honey's fluster blush, Yukino's small smile, Yoru calm.
+  // under / over: hair drawn behind / in front of the body (24 rows).
   const MAID_PARTS = {
-    // salmon-pink bob flicking out at the ends, the curled ahoge
+    // chin-length bob flicking out at the ends, the curled ahoge over her left temple
     berry: {
       down: {
         head: [
           '....|..kk|kk..|.kk.',
           '....|.kww|wwk.|khLk',
-          '....|kwcw|wcwk|.kHk',
-          '...k|Hhhh|hhhH|kHk.',
-          '..kH|hlLL|LLlh|Hk..',
-          '.kHh|lhhh|hhhl|hHk.',
-          '.kHh|hhhH|Hhhh|hHk.',
-          '.kHh|hhHh|hHhh|hHk.',
-          '.kHh|hHhh|hhHh|hHk.',
-          '.kHh|Hqhh|hhqH|hHk.',
-          '.kHh|sqqs|sqqs|hHk.',
-          'kHHH|pEes|seEp|HHHk',
-          'kHhH|tsss|msst|HhHk',
-          'kHk.|kttt|tttk|.kHk',
+          '....|cwcw|wcwc|kHkH',
+          '...k|cHHH|HHHc|khkk',
+          '...c|HhlL|lhhH|chk.',
+          '..kH|hlLl|hhhh|Hhk.',
+          '..cH|hhlh|hhhH|hHk.',
+          '.kHh|Hhhh|Hhhh|hHk.',
+          '..kH|hHhh|hhHh|Hk..',
+          '..kH|tkkt|tkkt|Hk..',
+          '..kH|kwEs|swEk|Hk..',
+          '.khH|sees|sees|Hhk.',
+          'khhH|Hpsm|mspH|Hhhk',
+          '.kkk|kHtt|ttHk|kkk.',
         ],
       },
       up: {
         head: [
           '.kk.|..kk|kk..|....',
           'kLhk|.kww|wwk.|....',
-          'kHk.|kwcw|wcwk|....',
-          '.kHk|Hhhh|hhhH|k...',
-          '..kH|hlLL|LLlh|Hk..',
-          '.kHh|lhhh|hhhl|hHk.',
+          'HkHk|cwcw|wcwc|....',
+          'kkhk|cHHH|HHHc|k...',
+          '.khc|hlLl|hhhh|c...',
+          '..kh|lLlh|hhhh|Hk..',
+          '..ch|hlhh|hhhh|Hc..',
           '.kHh|hhhh|hhhh|hHk.',
-          '.kHh|hHhh|hhHh|hHk.',
-          '.kHh|hHhh|hhHh|hHk.',
-          '.kHh|Hhhh|hhhH|hHk.',
-          '.kHh|HhhH|HhhH|hHk.',
-          'kHHh|HhhH|HhhH|hHHk',
-          'kHhH|hHhH|HhHh|HhHk',
-          'kHk.|kHkH|HkHk|.kHk',
+          '..kH|hhHh|hHhh|Hk..',
+          '..kH|hHhh|hhHh|Hk..',
+          '..kH|hHhh|hhHh|Hk..',
+          '.khH|HHHH|HHHH|Hhk.',
+          'khhH|HHHH|HHHH|Hhhk',
+          '.kkk|kHkH|HkHk|kkk.',
         ],
       },
       side: {
         head: [
-          '....|..kk|kk..|kk..',
-          '....|.kww|wwkk|hLk.',
-          '....|kwcw|wcwk|Hk..',
-          '...k|Hhhh|hhhh|Hk..',
-          '..kH|hlLL|LLlh|hHk.',
-          '.kHh|lhhh|hhhl|hhHk',
-          '.kHh|hhhh|Hhhh|hhHk',
-          'kHhh|hhhH|hhhh|hHHk',
-          'kHhh|hhHh|hhhh|HhHk',
-          'kHhq|HhHh|hhhH|hHk.',
-          'ksqq|shHh|hhHh|hHk.',
-          'kpEe|shHh|hHhh|hHk.',
-          '.kss|thHk|HhHh|Hk..',
-          '..kt|tkHk|.kHk|k...',
+          '....|.kk.|.kk.|....',
+          '....|kwc.|khLk|....',
+          '...k|Hwck|hkkH|....',
+          '..kH|hhwc|Hhkk|....',
+          '.kHh|lLhh|wcHk|....',
+          '.kHh|llhh|hwck|....',
+          'kHhh|hhhH|hcwk|....',
+          'kHhH|hHhh|Hwck|....',
+          'kHHh|HhhH|hHk.|....',
+          'kHkk|Hhhh|HHk.|....',
+          'ksEc|sHhH|hHk.|....',
+          'ksew|stHh|Hhk.|....',
+          '.kss|tkHH|hHhk|....',
+          '..kt|tk.k|kkk.|....',
         ],
       },
     },
-    // golden twin tails tied at the sides of her head with orange ties, falling past her shoulders
-    honey: {
-      down: {
-        head: FRILL.concat([
-          '...k|Hhhh|hhhH|k...',
-          '..kH|hlLL|LLlh|Hk..',
-          '.rHh|lhhh|hhhl|hHr.',
-          '.RHh|hhHh|hHhh|hHR.',
-          '.kHh|hHhh|hhHh|hHk.',
-          '.kHh|Hhhh|hhhH|hHk.',
-          '.kHh|Hqhh|hhqH|hHk.',
-          '.kHh|sqqs|sqqs|hHk.',
-          '.kHH|pEes|seEp|HHk.',
-          '..kH|tsss|msst|Hk..',
-          '...k|kttt|tttk|k...',
-        ]),
-        under: pad(4, [
-          '.kk.|....|....|.kk.',
-          'khLk|....|....|kLhk',
-          'khlh|k...|...k|hlhk',
-          'kHhh|k...|...k|hhHk',
-          'kHhk|....|....|khHk',
-          'kHlk|....|....|klHk',
-          'kHlk|....|....|klHk',
-          'kHhk|....|....|khHk',
-          'kHhk|....|....|khHk',
-          'kHlh|k...|...k|hlHk',
-          'kHhh|k...|...k|hhHk',
-          '.kHh|k...|...k|hHk.',
-          '.kHk|....|....|kHk.',
-          '..kH|k...|...k|Hk..',
-          '...k|....|....|k...',
-        ]),
-      },
-      up: {
-        head: FRILL.concat([
-          '...k|Hhhh|hhhH|k...',
-          '..kH|hlLL|LLlh|Hk..',
-          '.rHh|lhhh|hhhl|hHr.',
-          '.RHh|hhhh|hhhh|hHR.',
-          '.kHh|hHhh|hhHh|hHk.',
-          '.kHh|hHhh|hhHh|hHk.',
-          '.kHh|Hhhh|hhhH|hHk.',
-          '.kHh|HhhH|HhhH|hHk.',
-          '.kHH|hHhH|HhHh|HHk.',
-          '..kH|kHhH|HhHk|Hk..',
-          '...k|kHkk|kkHk|k...',
-        ]),
-        under: pad(4, [
-          '.kk.|....|....|.kk.',
-          'khLk|....|....|kLhk',
-          'khlh|k...|...k|hlhk',
-          'kHhh|k...|...k|hhHk',
-          'kHhk|....|....|khHk',
-          'kHlk|....|....|klHk',
-          'kHlk|....|....|klHk',
-          'kHhk|....|....|khHk',
-          'kHhk|....|....|khHk',
-          'kHlh|k...|...k|hlHk',
-          'kHhh|k...|...k|hhHk',
-          '.kHh|k...|...k|hHk.',
-          '.kHk|....|....|kHk.',
-          '..kH|k...|...k|Hk..',
-          '...k|....|....|k...',
-        ]),
-      },
-      side: {
-        head: FRILL.concat([
-          '...k|Hhhh|hhhh|Hk..',
-          '..kH|hlLL|LLlh|hHk.',
-          '.kHh|lhhh|hhhl|rHk.',
-          '.kHh|hhhh|Hhhh|RHk.',
-          'kHhh|hhhH|hhhh|hHk.',
-          'kHhh|hhHh|hhhh|Hk..',
-          'kHhq|HhHh|hhhH|k...',
-          'ksqq|shHh|hhHh|k...',
-          'kpEe|shHh|hHhh|k...',
-          '.kss|thHk|HhHk|....',
-          '..kt|tkHk|.kk.|....',
-        ]),
-        under: pad(6, [
-          '....|....|..kk|....',
-          '....|....|.khL|k...',
-          '....|....|.khl|hk..',
-          '....|....|.kHh|hk..',
-          '....|....|..kH|hk..',
-          '....|....|..kH|lhk.',
-          '....|....|..kH|lhk.',
-          '....|....|..kH|hhk.',
-          '....|....|...k|Hhk.',
-          '....|....|...k|Hlk.',
-          '....|....|...k|Hhk.',
-          '....|....|..kH|hk..',
-          '....|....|..kH|k...',
-          '....|....|...k|....',
-        ]),
-      },
-    },
-    // long straight hair down her back, red glasses
-    yukino: {
-      down: {
-        head: FRILL.concat([
-          '...k|Hhhh|hhhH|k...',
-          '..kH|hlLL|LLlh|Hk..',
-          '.kHh|lhhh|hhhl|hHk.',
-          '.kHh|hhhH|hhhh|hHk.',
-          '.kHh|hhHh|hHhh|hHk.',
-          '.kHh|hHhh|hhHh|hHk.',
-          '.kHl|Hqhh|hhqH|lHk.',
-          '.kHl|sqqs|sqqs|lHk.',
-          '.kHl|sEes|seEs|lHk.',
-          '.kHl|tsss|msst|lHk.',
-          '..kH|kttt|tttk|Hk..',
-        ]),
-        under: pad(11, [
-          '.kHk|....|....|kHk.',
-          'kHhk|....|....|khHk',
-          'kHhk|....|....|khHk',
-          'kHlh|k...|...k|hlHk',
-          'kHlh|k...|...k|hlHk',
-          'kHhh|k...|...k|hhHk',
-          'kHhh|k...|...k|hhHk',
-          'kHhk|....|....|khHk',
-          'kHhk|....|....|khHk',
-          'kHk.|....|....|.kHk',
-          '.k..|....|....|..k.',
-        ]),
-        over: pad(10, ['....|G..G|G..G|....']),
-      },
-      up: {
-        head: FRILL.concat([
-          '...k|Hhhh|hhhH|k...',
-          '..kH|hlLL|LLlh|Hk..',
-          '.kHh|lhhh|hhhl|hHk.',
-          '.kHh|hhhh|hhhh|hHk.',
-          '.kHh|hHhh|hhHh|hHk.',
-          '.kHh|hHhh|hhHh|hHk.',
-          '.kHh|Hhhh|hhhH|hHk.',
-          '.kHh|Hhhh|hhhH|hHk.',
-          '.kHh|HhhH|HhhH|hHk.',
-          '.kHh|HhhH|HhhH|hHk.',
-          '.kHh|hHhH|HhHh|hHk.',
-        ]),
-        over: pad(14, [
-          '.kHh|hHhH|HhHh|hHk.',
-          '.kHh|HhhH|HhhH|hHk.',
-          'kHhh|HhhH|HhhH|hhHk',
-          'kHhh|HhhH|HhhH|hhHk',
-          'kHhH|hhHh|hHhh|HhHk',
-          'kHhH|hhHh|hHhh|HhHk',
-          '.kHk|HkHk|kHkH|kHk.',
-          '..k.|k.k.|.k.k|.k..',
-        ]),
-      },
-      side: {
-        head: FRILL.concat([
-          '...k|Hhhh|hhhh|Hk..',
-          '..kH|hlLL|LLlh|hHk.',
-          '.kHh|lhhh|hhhl|hhHk',
-          '.kHh|hhhh|Hhhh|hhHk',
-          'kHhh|hhhH|hhhh|hHHk',
-          'kHhh|hhHh|hhhh|HhHk',
-          'kHhq|HhHh|hhhH|hHHk',
-          'ksqq|shHh|hhHh|hHHk',
-          'kpEe|shHh|hHhh|hHHk',
-          '.kss|thHh|hHhh|HhHk',
-          '..kt|tkHh|HhhH|hhHk',
-        ]),
-        under: pad(14, [
-          '....|..kH|hhhH|hHk.',
-          '....|..kH|hhHh|hHk.',
-          '....|...k|HhHh|hHk.',
-          '....|...k|HhHh|Hk..',
-          '....|....|kHhH|Hk..',
-          '....|....|kHkH|k...',
-          '....|....|.k.k|....',
-        ]),
-        over: pad(10, ['.G.G|GG..|....|....', '.G..|....|....|....']),
-      },
-    },
-    // long black hair, a black rose on her hairband with a dark red ribbon
+    // long black hair, a black rose on her hairband with a dark red ribbon hanging from it
     yoru: {
       down: {
         head: [
-          '....|..kk|kk..|.kk.',
-          '....|.kww|wwk.|kOlk',
-          '....|kwcw|wcwk|OLOk',
-          '...k|Hhhh|hhhk|OOxk',
-          '..kH|hlLL|LLlh|kxXk',
-          '.kHh|lhhh|hhhl|hkx.',
-          '.kHh|hhhH|hhhh|hHk.',
-          '.kHh|hhHh|hHhh|hHk.',
-          '.kHh|hHhh|hhHh|hHk.',
-          '.kHl|Hqhh|hhqH|lHk.',
-          '.kHl|sqqs|sqqs|lHk.',
-          '.kHl|pEes|seEp|lHk.',
-          '.kHl|tsss|ssst|lHk.',
-          '..kH|kttt|tttk|Hk..',
+          '....|..kk|kk..|....',
+          '....|.kww|wwk.|....',
+          '....|cwcw|wcwc|.kk.',
+          '...k|chhh|hhhc|OlLk',
+          '...c|hLlh|hhhh|OLlk',
+          '..kh|lLlh|hhlh|hOxk',
+          '..ch|hlhh|hhhh|hxXk',
+          '.khh|Hhhh|Hhhh|lhxk',
+          'khhh|hHhh|hhHh|hhXk',
+          '.kHk|tkkt|tkkt|kHk.',
+          '.khk|kwEs|swEk|khk.',
+          '.khk|sees|sees|khk.',
+          '.khk|kpss|sspk|khk.',
+          '.klk|.ktt|ttk.|klk.',
         ],
-        bare: { 1: '....|.kww|wwk.|....', 2: '....|kwcw|wcwk|....', 3: '...k|Hhhh|hhhH|k...', 4: '..kH|hlLL|LLlh|Hk..', 5: '.kHh|lhhh|hhhl|hHk.' },
-        under: pad(11, [
-          '.kHk|....|....|kHk.',
-          'kHhk|....|....|khHk',
-          'kHhk|....|....|khHk',
-          'kHlh|k...|...k|hlHk',
-          'kHlh|k...|...k|hlHk',
-          'kHhh|k...|...k|hhHk',
-          'kHhh|k...|...k|hhHk',
-          'kHhk|....|....|khHk',
-          'kHhk|....|....|khHk',
-          'kHk.|....|....|.kHk',
-          '.k..|....|....|..k.',
-        ]),
+        over: pad(14, ['.khk|....|....|khk.', '.klk|....|....|klk.', '.khk|....|....|khk.', '.klk|....|....|klk.', '.khk|....|....|khk.', '..k.|....|....|.k..']),
       },
       up: {
         head: [
-          '.kk.|..kk|kk..|....',
-          'klOk|.kww|wwk.|....',
-          'kOLO|kwcw|wcwk|....',
-          'kxOO|kHhh|hhhH|k...',
-          'kXxk|HlLL|LLlh|Hk..',
-          '.xkH|lhhh|hhhl|hHk.',
-          '.kHh|hhhh|hhhh|hHk.',
-          '.kHh|hHhh|hhHh|hHk.',
-          '.kHh|hHhh|hhHh|hHk.',
-          '.kHh|Hhhh|hhhH|hHk.',
-          '.kHh|Hhhh|hhhH|hHk.',
-          '.kHh|HhhH|HhhH|hHk.',
-          '.kHh|HhhH|HhhH|hHk.',
-          '.kHh|hHhH|HhHh|hHk.',
+          '....|..kk|kk..|....',
+          '....|.kww|wwk.|....',
+          '.kk.|cwcw|wcwc|....',
+          'kLlO|chhh|hhhc|k...',
+          'klLO|hLlh|hhhh|c...',
+          'kxOh|lLlh|hhhh|hk..',
+          'kXxh|hlhh|hhhh|hc..',
+          'kxhl|hhlh|hlhh|lhk.',
+          'kXhh|hhhh|hhhh|hhhk',
+          '.khh|hhhh|hhhh|hhk.',
+          '.khh|hlhh|hhlh|hhk.',
+          '.khh|hlhh|hhlh|hhk.',
+          '.khh|hhhh|hhhh|hhk.',
+          '.khl|hhhh|hhhh|lhk.',
         ],
-        bare: { 1: '....|.kww|wwk.|....', 2: '....|kwcw|wcwk|....', 3: '...k|Hhhh|hhhH|k...', 4: '..kH|hlLL|LLlh|Hk..', 5: '.kHh|lhhh|hhhl|hHk.' },
-        over: pad(14, [
-          '.kHh|hHhH|HhHh|hHk.',
-          '.kHh|HhhH|HhhH|hHk.',
-          'kHhh|HhhH|HhhH|hhHk',
-          'kHhh|HhhH|HhhH|hhHk',
-          'kHhH|hhHh|hHhh|HhHk',
-          'kHhH|hhHh|hHhh|HhHk',
-          '.kHk|HkHk|kHkH|kHk.',
-          '..k.|k.k.|.k.k|.k..',
-        ]),
+        over: pad(14, ['.khl|hhhh|hhhh|lhk.', '.khh|hlhh|hhlh|hhk.', '.khh|hlhh|hhlh|hhk.', '..kh|hhhh|hhhh|hk..', '..kh|hlhh|hhlh|hk..', '...k|hkhh|hhkh|k...', '....|k.kk|kk.k|....']),
       },
       side: {
-        head: FRILL.concat([
-          '...k|Hhhh|hhhh|Hkk.',
-          '..kH|hlLL|LLlh|hkOk',
-          '.kHh|lhhh|hhhl|hkLO',
-          '.kHh|hhhh|Hhhh|hHkx',
-          'kHhh|hhhH|hhhh|hHkX',
-          'kHhh|hhHh|hhhh|HhHk',
-          'kHhq|HhHh|hhhH|hHHk',
-          'ksqq|shHh|hhHh|hHHk',
-          'kpEe|shHh|hHhh|hHHk',
-          '.kss|thHh|hHhh|HhHk',
-          '..kt|tkHh|HhhH|hhHk',
-        ]),
-        bare: { 3: '...k|Hhhh|hhhh|Hk..', 4: '..kH|hlLL|LLlh|hHk.', 5: '.kHh|lhhh|hhhl|hhHk', 6: '.kHh|hhhh|Hhhh|hhHk', 7: 'kHhh|hhhH|hhhh|hHHk' },
-        under: pad(14, [
-          '....|..kH|hhhH|hHk.',
-          '....|..kH|hhHh|hHk.',
-          '....|...k|HhHh|hHk.',
-          '....|...k|HhHh|Hk..',
-          '....|....|kHhH|Hk..',
-          '....|....|kHkH|k...',
-          '....|....|.k.k|....',
-        ]),
+        head: [
+          '....|.kk.|....|....',
+          '....|kwc.|k...|....',
+          '...k|hwck|hk..|....',
+          '..kh|hhwc|hhk.|....',
+          '.khh|lLhh|wchk|....',
+          '.khh|llhh|hwck|....',
+          'khhh|hhhh|hcwk|OO..',
+          'khhl|hhhh|hwck|LlO.',
+          'khhh|hhhh|hhhk|lLO.',
+          'kHkk|hhhh|hlhh|kxk.',
+          'ksEc|shhh|hlhh|kX..',
+          'ksew|sthh|hhlh|kx..',
+          '.kss|tkhh|hhlh|k...',
+          '..kt|tkhh|hhhl|k...',
+        ],
+        over: pad(14, ['....|kkhh|hlhk|....', '....|.khh|hlhk|....', '....|.khh|hhlk|....', '....|.khh|hhlk|....', '....|..kh|hhk.|....', '....|...k|kk..|....']),
+      },
+    },
+    // long twin tails from high on her head, flaring out and down past her shoulders
+    honey: {
+      down: {
+        head: [
+          '....|..kk|kk..|....',
+          '....|.kww|wwk.|....',
+          '....|cwcw|wcwc|....',
+          '...k|cHHH|HHHc|k...',
+          '...c|hLHh|hHlh|c...',
+          '..kh|LlHh|hHhh|hk..',
+          '..ch|hlHh|hHhh|Hc..',
+          '.kHh|hlHh|hHhh|hHk.',
+          '..kH|hHhh|hhHh|Hk..',
+          '..kH|tkkt|tkkt|Hk..',
+          '..sH|kwEs|swEk|Hs..',
+          '..tH|sees|sees|Ht..',
+          '...k|Hpss|sspH|k...',
+          '....|kHtt|ttHk|....',
+        ],
+        under: pad(3, ['.kk.|....|....|.kk.', 'khLk|....|....|kLhk', 'khlh|....|....|hlhk', 'kHhk|....|....|khHk', '..kh|....|....|hk..', '..kH|....|....|Hk..', '..kH|....|....|Hk..', '..kH|....|....|Hk..', '..kH|....|....|Hk..', '..kH|....|....|Hk..', '.khH|....|....|Hhk.', 'khlH|....|....|Hlhk', 'khlk|....|....|klhk', 'kHlk|....|....|klHk', 'kHhk|....|....|khHk', '.kHk|....|....|kHk.', 'kHk.|....|....|.kHk', 'kk..|....|....|..kk']),
+      },
+      up: {
+        head: [
+          '....|..kk|kk..|....',
+          '....|.kww|wwk.|....',
+          '....|cwcw|wcwc|....',
+          '...k|cHHH|HHHc|k...',
+          '...c|hLHh|hHlh|c...',
+          '..kh|LlHh|hHhh|hk..',
+          '..ch|hlHh|hHhh|Hc..',
+          '.kHh|hlHh|hHlh|hHk.',
+          '..kH|hHhH|HhHh|Hk..',
+          '..kH|hHhh|hhHh|Hk..',
+          '..kH|hHHh|HHhH|Hk..',
+          '..sk|HHHH|HHHH|ks..',
+          '...k|kHHH|HHHk|k...',
+          '....|kHkH|HkHk|....',
+        ],
+        under: pad(3, ['.kk.|....|....|.kk.', 'khLk|....|....|kLhk', 'khlh|....|....|hlhk', 'kHhk|....|....|khHk', '..kh|....|....|hk..', '..kH|....|....|Hk..', '..kH|....|....|Hk..', '..kH|....|....|Hk..', '..kH|....|....|Hk..', '..kH|....|....|Hk..', '.khH|....|....|Hhk.', 'khlH|....|....|Hlhk', 'khlk|....|....|klhk', 'kHlk|....|....|klHk', 'kHhk|....|....|khHk', '.kHk|....|....|kHk.', 'kHk.|....|....|.kHk', 'kk..|....|....|..kk']),
+      },
+      side: {
+        head: [
+          '....|.kk.|....|....',
+          '....|kwc.|k...|....',
+          '...k|Hwck|hk..|....',
+          '..kH|hhwc|Hhk.|....',
+          '.kHh|LHhh|wcHk|....',
+          '.kHh|lHhl|hwck|....',
+          'kHhl|hHhl|hcwk|....',
+          'kHhl|hHhl|Hwck|....',
+          'kHhH|HhHh|hHk.|....',
+          'kHkk|Hhhh|HHk.|....',
+          'ksEc|sHhH|hHk.|....',
+          'ksew|stHh|Hk..|....',
+          '.kss|tkHH|k...|....',
+          '..kt|tk..|....|....',
+        ],
+        under: pad(2, ['....|....|.kk.|....', '....|....|khhk|....', '....|....|khLh|k...', '....|....|kHlh|k...', '....|....|.kHl|hk..', '....|....|.kHl|hk..', '....|....|..kH|hk..', '....|....|..kH|hhk.', '....|....|..kH|lhk.', '....|....|..kH|hhk.', '....|....|...k|Hhk.', '....|....|...k|Hhk.', '....|....|...k|Hhk.', '....|....|..kH|hk..', '....|....|..kh|k...', '....|....|...k|....']),
+      },
+    },
+    // long straight hair down her back, red-rimmed glasses
+    yukino: {
+      down: {
+        head: [
+          '....|..kk|kk..|....',
+          '....|.kww|wwk.|....',
+          '....|cwcw|wcwc|....',
+          '...k|cHHH|HHHc|k...',
+          '...c|hlLl|hhhH|c...',
+          '..kH|lLlh|hhhh|Hk..',
+          '..kH|hlhh|hhhH|hk..',
+          '.kHh|Hhhh|Hhhh|hHk.',
+          '.kHh|hHhh|hhHh|hHk.',
+          '.kHk|tkkt|tkkt|kHk.',
+          '.kHk|kwEs|swEk|kHk.',
+          '.kHk|sees|sees|kHk.',
+          '.kHk|Hpss|mspH|kHk.',
+          '.kHk|kHtt|ttHk|kHk.',
+        ],
+        over: pad(10, ['....|G..G|G..G|....', '....|G...|...G|....', '....|....|....|....', '....|....|....|....', '.kHk|....|....|kHk.', '.kHk|....|....|kHk.', '.klk|....|....|klk.', '.kHk|....|....|kHk.', '..k.|....|....|.k..']),
+      },
+      up: {
+        head: [
+          '....|..kk|kk..|....',
+          '....|.kww|wwk.|....',
+          '....|cwcw|wcwc|....',
+          '...k|cHHH|HHHc|k...',
+          '...c|hhhh|hhhh|c...',
+          '..kh|lLlh|hhhh|hk..',
+          '..kh|hlhh|hhhh|hk..',
+          '..kH|hlhh|hhlh|Hk..',
+          '..kH|hhhh|hhhh|Hk..',
+          '..kH|hhHh|hHhh|Hk..',
+          '..kH|hHhh|hhHh|Hk..',
+          '..kH|hhhh|hhhh|Hk..',
+          '..kH|hHhh|hhHh|Hk..',
+          '...k|Hhhh|hhhH|k...',
+        ],
+        over: pad(14, ['...k|Hhhh|hhhH|k...', '...k|HhHh|hHhH|k...', '....|kHhH|HhHk|....', '....|kHkH|HkHk|....', '....|.k.k|k.k.|....']),
+      },
+      side: {
+        head: [
+          '....|.kk.|....|....',
+          '....|kwc.|k...|....',
+          '...k|Hwck|hk..|....',
+          '..kH|hhwc|Hhk.|....',
+          '.kHh|lLhh|wcHk|....',
+          '.kHh|llhh|hwck|....',
+          'kHhh|hhhH|hcwk|....',
+          'kHhH|hHhh|Hwck|....',
+          'kHHh|HhhH|hHhk|....',
+          'kHkk|Hhhh|HHhk|....',
+          'ksEc|sHhH|hHhk|....',
+          'ksew|stHh|Hhlk|....',
+          '.kss|tkHH|hhHk|....',
+          '..kt|tkHh|hhHk|....',
+        ],
+        under: pad(14, ['....|..kH|hhHk|....', '....|..kH|hlhk|....', '....|..kH|hhHk|....', '....|...k|HhHk|....', '....|...k|HkHk|....', '....|....|k.k.|....']),
+        over: pad(10, ['.G..|G...|....|....', '.G..|....|....|....']),
       },
     },
   };
 
-  // ---------------------------------------------------------------- outfits: body palette + what replaces the lace frill
+  // ---------------------------------------------------------------- outfits: body palette + what replaces the lace headdress
+  // (front and back rows 0-3, side rows 0-4); hair ribbons come off with the uniform
   const YUKATA = {
-    berry: { d: '#d9435f', D: '#f07d92', w: '#ffc9d4', c: '#f28aa0', r: '#ffd23f', R: '#c9920e' },
-    honey: { d: '#e38a1e', D: '#ffbd55', w: '#fff0b8', c: '#ffd57a', r: '#ec3d5f', R: '#a51f40' },
-    yukino: { d: '#3a86d0', D: '#78bdf2', w: '#e2f4ff', c: '#9fd3f5', r: '#ff8ea4', R: '#d65a78' },
-    yoru: { d: '#4a3f78', D: '#7466a8', w: '#dcd4f2', c: '#9b8fc8', r: '#ec3d5f', R: '#a51f40' },
+    berry: { 'd': '#d9435f', 'D': '#f07d92', 'w': '#ffc9d4', 'c': '#f28aa0', 'r': '#ffd23f', 'R': '#c9920e', 'b': '#f4c7b0', 'B': '#e0a896' },
+    honey: { 'd': '#e38a1e', 'D': '#ffbd55', 'w': '#fff0b8', 'c': '#ffd57a', 'r': '#ec3d5f', 'R': '#a51f40', 'b': '#f4c7b0', 'B': '#e0a896' },
+    yukino: { 'd': '#3a86d0', 'D': '#78bdf2', 'w': '#e2f4ff', 'c': '#9fd3f5', 'r': '#ff8ea4', 'R': '#d65a78', 'b': '#f4c7b0', 'B': '#e0a896' },
+    yoru: { 'd': '#4a3f78', 'D': '#7466a8', 'w': '#dcd4f2', 'c': '#9b8fc8', 'r': '#ec3d5f', 'R': '#a51f40', 'b': '#f4c7b0', 'B': '#e0a896' },
   };
   const OUTFIT_STYLE = {
     maid: { pal: () => ({}), head: null },
-    cat: { pal: () => ({ d: '#3b2f45', D: '#66557a', w: '#ffd6e2', c: '#f2a6bf', r: '#ffd23f', R: '#c9920e' }), head: 'cat' },
+    cat: { pal: () => ({ 'd': '#3b2f45', 'D': '#66557a', 'w': '#ffd6e2', 'c': '#f2a6bf', 'r': '#ffd23f', 'R': '#c9920e', 'b': '#3b2f45', 'B': '#241c2c' }), head: 'cat' },
     yukata: { pal: (m) => Object.assign({}, YUKATA[m]), head: 'flower' },
-    princess: { pal: () => ({ d: '#ff82a8', D: '#ffc2d6', w: '#ffffff', c: '#ffe0ea', r: '#ffd23f', R: '#e0a014' }), head: 'tiara' },
+    princess: { pal: () => ({ 'd': '#ff82a8', 'D': '#ffc2d6', 'w': '#ffffff', 'c': '#ffe0ea', 'r': '#ffd23f', 'R': '#e0a014', 'b': '#ffffff', 'B': '#ffe0ea' }), head: 'tiara' },
   };
-  // replaces head rows 0-3 (side 0-4): the bare crown of the head with ears, a flower or a tiara on it
   const HEADWEAR = {
     cat: {
-      front: ['..kk|....|....|kk..', '.kdp|k.kk|kk.k|pdk.', '.kdp|pkHh|hhkp|pdk.', '..kH|hhhh|hhhh|Hk..'],
-      back: ['..kk|....|....|kk..', '.kdd|k.kk|kk.k|ddk.', '.kdd|dkHh|hhkd|ddk.', '..kH|hhhh|hhhh|Hk..'],
-      side: ['....|....|kk..|....', '...k|k..k|dpk.|....', '..kd|pkkk|dppk|....', '..kd|pHhh|hkkk|....', '..kH|hhhh|hhhH|k...'],
+      front: ['..k.|....|....|.k..', '.kdk|....|....|kdk.', '.kpd|kkkk|kkkk|dpk.', '.kpd|Hhhh|hhhH|dpk.'],
+      side: ['....|k...|k...|....', '...k|dk.k|dk..|....', '...k|pdkk|pdk.|....', '..kk|Hhhh|hhkk|....', '.kHh|hhhh|hhhH|k...'],
     },
     flower: {
-      front: ['....|....|...k|k...', '....|..kk|kkkr|yk..', '....|kkHh|hhkr|rk..', '...k|Hhhh|hhhH|k...'],
-      back: ['...k|k...|....|....', '..ky|rkkk|kk..|....', '..kr|rkhh|hHkk|....', '...k|Hhhh|hhhH|k...'],
-      side: ['....|....|kk..|....', '....|...k|ryk.|....', '....|kkkk|rrk.|....', '...k|Hhhh|hkk.|....', '..kH|hhhh|hhhH|k...'],
+      front: ['....|....|..kr|k...', '....|....|.kry|rk..', '...k|kkkk|kkkr|k...', '..kH|hhhh|hhhh|Hk..'],
+      back: ['...k|rk..|....|....', '..kr|yrk.|....|....', '...k|rkkk|kkkk|k...', '..kH|hhhh|hhhh|Hk..'],
+      side: ['....|....|..kr|k...', '....|....|.kry|rk..', '....|kkkk|kkkr|k...', '..kk|Hhhh|hhkk|....', '.kHh|hhhh|hhhH|k...'],
     },
     tiara: {
-      front: ['....|..y.|.y..|....', '....|.kyk|kyk.|....', '....|kyyp|pyyk|....', '...k|Hhhh|hhhH|k...'],
-      side: ['....|.y..|....|....', '....|kyky|....|....', '...k|yypy|k...|....', '...k|Hhhh|kk..|....', '..kH|hhhh|hhhH|k...'],
+      front: ['....|.y.y|y.y.|....', '....|kyky|ykyk|....', '...k|yyyp|pyyy|k...', '..kH|hhhh|hhhh|Hk..'],
+      side: ['....|.y.y|....|....', '....|kyky|k...|....', '...k|yypy|kk..|....', '..kk|Hhhh|hhkk|....', '.kHh|hhhh|hhhH|k...'],
     },
   };
   G.OUTFIT_IDS = Object.keys(OUTFIT_STYLE);
-  function withHeadwear(name, outfit, dir) {
-    const part = MAID_PARTS[name][dir];
+  function withHeadwear(rows, outfit, dir) {
     const hw = HEADWEAR[OUTFIT_STYLE[outfit].head];
-    if (!hw) return part.head.map((r) => r.replace(/\|/g, ''));
-    const rows = part.head.map((r, i) => ((part.bare && part.bare[i]) || r).replace(/\|/g, ''));
+    if (!hw) return rows;
     const top = dir === 'side' ? hw.side : dir === 'up' ? hw.back || hw.front : hw.front;
-    const out = top.map((r) => r.replace(/\|/g, '')).concat(rows.slice(top.length)).map((r) => r.replace(/[xXO]/g, 'h'));
-    // the lace frill comes off: whatever is left of it along the hair edge becomes outline, the rest becomes hair
+    const out = top.concat(rows.slice(top.length)).map((r) => r.replace(/\|/g, '').replace(/[xXO]/g, 'h'));
+    // the lace headdress comes off: its trim along the hair edge becomes outline, its band across the hair becomes hair
     for (let y = top.length; y < 9; y++) {
       const row = out[y];
       out[y] = row.split('').map((ch, x) => {
@@ -487,23 +374,41 @@
   }
 
   // ---------------------------------------------------------------- compose maids
-  // what the illustration dresses each maid in: long or short sleeves and bare legs or white thigh-highs
-  const STYLE = { berry: {}, yoru: { longSleeves: true }, honey: { longSleeves: true, stockings: true }, yukino: { longSleeves: true } };
-  // the outline along the hair takes a very dark shade of the hair (the silhouette stays dark, the hair keeps its hue);
-  // outline next to skin, eyes, lace or the dress stays black
+  // what the illustration dresses each maid in: long or short sleeves (u shoulder, a forearm, A forearm shade) and
+  // bare legs or white thigh-highs (j)
+  const STYLE = { berry: {  }, yoru: { longSleeves: true }, honey: { longSleeves: true, stockings: true }, yukino: { longSleeves: true } };
+  // outlines are inked by what they wrap, as in the Genshin chibi sheet the user chose: the silhouette along hair takes a deep
+  // hair hue, along skin a warm brown, along white cloth a blue-grey, elsewhere the body ink; black lines inside the face (lids,
+  // lash corners, closed eyes) take the lash colour and the other inner lines the body ink, so no pure black is left
   function inkHair(pix, P) {
-    const hair = new Set(['H', 'h', 'l', 'L'].map((k) => P[k]).filter(Boolean).map((h) => h.toLowerCase()));
     const hex = (c) => '#' + [c[0], c[1], c[2]].map((v) => v.toString(16).padStart(2, '0')).join('');
-    const ink = mix(P.H, '#000000', 0.45);
+    const group = {};
+    const put = (keys, g) => keys.forEach((k) => { if (P[k] && !group[P[k].toLowerCase()]) group[P[k].toLowerCase()] = g; });
+    put(['E', 'e'], 'eye');
+    put(['H', 'h', 'l', 'L'], 'hair');
+    put(['s', 't', 'p', 'm'], 'skin');
+    put(['w', 'c'], 'white');
+    put(['j'], P.j === P.s ? 'skin' : P.j === P.w ? 'white' : 'body');
+    put(['a'], P.a === P.s ? 'skin' : 'body');
+    const INK = { hair: P.hairInk || mix(P.H, '#000000', 0.45), skin: P.skinInk, white: P.whiteInk, body: P.bodyInk, eye: P.lash };
     return pix.map((c, x, y) => {
       if (c[0] || c[1] || c[2]) return c;
-      let hairN = 0, other = 0;
+      const seen = {};
+      let edge = false;
       for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
         const n = pix.get(x + dx, y + dy);
-        if (!n || (!n[0] && !n[1] && !n[2])) continue;
-        if (hair.has(hex(n))) hairN++; else other++;
+        if (!n) { edge = true; continue; }
+        const g = n[0] || n[1] || n[2] ? group[hex(n)] || 'body' : null;
+        if (g) seen[g] = (seen[g] || 0) + 1;
       }
-      return hairN && !other ? ink : c;
+      const inFace = y >= 9 && y <= 12 && x >= 4 && x <= 11;
+      if (inFace && !edge && (seen.eye || seen.skin) && !seen.hair) return INK.eye;
+      if (!edge) return seen.hair && Object.keys(seen).length === 1 ? INK.hair : INK.body;
+      if (seen.body) return INK.body;
+      if (seen.hair) return INK.hair;
+      if (seen.skin) return INK.skin;
+      if (seen.white) return INK.white;
+      return INK.body;
     });
   }
   function buildMaid(name, outfit) {
@@ -529,7 +434,7 @@
       return inkHair(pix, P);
     };
     for (const dir of ['down', 'up', 'side']) {
-      const head = withHeadwear(name, outfit, dir);
+      const head = withHeadwear(parts[dir].head, outfit, dir);
       for (let f = 0; f < 3; f++) {
         const pix = compose(dir, head, f, f === 0 ? 0 : 1);
         if (dir === 'side') {
@@ -541,7 +446,7 @@
     // facial expressions (front view, standing) for the room, the title screen and dialogue
     out.faces = { normal: out.down[0] };
     for (const key of Object.keys(FACES)) {
-      const head = withHeadwear(name, outfit, 'down');
+      const head = withHeadwear(parts.down.head, outfit, 'down').map((r) => r.replace(/\|/g, ''));
       FACES[key].forEach((r, i) => {
         if (!r) return;
         const row = head[9 + i];
@@ -551,14 +456,14 @@
     }
     return out;
   }
-  // expressions replace columns 4-11 of head rows 9-12 (lash tips, lids, irises, mouth); ? keeps the pixel, null the row
+  // expressions replace the eye block (columns 4-11) of head rows 9-12; null keeps the row
   const FACES = {
-    happy: ['HhhhhhhH', 'sqssssqs', 'qsqssqsq', 'tssmmsst'],
-    blush: [null, null, 'pEesseEp', 'ppsmmspp'],
-    angry: ['HhqhhqhH', 'sqqssqqs', 'seessees', 'tsskksst'],
-    tired: ['HhhhhhhH', 'ssssssss', 'sqesseqs', 'tssttsst'],
-    sleep: ['HhhhhhhH', 'ssssssss', 'sqqssqqs', 'tsssssst'],
-    surprise: ['HqhhhhqH', 'sqqssqqs', 'sEesseEs', 'tsskksst'],
+    happy: ['tssttsst', 'skksskks', 'ksskkssk', '?psmmsp?'],
+    blush: [null, null, null, '?ppsspp?'],
+    angry: ['kksttskk', 'skEssEks', 'swessews', '?tskkst?'],
+    tired: ['tssttsst', 'skksskks', 'sEessEes', '?tsssst?'],
+    sleep: ['tssttsst', 'ssssssss', 'skksskks', '?tsssst?'],
+    surprise: ['tkkttkkt', 'kwEssEwk', 'swessews', '?tsmmst?'],
   };
 
   // ---------------------------------------------------------------- painters
