@@ -1575,7 +1575,7 @@
         if (m.deadT > 70) return;
         ctx.save();
         ctx.globalAlpha = Math.max(0, 1 - m.deadT / 70);
-        ctx.drawImage(S.burnt, x - 5, y - 16 - Math.min(20, m.deadT * 0.3));
+        ctx.drawImage(S.burnt, x, y - 8 - Math.min(20, m.deadT * 0.3));
         ctx.restore();
         return;
       }
@@ -1591,15 +1591,15 @@
       if (m.star > 0 && (m.star >> 1) % 2) {
         ctx.save();
         ctx.globalAlpha = 0.55;
-        ctx.drawImage(img, x - 5, y - 17);
+        ctx.drawImage(img, x, y - 9);
         ctx.restore();
-        ctx.drawImage(E.spr.fx.sparkle[(m.star >> 3) % 3], x + ((m.star * 7) % 14), y - 18 + ((m.star * 3) % 22));
-      } else ctx.drawImage(img, x - 5, y - 16);
+        ctx.drawImage(E.spr.fx.sparkle[(m.star >> 3) % 3], x + ((m.star * 7) % 14), y - 10 + ((m.star * 3) % 16));
+      } else ctx.drawImage(img, x, y - 8);
       if (m.burnT > 0 || m.stun > 0) {
         const t = this.frame * 0.15;
         for (let i = 0; i < 3; i++) {
           const a = t + (i * Math.PI * 2) / 3;
-          ctx.drawImage(E.spr.fx.star[(this.frame >> 3) % 2], Math.round(x + 6 + Math.cos(a) * 7), Math.round(y - 19 + Math.sin(a) * 2));
+          ctx.drawImage(E.spr.fx.star[(this.frame >> 3) % 2], Math.round(x + 6 + Math.cos(a) * 7), Math.round(y - 11 + Math.sin(a) * 2));
         }
       }
       if (m.slashT > 0) {
@@ -1624,13 +1624,13 @@
       }
       // Yukino's remote: signal arcs blinking over her head
       if (m.remoteT > 0 && (m.remoteT >> 2) % 2) {
-        for (let i = -2; i <= 2; i++) { E.rect(x + 8 + i, y - 22 - (Math.abs(i) === 2 ? 0 : 1), 1, 1, '#9ff3ff'); E.rect(x + 8 + i * 2, y - 25 + (Math.abs(i) < 2 ? -1 : 1), 1, 1, '#d8fbff'); }
+        for (let i = -2; i <= 2; i++) { E.rect(x + 8 + i, y - 16 - (Math.abs(i) === 2 ? 0 : 1), 1, 1, '#9ff3ff'); E.rect(x + 8 + i * 2, y - 19 + (Math.abs(i) < 2 ? -1 : 1), 1, 1, '#d8fbff'); }
       }
       // Honey's sugar shield: a shimmering pink bubble
       if (m.shield > 0) {
         const col = (this.frame >> 3) % 3 === 0 ? '#ffffff' : '#ffb0d0';
-        pixelRing(x + 8, y + 1, 14, col);
-        if ((this.frame >> 4) % 4 === 0) E.rect(x - 1, y - 9, 2, 2, '#ffffff');
+        pixelRing(x + 8, y + 3, 11, col);
+        if ((this.frame >> 4) % 4 === 0) E.rect(x + 1, y - 5, 2, 2, '#ffffff');
       }
       // chilled by Yukino's frost: icy glints round the feet
       if (m.chill > 0 && (m.chill >> 2) % 2) {
@@ -1638,8 +1638,8 @@
         E.rect(x + 1 + ((m.chill * 3) % 13), y + 4 + ((m.chill * 5) % 8), 1, 1, '#ffffff');
       }
       if (this.mode === 'battle') {
-        E.rect(x + 6, y - 20, 4, 2, m.color);
-        E.text(String(m.slot + 1), x + 8, y - 28, { color: '#ffffff', outline: m.color, align: 'center', small: true });
+        E.rect(x + 6, y - 14, 4, 2, m.color);
+        E.text(String(m.slot + 1), x + 8, y - 22, { color: '#ffffff', outline: m.color, align: 'center', small: true });
       }
     }
 

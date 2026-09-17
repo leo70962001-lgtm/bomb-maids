@@ -174,18 +174,17 @@
   }
   const maidName = (key) => (isLocked(key) ? '？？？' : G.MAID_DATA[key].name);
   // a standing maid at scale s with the signature prop from her design sheet:
-  // Berry's giant vacuum cleaner stands at her side, Honey's pet bunny sits at her feet
+  // Berry carries her giant vacuum cleaner, Honey's pet bunny peeks out from behind her
   function drawMaidFigure(key, x, y, s, f) {
     const ctx = E.ctx;
     const locked = isLocked(key);
     const ps = Math.max(1, s - 1);
-    const img = maidImg(key, 'down', f);
-    ctx.drawImage(img, Math.round(x - 5 * s), Math.round(y - 8 * s), img.width * s, img.height * s);
     if (!locked && key === 'honey') {
       const bunny = E.spr.room.bunny[(E.frame >> 5) % 8 === 7 ? 1 : 0];
-      ctx.drawImage(bunny, Math.round(x - 6 * s), Math.round(y + 24 * s - bunny.height * s), bunny.width * s, bunny.height * s);
+      ctx.drawImage(bunny, Math.round(x + 7 * s), Math.round(y + 24 * s - bunny.height * s), bunny.width * s, bunny.height * s);
     }
-    if (!locked && key === 'berry') ctx.drawImage(E.spr.room.vacuum, Math.round(x - 9 * s), Math.round(y + 24 * s - 22 * ps), 12 * ps, 22 * ps);
+    ctx.drawImage(maidImg(key, 'down', f), Math.round(x), Math.round(y), 16 * s, 24 * s);
+    if (!locked && key === 'berry') ctx.drawImage(E.spr.room.vacuum, Math.round(x + 11 * s), Math.round(y + 7 * s), 12 * ps, 22 * ps);
   }
   // draw a sprite as large as fits a box, keeping its shape, standing on the box's bottom edge
   function fitImage(img, x, y, w, h) {
@@ -195,7 +194,7 @@
   }
   function drawHead(key, x, y, scale) {
     const img = maidImg(key, 'down', 0);
-    E.ctx.drawImage(img, 5, 3, 16, 16, x, y, 16 * scale, 16 * scale);
+    E.ctx.drawImage(img, 0, 0, 16, 16, x, y, 16 * scale, 16 * scale);
   }
   function rankColor(r) { return { S: C.gold, A: C.pink, B: C.sky, C: C.gray }[r] || C.gray; }
   // cream sheet in an orange-red frame (the original's menu card)
@@ -837,18 +836,18 @@
       const tool = m.key === 'berry' ? E.spr.room.vacuum : cleaning ? E.spr.room.broom : null;
       const toolW = tool ? tool.width * 2 : 0, toolH = tool ? tool.height * 2 : 0;
       const front = !seated && (m.dir === 'down' || (cleaning && m.dir !== 'up'));
-      let toolX = cleaning ? (m.dir === 'left' ? x - toolW + 10 + sway : x + 22 + sway) : m.dir === 'left' ? x + 18 : m.dir === 'right' ? x - toolW + 14 : x + 26;
-      if (seated) toolX = m.dir === 'left' ? x + 30 : x - toolW + 2;
+      let toolX = cleaning ? (m.dir === 'left' ? x - toolW + 10 + sway : x + 22 + sway) : m.dir === 'left' ? x + 18 : m.dir === 'right' ? x - toolW + 14 : x + 22;
+      if (seated) toolX = m.dir === 'left' ? x + 24 : x - toolW + 8;
       const toolY = Math.round(m.y - toolH + 2 - (cleaning || seated ? 0 : hop));
       if (tool && !front) ctx.drawImage(tool, toolX, toolY, toolW, toolH);
       if (seated) {
         // sitting on a cushion: legs tucked away, cushion in front
-        ctx.drawImage(img, 0, 0, 26, 26, x - 10, y - 2, 52, 52);
+        ctx.drawImage(img, 0, 0, 16, 20, x, y + 10, 32, 40);
         ctx.drawImage(E.spr.room.cushion, Math.round(m.x - 16), Math.round(m.y - 12), 32, 16);
-      } else ctx.drawImage(img, x - 10, y - 16, 52, 64);
+      } else ctx.drawImage(img, x, y, 32, 48);
       if (tool && front) ctx.drawImage(tool, toolX, toolY, toolW, toolH);
       const cup = E.spr.room.cup;
-      if (m.state === 'tea') ctx.drawImage(cup, x + 8, m.sipT > 0 ? y + 14 : y + 26, 16, 16);
+      if (m.state === 'tea') ctx.drawImage(cup, x + 8, m.sipT > 0 ? y + 17 : y + 27, 16, 16);
       if (m.state === 'party') {
         const cx = m.dir === 'right' ? x + 18 : x - 2;
         ctx.drawImage(cup, cx, m.sipT > 0 ? y + 24 : y + 32, 16, 16);
@@ -860,8 +859,8 @@
       if (m.state === 'read') ctx.drawImage(E.spr.room.book, x + 6, y + 26, 20, 16);
       if (m.emote) {
         const em = E.spr.room.emotes[m.emote];
-        const ey = seated ? y + 14 : y;
-        if (em) ctx.drawImage(em, x + 30, ey - 24 - Math.round(Math.sin(t * 0.2)), em.width * 2, em.height * 2);
+        const ey = seated ? y + 10 : y;
+        if (em) ctx.drawImage(em, x + 22, ey - 14 - Math.round(Math.sin(t * 0.2)), em.width * 2, em.height * 2);
       }
     },
   };
@@ -1156,9 +1155,8 @@
         const TH = E.spr.themes[s.theme];
         for (let i = 0; i < 9; i++) E.ctx.drawImage(TH.floor[i % 2], 150 + i * 16, 30);
         E.ctx.drawImage(TH.hard, 150, 26); E.ctx.drawImage(TH.soft[0], 166, 26); E.ctx.drawImage(TH.soft[1], 214, 26); E.ctx.drawImage(TH.hard, 262, 26);
-        // she stands on the front edge of the strip, clear of the top bar
+        E.ctx.drawImage(maidImg(SAVE.maid, 'down', [0, 1, 0, 2][(this.t >> 4) % 4]), 190, 22);
         E.rect(150, 46, 158, 1, C.pink);
-        E.ctx.drawImage(maidImg(SAVE.maid, 'down', [0, 1, 0, 2][(this.t >> 4) % 4]), 185, 20);
         E.text(s.title, 152, 52, { color: C.red, size: 14 });
         E.text(G.t('委託人：{client}', { client: s.client }), 152, 70, { color: C.ink });
         // the brief gets three lines: Japanese and English run longer than Chinese
@@ -1344,8 +1342,8 @@
         wrapLines([G.t('每打倒一個 BOSS，就有新的女僕加入。在這裡可以讓她們換班。'), '', G.t('按 Z 前往更衣室')], 112, 66, C.ink, 16, 190);
         const plan = unlockPlan();
         G.MAID_ORDER.forEach((k, i) => {
-          drawMaidFigure(k, 127 + i * 46, 162, 2, 0);
-          if (!SAVE.hired[k] && plan[k]) E.text(plan[k], 143 + i * 46, 132, { color: C.red, align: 'center' });
+          drawMaidFigure(k, 124 + i * 44, 150, 2, 0);
+          if (!SAVE.hired[k] && plan[k]) E.text(plan[k], 140 + i * 44, 140, { color: C.red, align: 'center' });
         });
       } else {
         E.text(G.t('回到自己的房間'), 205, 110, { color: C.ink, align: 'center' });
@@ -2001,7 +1999,7 @@
       G.MAID_ORDER.forEach((k, i) => {
         const x = 20 + i * 76;
         const hop = Math.abs(Math.sin(this.t * 0.1 + i)) * 8;
-        E.ctx.drawImage(maidImg(k, 'down', [1, 2][((this.t >> 4) + i) % 2]), x + 4, 174 - hop, 52, 64);
+        E.ctx.drawImage(maidImg(k, 'down', [1, 2][((this.t >> 4) + i) % 2]), x + 14, 190 - hop, 32, 48);
       });
       const bear = E.spr.monsters.teddy.frames[(this.t >> 5) % 2];
       E.ctx.drawImage(bear, 152, 232 - bear.height);
@@ -2206,10 +2204,10 @@
         E.text(t < 70 ? 'ROUND ' + this.round : 'GO!', 120, 104, { color: t < 70 ? C.white : C.red, outline: C.plum, align: 'center', scale: 2 });
       }
       if (w.state === 'end' && w.stateT > 20) {
-        E.rect(0, 88, 240, 56, 'rgba(42,27,48,0.85)');
+        E.rect(0, 88, 240, 48, 'rgba(42,27,48,0.85)');
         if (w.winner) {
           E.text(G.t('{name} 贏了這一局！', { name: w.winner.name }), 120, 96, { color: C.gold, align: 'center', size: 14 });
-          E.ctx.drawImage(maidImg(w.winner.maidKey, 'down', [1, 2][(E.frame >> 4) % 2], w.winner.outfit), 107, 111);
+          E.ctx.drawImage(maidImg(w.winner.maidKey, 'down', [1, 2][(E.frame >> 4) % 2], w.winner.outfit), 112, 112);
         } else E.text(G.t('平手！'), 120, 104, { color: C.white, align: 'center', scale: 2, size: 12 });
       }
       if (this.paused) {
@@ -2233,7 +2231,7 @@
       E.text('CHAMPION', 160, 36, { color: C.gold, outline: C.red, align: 'center', scale: 3 });
       E.text(G.t('{name}（{who}）是最強的女僕！', { name: D.name, who: p.human ? (p.pad + 1) + 'P' : 'CPU' }), 160, 88, { color: C.plum, align: 'center', size: 14 });
       const hop = Math.abs(Math.sin(t * 0.12)) * 12;
-      E.ctx.drawImage(maidImg(p.maid, 'down', [1, 2][(t >> 4) % 2], p.outfit), 134, 118 - hop, 52, 64);
+      E.ctx.drawImage(maidImg(p.maid, 'down', [1, 2][(t >> 4) % 2], p.outfit), 136, 108 - hop, 48, 72);
       for (let i = 0; i < 24; i++) {
         const x = (i * 37 + t * (1 + (i % 3))) % 320, y = (i * 29 + t * 1.5) % 240;
         E.rect(x, y, 3, 3, [C.red, C.gold, C.sky, C.mint, C.pink][i % 5]);
