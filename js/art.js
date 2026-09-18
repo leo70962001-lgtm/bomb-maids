@@ -1831,6 +1831,27 @@
     const avg = [r / n, g / n, b / n];
     return pix.map((c) => [0, 1, 2].map((k) => Math.round(c[k] + (avg[k] - c[k]) * amt)).concat(255));
   }
+  // Outlines take a dark tint of whatever they wrap instead of flat black — the same ink the maids use, so monsters,
+  // furniture, props and icons sit in the same picture. Shapes never move: only near-black pixels are recoloured.
+  function softInk(pix, amt) {
+    const k = amt == null ? 0.62 : amt;
+    const dark = (c) => c && c[0] + c[1] + c[2] < 140;
+    const ring = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]];
+    return pix.map((c, x, y) => {
+      if (!dark(c)) return c;
+      let r = 0, g = 0, b = 0, n = 0;
+      for (const [dx, dy] of ring) {
+        const s = pix.get(x + dx, y + dy);
+        if (!s || dark(s)) continue;
+        r += s[0]; g += s[1]; b += s[2]; n++;
+      }
+      if (!n) return c;
+      const avg = [Math.round(r / n), Math.round(g / n), Math.round(b / n), 255];
+      // light subjects need a deeper ink to stay readable on a light floor
+      const luma = (avg[0] * 0.3 + avg[1] * 0.6 + avg[2] * 0.1) / 255;
+      return mix(avg, '#140f1c', Math.min(0.88, k + 0.25 * luma));
+    });
+  }
   function bevel(pix) {
     const edge = (x, y) => pix.solid(x, y) && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => !pix.solid(x + dx, y + dy));
     return pix.map((c, x, y) => {
@@ -1841,7 +1862,7 @@
       return c;
     });
   }
-  const block = (pix) => bevel(inkOutline(pix));
+  const block = (pix) => softInk(bevel(inkOutline(pix)), 0.5);
   function buildTheme(key) {
     const T = THEMES[key];
     return {
@@ -3028,7 +3049,7 @@
       art.maids[m] = art.outfits[m].maid;
     }
     for (const k of Object.keys(MONSTERS)) {
-      const frames = [MONSTERS[k](0), MONSTERS[k](1)];
+      const frames = [softInk(bevel(MONSTERS[k](0))), softInk(bevel(MONSTERS[k](1)))];
       art.monsters[k] = { frames, flipped: frames.map((f) => f.flipped()), white: frames.map((f) => tinted(f, '#ffffff', 0.8)) };
     }
     art.boss = { frames: [buildBoss(0, false), buildBoss(1, false)], hurt: buildBoss(0, true) };
@@ -3042,9 +3063,9 @@
     art.flame = {};
     for (let mask = 0; mask < 16; mask++) art.flame[mask] = [0, 1, 2, 3, 4].map((s) => buildFlame(mask, s));
     art.decor = {};
-    for (const k of ['treehouse', 'igloo', 'castle', 'podium', 'cane', 'stage', 'egg']) art.decor[k] = bevel(buildDecor(k));
+    for (const k of ['treehouse', 'igloo', 'castle', 'podium', 'cane', 'stage', 'egg']) art.decor[k] = softInk(bevel(buildDecor(k)));
     art.bgTile = buildBgTile();
-    for (const k of Object.keys(ICONS)) art.items[k] = buildItem(k);
+    for (const k of Object.keys(ICONS)) art.items[k] = softInk(bevel(buildItem(k)));
     art.items.coin = [0, 1, 2, 3].map(buildCoin);
     art.items.dust = [0, 1, 2].map(buildDust);
     for (const k of Object.keys(UI)) art.ui[k] = fromRows(UI[k], UI_PAL);
@@ -3066,14 +3087,14 @@
       floors: {},
       gifts: {},
       window: buildWindow(),
-      broom: buildProp('broom'), vacuum: buildProp('vacuum'), cushion: buildProp('cushion'), book: buildProp('book'), cup: buildProp('cup'), mat: buildProp('mat'),
+      broom: softInk(buildProp('broom')), vacuum: softInk(buildProp('vacuum')), cushion: softInk(buildProp('cushion')), book: softInk(buildProp('book')), cup: softInk(buildProp('cup')), mat: softInk(buildProp('mat')),
       bunny: BUNNY.map((rows) => fromRows(rows, BUNNY_PAL, 9)),
     };
     for (const k of Object.keys(EMOTES)) art.room.emotes[k] = buildEmote(k);
-    for (const k of ['bed', 'princess', 'desk', 'wardrobe', 'teatable', 'bookshelf', 'plant', 'plush', 'rug', 'piano', 'lamp', 'fishbowl', 'dresser', 'sofa', 'gramophone']) art.room.furniture[k] = bevel(buildFurniture(k));
+    for (const k of ['bed', 'princess', 'desk', 'wardrobe', 'teatable', 'bookshelf', 'plant', 'plush', 'rug', 'piano', 'lamp', 'fishbowl', 'dresser', 'sofa', 'gramophone']) art.room.furniture[k] = softInk(bevel(buildFurniture(k)));
     for (const k of ['bunny', 'stripe', 'strawberry', 'night']) art.room.walls[k] = [buildWall(k, 0), buildWall(k, 1)];
     for (const k of ['wood', 'carpet', 'checker']) art.room.floors[k] = [buildFloor(k, 0), buildFloor(k, 1)];
-    for (const k of ['daifuku', 'matcha', 'honeycake', 'icecream', 'bouquet', 'ribbon']) art.room.gifts[k] = buildGift(k);
+    for (const k of ['daifuku', 'matcha', 'honeycake', 'icecream', 'bouquet', 'ribbon']) art.room.gifts[k] = softInk(bevel(buildGift(k)));
     if (ROW_ERRORS.length) throw new Error('sprite rows:\n' + ROW_ERRORS.join('\n'));
     return art;
   }
