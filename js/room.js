@@ -16,6 +16,7 @@
   const maidKey = () => save().maid;
   const bond = (k) => B.getBond(k || maidKey());
   const lines = (k) => G.LINES[k || maidKey()];
+  const trait = (k) => G.traitOf(k || maidKey());
   const name = (k) => G.MAID_DATA[k || maidKey()].name;
   const clamp = E.clamp;
 
@@ -763,17 +764,83 @@
         if (m.prop === 'broom' && this.t % 20 === 0) this.sparkle(this.maidScreen().x + E.randi(-4, 18), this.maidScreen().y + 14);
         return;
       }
+      // her own little moves: each maid has her own (see G.TRAITS)
+      if (m.state === 'pose') {
+        const ms = this.maidScreen();
+        const t = m.poseT;
+        switch (m.pose) {
+          case 'punch': // Berry shadow-boxes, one jab at a time
+            m.dir = 'down';
+            m.walkT++;
+            if (t % 14 === 0) { m.hop = 3; this.sparkle(ms.x + (t % 28 === 0 ? -2 : 18), ms.y - 2); }
+            if (t === 104) this.emote('exclaim', 40);
+            break;
+          case 'trip': // Honey trips over nothing and catches herself
+            if (t === 96) { m.hop = 5; this.emote('sweat', 50); this.setFace('surprise', 60); }
+            if (t === 50) this.emote('note', 40);
+            break;
+          case 'dream': // Honey drifts off in the middle of a thought
+            if (t === 108) this.emote('dots', 80);
+            if (t === 46) { this.emote('question', 50); m.dir = E.pick(['left', 'right']); }
+            break;
+          case 'tidy': // Yukino straightens the room as she goes
+            m.walkT++;
+            if (t % 30 === 0) { m.dir = m.dir === 'left' ? 'right' : 'left'; this.sparkle(ms.x + E.randi(0, 16), ms.y + 10); }
+            if (t === 100) this.emote('note', 60);
+            break;
+          case 'read':
+            if (t === 100) this.emote('dots', 80);
+            break;
+          case 'stare': // Yoru simply watches you
+            m.dir = 'down';
+            if (t === 90) this.emote('dots', 70);
+            break;
+          case 'blade': // Yoru practises a single cut
+            if (t === 40) {
+              this.emote('sparkle', 40);
+              for (let i = 0; i < 5; i++) this.sparkle(ms.x + 2 + i * 3, ms.y + 4 - i * 2);
+              A.sfx('slash');
+            }
+            break;
+        }
+        if (--m.poseT <= 0) { m.state = 'idle'; m.prop = null; m.idle = E.randi(90, 200); }
+        return;
+      }
       if (m.state === 'sleep' || m.state === 'hold') return;
       // idle: look at the glove when it hovers nearby, otherwise live a little
       if (this.hover && this.hover.kind === 'maid') { m.dir = 'down'; return; }
       if (--m.idle > 0) return;
       this.idleBehavior();
     },
+    // her own move: shadow-boxing, a stumble, tidying, a cut — whatever suits her (G.TRAITS)
+    startPose(kind) {
+      const m = this.maid;
+      m.state = 'pose';
+      m.pose = kind;
+      m.poseT = kind === 'blade' ? 70 : 120;
+      m.prop = kind === 'read' ? 'book' : null;
+      if (kind === 'stare' || kind === 'punch') m.dir = 'down';
+      if (kind === 'blade') { m.dir = 'left'; this.setFace('angry', 60); }
+      if (kind === 'dream') this.setFace('tired', 90);
+    },
     idleBehavior() {
       const m = this.maid;
       const room = B.getRoom();
       const roll = Math.random();
       const b = bond();
+      const tr = trait();
+      // a word about the weather when it is worth mentioning
+      const w = this.world || (this.world = G.world());
+      if (!m.speech && Math.random() < 0.12 && ['rain', 'snow', 'storm', 'petal'].includes(w.weather)) {
+        const say = G.contextLines(maidKey(), w);
+        if (say.sky) { this.speak(say.sky, w.weather === 'storm' ? 'surprise' : 'normal'); m.idle = E.randi(120, 220); return; }
+      }
+      if (Math.random() < 0.34) {
+        const kind = E.pick(tr.idle);
+        if (kind === 'clean') { m.state = 'use'; m.prop = 'broom'; m.useT = 160; m.dir = 'down'; return; }
+        this.startPose(kind);
+        return;
+      }
       if (roll < 0.35) {
         const { grid, g } = occupancy();
         const free = [];
@@ -849,24 +916,25 @@
       m.path = [];
       m.dir = 'down';
       this.bumpDaily('pat');
+      const tr = trait();
       if (n < 3) {
         this.gain('aff', 3 + (B.roomHas('plush') ? 1 : 0));
         this.gain('mood', 3);
-        m.hop = 4;
-        this.emote('heart', 80);
-        this.speak(E.pick(L.pat), n === 0 ? 'blush' : 'happy');
+        m.hop = tr.pat.hop;
+        this.emote(tr.pat.emote, 80);
+        this.speak(E.pick(L.pat), n === 0 ? 'blush' : tr.pat.face);
         this.hearts(this.maidScreen().x + 8, this.maidScreen().y - 10, 4);
         A.sfx('pat');
       } else if (n < 6) {
         this.gain('aff', 1);
         this.gain('mood', 1);
-        this.emote('note', 70);
-        this.speak(E.pick(L.pat), 'happy');
+        this.emote(tr.mood, 70);
+        this.speak(E.pick(L.pat), tr.pat.face);
         A.sfx('pat');
       } else {
         this.gain('mood', -3);
-        this.emote('anger', 90);
-        this.speak(E.pick(L.patMany), 'angry');
+        this.emote(tr.cross.emote, 90);
+        this.speak(E.pick(L.patMany), tr.cross.face);
         A.sfx('angry');
       }
       this.guideDone('pat');
@@ -879,21 +947,22 @@
       const n = this.daily('poke');
       this.bumpDaily('poke');
       this.touchStart('poke', 40);
+      const tr = trait();
       if (n < 2) {
         this.gain('aff', 2);
         this.gain('mood', 2);
-        this.emote('exclaim', 60);
-        this.speak(E.pick(L.poke), 'surprise');
+        this.emote(tr.poke.emote, 60);
+        this.speak(E.pick(L.poke), tr.poke.face);
         A.sfx('pat');
       } else if (n < 5) {
         this.gain('mood', 1);
-        this.emote('heart', 60);
-        this.speak(E.pick(L.poke), 'blush');
+        this.emote(tr.mood, 60);
+        this.speak(E.pick(L.poke), tr.pat.face);
         A.sfx('pat');
       } else {
         this.gain('mood', -2);
-        this.emote('anger', 80);
-        this.speak(L.pokeMany, 'angry');
+        this.emote(tr.cross.emote, 80);
+        this.speak(L.pokeMany, tr.cross.face);
         A.sfx('angry');
       }
       G.persist();
@@ -928,23 +997,23 @@
       const ms = this.maidScreen();
       if (a.kind === 'highfive') {
         if (a.t === 16) {
-          m.hop = 7;
+          m.hop = trait().five.hop;
           A.sfx('kick');
           for (let i = 0; i < 8; i++) {
             const ang = (i / 8) * Math.PI * 2;
             this.particles.push({ kind: 'sparkle', x: ms.x + 15, y: ms.y - 13, vx: Math.cos(ang) * 1.3, vy: Math.sin(ang) * 1.3 - 0.4, t: 0, life: 26 });
           }
           if (a.n < 3) { this.gain('aff', 2); this.gain('mood', 4); }
-          this.emote('sparkle', 80);
-          this.speak(E.pick(L.highFive), 'happy');
+          this.emote(trait().five.emote, 80);
+          this.speak(E.pick(L.highFive), trait().five.face);
         }
       } else if (a.kind === 'tickle') {
         if (a.t % 14 === 0) m.hop = 2;
         if (a.t % 22 === 0) this.particles.push({ kind: 'note', x: ms.x + E.rand(-4, 14), y: ms.y - 12, vy: -0.6, t: 0, life: 36 });
         if (a.t === 10) {
           if (a.n < 3) {
-            this.emote('note', 90);
-            this.speak(E.pick(L.tickle), 'happy');
+            this.emote(trait().tickle.emote, 90);
+            this.speak(E.pick(L.tickle), trait().tickle.face);
           } else {
             this.emote('sweat', 90);
             this.speak(L.tickleMany, 'tired');
@@ -1900,7 +1969,8 @@
       // idle, she turns to look at the glove when it comes close (her mood face waits until it goes)
       const look = this.lookDir();
       const face = m.face || (!look && m.dir === 'down' && m.state !== 'walk' ? faceFor() : null);
-      if (m.state === 'walk' || (this.anim && this.anim.kind === 'train' && this.anim.tr.anim === 'run')) {
+      const busy = m.state === 'pose' && (m.pose === 'punch' || m.pose === 'tidy');
+      if (m.state === 'walk' || busy || (this.anim && this.anim.kind === 'train' && this.anim.tr.anim === 'run')) {
         img = S[m.dir][[1, 0, 2, 0][(m.walkT >> 3) % 4]];
       } else if (face && face !== 'normal' && (m.dir === 'down')) img = S.faces[face];
       else img = S[look || m.dir][0];
