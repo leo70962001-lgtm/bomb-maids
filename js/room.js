@@ -19,6 +19,11 @@
   const trait = (k) => G.traitOf(k || maidKey());
   const name = (k) => G.MAID_DATA[k || maidKey()].name;
   const clamp = E.clamp;
+  // how far a line types on in one frame: her own pace (G.TRAITS talk), slower through silences and after a pause mark
+  function talkStep(text, at, pace) {
+    const ch = text[Math.floor(at)];
+    return ch === '…' ? pace * 0.3 : ch === '。' || ch === '、' || ch === '，' || ch === '！' || ch === '？' ? pace * 0.5 : pace;
+  }
 
   // ------------------------------------------------------------------ the sky in the window (real time of day + weather)
   const SKY = {
@@ -619,6 +624,10 @@
       this.decor = null;
       this.toasts = [];
       this.particles = [];
+      this.shakeT = 0;
+      this.flashFx = null;
+      this.hoverCD = 0;
+      this.wasOnMaid = false;
       // the real world: the clock and sky the room follows, and the rest the maids got while the game was closed
       this.world = G.world();
       const rested = G.restTick();
@@ -672,7 +681,7 @@
         const k = free[free.length - 1];
         c = k % g.w; r = (k / g.w) | 0;
       }
-      this.maid = { c, r, x: c * T, y: r * T, dir: 'down', path: [], state: 'idle', idle: 90, walkT: 0, face: null, faceT: 0, emote: null, emoteT: 0, hop: 0, speech: null, speechT: 0, prop: null, useT: 0 };
+      this.maid = { c, r, x: c * T, y: r * T, dir: 'down', path: [], state: 'idle', idle: 90, walkT: 0, face: null, faceT: 0, emote: null, emoteT: 0, hop: 0, speech: null, speechT: 0, speechChars: 0, pauseT: 0, prop: null, useT: 0 };
     },
     maidTile() { return [this.maid.c, this.maid.r]; },
     pathTo(tc, tr) {
@@ -728,7 +737,8 @@
     emote(kind, frames) { this.maid.emote = kind; this.maid.emoteT = frames || 90; },
     speak(text, face) {
       this.maid.speech = text;
-      this.maid.speechT = 170;
+      this.maid.speechChars = 0;
+      this.maid.speechT = Math.max(170, Math.round(text.length / trait().talk) + 110);
       if (face) this.setFace(face, 150);
     },
     updateMaid() {
@@ -736,6 +746,7 @@
       if (m.faceT > 0 && --m.faceT === 0) m.face = null;
       if (m.emoteT > 0 && --m.emoteT === 0) m.emote = null;
       if (m.speechT > 0 && --m.speechT === 0) m.speech = null;
+      if (m.speech && m.speechChars < m.speech.length) m.speechChars += talkStep(m.speech, m.speechChars, trait().talk);
       if (m.hop > 0) m.hop = Math.max(0, m.hop - 0.6);
       if (m.state === 'walk') {
         const next = m.path[0];
@@ -745,14 +756,32 @@
           if (m.then) { const f = m.then; m.then = null; f(); }
           return;
         }
+        // each walks her own way (G.TRAITS walk): Berry runs and kicks up dust, Honey sometimes stops to wonder where she
+        // was going, Yukino glides with a glint now and then, Yoru takes her time
+        const w = trait().walk;
+        if (m.pauseT > 0) {
+          if (--m.pauseT % 22 === 0) m.dir = m.dir === 'left' ? 'right' : 'left';
+          return;
+        }
+        if (w.wobble && this.mode === 'free' && !m.then && m.path.length > 1 && Math.random() < 0.006) {
+          m.pauseT = 66;
+          this.emote('question', 60);
+          return;
+        }
         const tx = next[0] * T, ty = next[1] * T;
         const dx = tx - m.x, dy = ty - m.y;
         if (Math.abs(dx) > 0.01) m.dir = dx > 0 ? 'right' : 'left';
         else if (Math.abs(dy) > 0.01) m.dir = dy > 0 ? 'down' : 'up';
-        const sp = 0.9;
+        const sp = 0.9 * w.speed;
         m.x += Math.sign(dx) * Math.min(Math.abs(dx), sp);
         m.y += Math.sign(dy) * Math.min(Math.abs(dy), sp);
-        m.walkT++;
+        m.walkT += w.speed > 1.2 ? 2 : 1;
+        const ws = this.maidScreen();
+        if (w.dust && m.walkT % 10 === 0) {
+          const back = m.dir === 'left' ? 1 : m.dir === 'right' ? -1 : 0;
+          this.fx({ kind: 'dust', x: ws.x + 8 + back * 5, y: ws.y + 14, vx: back * 0.3, vy: -0.25, life: 18 });
+        }
+        if (w.glide && m.walkT % 48 === 0) this.fx({ kind: 'glint', x: ws.x + E.randi(1, 15), y: ws.y + E.randi(-6, 10), life: 16 });
         if (Math.abs(m.x - tx) < 0.01 && Math.abs(m.y - ty) < 0.01) {
           m.c = next[0]; m.r = next[1];
           m.path.shift();
@@ -769,38 +798,72 @@
         const ms = this.maidScreen();
         const t = m.poseT;
         switch (m.pose) {
-          case 'punch': // Berry shadow-boxes, one jab at a time
+          case 'punch': { // Berry shadow-boxes, one jab at a time, and ends on a big one
             m.dir = 'down';
             m.walkT++;
-            if (t % 14 === 0) { m.hop = 3; this.sparkle(ms.x + (t % 28 === 0 ? -2 : 18), ms.y - 2); }
             if (t === 104) this.emote('exclaim', 40);
+            if (t % 14 === 0 && t > 20) {
+              m.hop = 3;
+              const left = t % 28 === 0;
+              const fx = ms.x + (left ? -3 : 19), fy = ms.y + 2;
+              this.ring(fx, fy, 1, 7, '#ffb45c', 10);
+              this.fx({ kind: 'star', x: fx, y: fy, vx: left ? -0.8 : 0.8, vy: -0.7, g: 0.05, life: 18 });
+              this.fx({ kind: 'flame', x: fx, y: fy - 2, vx: 0, vy: -0.6, life: 14 });
+              A.sfx('kick');
+            }
+            if (t === 20) {
+              m.hop = 7;
+              this.ring(ms.x + 8, ms.y + 2, 2, 18, '#ffe14d', 14);
+              this.burst(ms.x + 8, ms.y + 2, 'flame', 8, 1.3, { vyAdd: -0.4 });
+              this.shake(4);
+              this.emote('exclaim', 40);
+              A.sfx('punch');
+            }
             break;
-          case 'trip': // Honey trips over nothing and catches herself
-            if (t === 96) { m.hop = 5; this.emote('sweat', 50); this.setFace('surprise', 60); }
-            if (t === 50) this.emote('note', 40);
+          }
+          case 'trip': // Honey trips over nothing, sees stars, and laughs it off
+            if (t === 96) {
+              m.hop = 5;
+              this.emote('sweat', 50);
+              this.setFace('surprise', 60);
+              for (let i = 0; i < 4; i++) this.fx({ kind: 'dust', x: ms.x + 8 + E.rand(-6, 6), y: ms.y + 14, vx: E.rand(-0.6, 0.6), vy: -0.3, life: 20 });
+              for (let i = 0; i < 3; i++) this.fx({ kind: 'orbit', cx: ms.x + 8, cy: ms.y - 10, ph: i * 2.1, life: 56 });
+              A.sfx('drop');
+            }
+            if (t === 50) { this.emote('note', 40); this.aura(ms.x + 8, ms.y - 4, 5); }
             break;
-          case 'dream': // Honey drifts off in the middle of a thought
+          case 'dream': // Honey drifts off: daydream bubbles float up, and the last one pops
             if (t === 108) this.emote('dots', 80);
-            if (t === 46) { this.emote('question', 50); m.dir = E.pick(['left', 'right']); }
+            if (t > 50 && t % 16 === 0) this.fx({ kind: 'bubble', x: ms.x + 12 + E.rand(-2, 2), y: ms.y - 10, vx: 0, vy: -0.35, sway: 0.25, ph: t, big: t % 32 === 0, life: 48 });
+            if (t === 46) { this.emote('question', 50); m.dir = E.pick(['left', 'right']); this.ring(ms.x + 12, ms.y - 22, 1, 7, '#ffb8d8', 10); }
             break;
-          case 'tidy': // Yukino straightens the room as she goes
+          case 'tidy': // Yukino straightens the room as she goes, and it gleams
             m.walkT++;
-            if (t % 30 === 0) { m.dir = m.dir === 'left' ? 'right' : 'left'; this.sparkle(ms.x + E.randi(0, 16), ms.y + 10); }
+            if (t % 30 === 0) { m.dir = m.dir === 'left' ? 'right' : 'left'; this.fx({ kind: 'glint', x: ms.x + E.randi(0, 16), y: ms.y + E.randi(0, 12), life: 18 }); }
+            if (t % 12 === 0) this.fx({ kind: 'dust', x: ms.x + (m.dir === 'left' ? -2 : 18), y: ms.y + 13, vx: m.dir === 'left' ? -0.5 : 0.5, vy: -0.1, life: 14 });
             if (t === 100) this.emote('note', 60);
+            if (t === 10) this.aura(ms.x + 8, ms.y + 2, 6);
             break;
           case 'read':
             if (t === 100) this.emote('dots', 80);
+            if (t % 34 === 0) this.fx({ kind: 'glint', x: ms.x + 8 + E.randi(-4, 4), y: ms.y - 2, vy: -0.2, life: 16 });
             break;
-          case 'stare': // Yoru simply watches you
+          case 'stare': // Yoru simply watches you, and the air goes quiet
             m.dir = 'down';
             if (t === 90) this.emote('dots', 70);
+            if (t % 18 === 0) this.fx({ kind: 'petal', pal: 'night', x: ms.x + E.randi(-8, 24), y: ms.y - 16, vx: E.rand(-0.2, 0.2), vy: 0.35, sway: 0.3, ph: t, life: 60 });
             break;
-          case 'blade': // Yoru practises a single cut
+          case 'blade': // Yoru practises a single cut: a flash, and the petals in the air fall in halves
             if (t === 40) {
               this.emote('sparkle', 40);
-              for (let i = 0; i < 5; i++) this.sparkle(ms.x + 2 + i * 3, ms.y + 4 - i * 2);
+              this.fx({ kind: 'slash', x: ms.x - 16, y: ms.y - 8, life: 12 });
+              this.flash('#ffffff', 4);
+              this.shake(3);
+              this.ring(ms.x - 4, ms.y + 4, 2, 12, '#c8b0ff', 12);
+              this.burst(ms.x - 6, ms.y + 2, 'petal', 8, 1.2, { pal: 'night', g: 0.03, sway: 0.2 });
               A.sfx('slash');
             }
+            if (t > 40 && t % 10 === 0) this.fx({ kind: 'petal', pal: 'night', x: ms.x + E.randi(-12, 20), y: ms.y - 14, vx: 0, vy: 0.3, sway: 0.3, ph: t, life: 50 });
             break;
         }
         if (--m.poseT <= 0) { m.state = 'idle'; m.prop = null; m.idle = E.randi(90, 200); }
@@ -880,6 +943,66 @@
       return { x: Math.round(g.x0 + this.maid.x), y: Math.round(g.floorY + this.maid.y) };
     },
     sparkle(x, y) { this.particles.push({ kind: 'sparkle', x, y, t: 0, life: 24, vy: -0.4 }); },
+    // ---- effects: particles keep kind, position, speed (vx, vy), gravity (g), drag, sway and a life in frames; a
+    // negative t holds one back that long. shake() jolts the room, flash() washes it in a colour for a few frames.
+    fx(p) {
+      if (p.t == null) p.t = 0;
+      this.particles.push(p);
+      return p;
+    },
+    ring(x, y, r0, r1, col, life) { this.fx({ kind: 'ring', x, y, r0, r1, col, life: life || 16 }); },
+    burst(x, y, kind, n, speed, extra) {
+      const o = extra || {};
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2 + E.rand(-0.2, 0.2);
+        const v = speed * E.rand(0.6, 1.1);
+        this.fx(Object.assign({ kind, x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v + (o.vyAdd || -0.3), life: E.randi(24, 36), ph: i * 7 }, o));
+      }
+    },
+    // her own particles (G.TRAITS aura): sparks and flames for Berry, bubbles and blossoms for Honey, snow and glints
+    // for Yukino, dark petals for Yoru
+    aura(x, y, n) {
+      const kind = trait().aura;
+      for (let i = 0; i < n; i++) {
+        const ox = x + E.rand(-9, 9), oy = y + E.rand(-6, 6), ph = i * 9;
+        if (kind === 'flame') {
+          this.fx(i % 3 === 2
+            ? { kind: 'star', x: ox, y: oy, vx: E.rand(-0.8, 0.8), vy: E.rand(-1.4, -0.6), g: 0.04, life: 24 }
+            : { kind: 'flame', x: ox, y: oy, vx: E.rand(-0.3, 0.3), vy: E.rand(-1, -0.5), life: E.randi(16, 26) });
+        } else if (kind === 'bubble') {
+          this.fx(i % 3 === 2
+            ? { kind: 'blossom', x: ox, y: oy, vx: E.rand(-0.4, 0.4), vy: E.rand(-0.8, -0.3), g: 0.02, sway: 0.2, ph, life: 40 }
+            : { kind: 'bubble', x: ox, y: oy, vx: E.rand(-0.2, 0.2), vy: E.rand(-0.7, -0.35), sway: 0.3, ph, big: Math.random() < 0.3, life: E.randi(34, 50) });
+        } else if (kind === 'snow') {
+          this.fx(i % 3 === 2
+            ? { kind: 'glint', x: ox, y: oy, life: 18 }
+            : { kind: 'snow', x: ox, y: oy - 8, vx: E.rand(-0.3, 0.3), vy: E.rand(0.15, 0.4), sway: 0.3, ph, small: Math.random() < 0.4, life: E.randi(36, 52) });
+        } else {
+          this.fx({ kind: 'petal', pal: 'night', x: ox, y: oy - 6, vx: E.rand(-0.6, 0.6), vy: E.rand(-0.6, 0.1), g: 0.025, sway: 0.25, ph, life: E.randi(40, 56) });
+        }
+      }
+    },
+    auraColor() { return { flame: '#ffb45c', bubble: '#ffb8d8', snow: '#9fd8ff', night: '#b08ae0' }[trait().aura]; },
+    confetti(x, y, n) {
+      const cols = ['#ff6f91', '#ffd23f', '#6ad0ff', '#8ee07a', '#ffffff', '#c89aff'];
+      for (let i = 0; i < n; i++) this.fx({ kind: 'confetti', x: x + E.rand(-4, 4), y, vx: E.rand(-1.6, 1.6), vy: E.rand(-2.4, -0.8), g: 0.06, drag: 0.98, sway: 0.2, ph: i * 5, col: E.pick(cols), life: E.randi(44, 70) });
+    },
+    floatText(x, y, text, col, delay) { this.fx({ kind: 'text', x, y, text, col, vy: -0.45, drag: 0.97, life: 72, t: -(delay || 0) }); },
+    shake(n) { this.shakeT = Math.max(this.shakeT, n); },
+    flash(col, frames) { this.flashFx = { col, t: 0, life: frames || 8 }; },
+    // a big moment (her affection goes up a level): hearts, confetti, rings and a pink flash
+    celebrate() {
+      const ms = this.maidScreen();
+      const x = ms.x + 8, y = ms.y - 6;
+      this.hearts(x, y - 2, 10);
+      this.confetti(x, y - 20, 36);
+      this.ring(x, y, 3, 30, '#ff9fbb', 22);
+      this.ring(x, y, 2, 18, '#ffffff', 16);
+      this.aura(x, y, 10);
+      this.fx({ kind: 'bigheart', tier: 'love', x, y: y - 16, vy: -0.4, life: 50 });
+      this.flash('#ffc8e0', 12);
+      this.shake(4);
+    },
     hearts(x, y, n) {
       for (let i = 0; i < n; i++) this.particles.push({ kind: 'heart', x: x + E.rand(-6, 6), y: y + E.rand(-2, 4), vx: E.rand(-0.5, 0.5), vy: E.rand(-1.2, -0.5), t: 0, life: 40 });
     },
@@ -923,18 +1046,23 @@
         m.hop = tr.pat.hop;
         this.emote(tr.pat.emote, 80);
         this.speak(E.pick(L.pat), n === 0 ? 'blush' : tr.pat.face);
-        this.hearts(this.maidScreen().x + 8, this.maidScreen().y - 10, 4);
+        const ms = this.maidScreen();
+        this.hearts(ms.x + 8, ms.y - 10, 4);
+        this.aura(ms.x + 8, ms.y - 6, 5);
+        this.ring(ms.x + 8, ms.y - 8, 2, 11, this.auraColor(), 12);
         A.sfx('pat');
       } else if (n < 6) {
         this.gain('aff', 1);
         this.gain('mood', 1);
         this.emote(tr.mood, 70);
         this.speak(E.pick(L.pat), tr.pat.face);
+        this.aura(this.maidScreen().x + 8, this.maidScreen().y - 6, 2);
         A.sfx('pat');
       } else {
         this.gain('mood', -3);
         this.emote(tr.cross.emote, 90);
         this.speak(E.pick(L.patMany), tr.cross.face);
+        this.crossFx();
         A.sfx('angry');
       }
       this.guideDone('pat');
@@ -953,6 +1081,9 @@
         this.gain('mood', 2);
         this.emote(tr.poke.emote, 60);
         this.speak(E.pick(L.poke), tr.poke.face);
+        const ms = this.maidScreen();
+        this.ring(ms.x + 11, ms.y + 3, 1, 6, '#ffffff', 8);
+        this.fx({ kind: 'star', x: ms.x + 13, y: ms.y + 2, vx: 0.6, vy: -0.8, g: 0.05, life: 16 });
         A.sfx('pat');
       } else if (n < 5) {
         this.gain('mood', 1);
@@ -963,9 +1094,20 @@
         this.gain('mood', -2);
         this.emote(tr.cross.emote, 80);
         this.speak(L.pokeMany, tr.cross.face);
+        this.crossFx();
         A.sfx('angry');
       }
       G.persist();
+    },
+    // enough is enough: each one shows it her own way
+    crossFx() {
+      const ms = this.maidScreen();
+      const x = ms.x + 8, y = ms.y - 6;
+      const kind = trait().aura;
+      if (kind === 'flame') { this.burst(x, y, 'flame', 6, 1, {}); this.shake(2); } // Berry flares up
+      else if (kind === 'bubble') this.burst(x, y - 4, 'bubble', 4, 0.6, { sway: 0.2 }); // Honey fizzles
+      else if (kind === 'snow') this.ring(x, y, 14, 4, '#9fd8ff', 14); // Yukino goes cool
+      else { this.ring(x, y, 16, 3, '#6a3a90', 14); this.fx({ kind: 'petal', pal: 'night', x, y: y - 8, vy: 0.3, sway: 0.3, life: 40 }); } // Yoru goes cold
     },
     // a high five: the open glove comes down and she jumps up to meet it
     highFive() {
@@ -1003,6 +1145,10 @@
             const ang = (i / 8) * Math.PI * 2;
             this.particles.push({ kind: 'sparkle', x: ms.x + 15, y: ms.y - 13, vx: Math.cos(ang) * 1.3, vy: Math.sin(ang) * 1.3 - 0.4, t: 0, life: 26 });
           }
+          this.ring(ms.x + 15, ms.y - 13, 2, 14, '#ffe14d', 12);
+          this.fx({ kind: 'glint', x: ms.x + 15, y: ms.y - 13, life: 14 });
+          this.aura(ms.x + 8, ms.y - 4, 6);
+          this.shake(3);
           if (a.n < 3) { this.gain('aff', 2); this.gain('mood', 4); }
           this.emote(trait().five.emote, 80);
           this.speak(E.pick(L.highFive), trait().five.face);
@@ -1010,6 +1156,7 @@
       } else if (a.kind === 'tickle') {
         if (a.t % 14 === 0) m.hop = 2;
         if (a.t % 22 === 0) this.particles.push({ kind: 'note', x: ms.x + E.rand(-4, 14), y: ms.y - 12, vy: -0.6, t: 0, life: 36 });
+        if (a.t % 18 === 9) this.aura(ms.x + 8, ms.y - 2, 1);
         if (a.t === 10) {
           if (a.n < 3) {
             this.emote(trait().tickle.emote, 90);
@@ -1050,12 +1197,19 @@
         this.say([{ who: null, text: G.t('沒有可以送的禮物……到女僕咖啡廳的「禮物專櫃」買一點吧！') }]);
         return;
       }
+      // what you already know of her taste shows beside each gift; the line at the bottom says what the gift does
+      const known = (S.tastes && S.tastes[maidKey()]) || {};
       this.openMenu(G.t('送什麼禮物？'), owned.map((g) => ({
         label: g.name + ' ×' + S.gifts[g.id],
         icon: E.spr.room.gifts[g.id],
+        badge: E.spr.ui.taste[known[g.id] || 'unknown'],
+        desc: g.desc,
         action: () => this.giveGift(g),
       })));
     },
+    // the present comes down to her wrapped, pops open, and she reacts the way her taste says (G.TRAITS taste):
+    // her favourite gets hearts, confetti and a pink flash; a gift she likes, hearts; the one that does not land, a
+    // little grey cloud. Then she says so, and the gift does what it does (applyGift).
     giveGift(g) {
       const S = save();
       const k = maidKey();
@@ -1063,17 +1217,139 @@
       if (this.daily('gift') >= 2) { this.say([{ who: k, face: 'normal', text: L.giftMany }]); return; }
       S.gifts[g.id]--;
       this.bumpDaily('gift');
-      const fav = g.fav === k;
-      const amount = fav ? 20 : g.aff;
-      this.emote(fav || g.fav === 'all' ? 'heart' : 'sparkle', 120);
-      this.hearts(this.maidScreen().x + 8, this.maidScreen().y - 8, fav ? 10 : 5);
-      A.sfx('gift');
-      this.say([{ who: k, face: fav ? 'surprise' : 'happy', text: fav ? L.giftLike : L.giftNormal }], () => {
-        this.gain('aff', amount);
-        this.gain('mood', 10);
-        this.toast(G.t('好感度 +{n}', { n: amount }), C.pink);
-        G.persist();
-      });
+      const m = this.maid;
+      if (m.state === 'walk' || m.state === 'pose' || m.state === 'use') { m.state = 'idle'; m.prop = null; }
+      m.path = [];
+      m.pauseT = 0;
+      m.dir = 'down';
+      m.speech = null;
+      this.anim = { kind: 'gift', g, taste: G.tasteOf(k, g.id), t: 0, dur: 92 };
+      this.mode = 'anim';
+      A.sfx('select');
+      G.persist();
+    },
+    updateGiftAnim(an) {
+      const m = this.maid;
+      const ms = this.maidScreen();
+      const x = ms.x + 8, top = ms.y - 30;
+      m.dir = 'down';
+      if (an.t === 24) { A.sfx('place'); this.fx({ kind: 'dust', x: x - 6, y: top + 13, vx: -0.4, vy: -0.2, life: 12 }); this.fx({ kind: 'dust', x: x + 6, y: top + 13, vx: 0.4, vy: -0.2, life: 12 }); }
+      if (an.t === 36) { // it pops open
+        this.fx({ kind: 'lid', x, y: top + 3, vx: E.pick([-0.7, 0.7]), vy: -1.8, g: 0.1, life: 30 });
+        this.ring(x, top + 6, 2, 16, '#ffffff', 12);
+        this.burst(x, top + 6, 'glint', 6, 1.1, { life: 18 });
+        this.confetti(x, top + 4, 10);
+        this.flash('#ffffff', 4);
+        A.sfx('pop');
+      }
+      if (an.t === 52) {
+        this.giftReaction(an.taste);
+        const S = save();
+        S.tastes = S.tastes || {};
+        const k = maidKey();
+        S.tastes[k] = S.tastes[k] || {};
+        S.tastes[k][an.g.id] = an.taste === 'secret' ? 'like' : an.taste;
+      }
+      if (an.t > 52 && an.t < 76 && an.t % 8 === 0) this.fx({ kind: 'glint', x: x + E.randi(-10, 10), y: top - 12 + E.randi(-6, 6), life: 14 });
+      if (an.t >= an.dur) {
+        this.anim = null;
+        m.state = 'idle';
+        const k = maidKey();
+        const L = lines(k);
+        const g = an.g;
+        const taste = an.taste;
+        const text = taste === 'love' ? L.giftLike
+          : taste === 'like' ? L.giftFond.replace('{gift}', g.name)
+          : taste === 'meh' ? L.giftMeh
+          : taste === 'secret' ? L.giftSecret[0]
+          : L.giftNormal;
+        const face = { love: 'blush', like: 'happy', normal: 'happy', meh: 'tired', secret: 'normal' }[taste];
+        this.say([{ who: k, face, text }], () => this.applyGift(g, taste));
+      }
+    },
+    giftReaction(taste) {
+      const m = this.maid;
+      const ms = this.maidScreen();
+      const x = ms.x + 8, y = ms.y - 6;
+      if (taste === 'love') {
+        m.hop = 8;
+        this.setFace('surprise', 40);
+        this.emote('heart', 120);
+        this.fx({ kind: 'bigheart', tier: 'love', x, y: y - 28, vy: -0.25, life: 60 });
+        this.hearts(x, y, 10);
+        this.aura(x, y, 12);
+        this.confetti(x, y - 26, 28);
+        this.ring(x, y, 3, 26, '#ff9fbb', 20);
+        this.ring(x, y, 2, 14, '#ffffff', 14);
+        this.flash('#ffc8e0', 12);
+        this.shake(5);
+        A.sfx('love');
+      } else if (taste === 'like') {
+        m.hop = 5;
+        this.setFace('happy', 60);
+        this.emote('heart', 100);
+        this.fx({ kind: 'bigheart', tier: 'like', x, y: y - 28, vy: -0.3, life: 50 });
+        this.hearts(x, y, 5);
+        this.aura(x, y, 8);
+        this.ring(x, y, 2, 16, this.auraColor(), 16);
+        A.sfx('gift');
+      } else if (taste === 'normal') {
+        m.hop = 2;
+        this.setFace('happy', 60);
+        this.emote('sparkle', 90);
+        this.aura(x, y, 4);
+        this.burst(x, y - 10, 'sparkle', 6, 1, {});
+        A.sfx('pat');
+      } else if (taste === 'meh') {
+        this.setFace('tired', 90);
+        this.emote('sweat', 100);
+        this.fx({ kind: 'gloom', x: x - 7, y: y - 12, vy: -0.03, life: 80 });
+        A.sfx('meh');
+      } else { // Yoru's secret: she acts as if it were nothing
+        this.emote('dots', 100);
+        A.sfx('tick');
+      }
+    },
+    // what the gift does: her affection (by taste), then whatever the shop promised, each shown floating up over her
+    applyGift(g, taste) {
+      const S = save();
+      const b = bond();
+      const k = maidKey();
+      const L = lines(k);
+      const TS = G.GIFT_TASTE[taste];
+      const ms = this.maidScreen();
+      const x = ms.x + 8, y = ms.y - 14;
+      const pops = [];
+      const aff = Math.max(1, Math.round(g.aff * TS.aff));
+      this.gain('aff', aff);
+      pops.push([G.t('好感度 +{n}', { n: aff }), '#ff9fbb']);
+      const mood = Math.min(100, (g.mood || 0) + TS.mood);
+      if (mood) { this.gain('mood', mood); pops.push([G.t('心情 +{n}', { n: mood }), '#ffe14d']); }
+      if (g.stamina) { this.gain('stamina', g.stamina); pops.push([G.t('體力 +{n}', { n: g.stamina }), '#8ee07a']); }
+      if (g.exp) {
+        for (const id of Object.keys(g.exp)) {
+          const tr = G.TRAININGS.find((q) => q.id === id);
+          const before = B.trainLevel(b.exp[id]);
+          b.exp[id] += g.exp[id];
+          pops.push([G.t('{name} +{n}', { name: tr.name, n: g.exp[id] }), '#9fd8ff']);
+          if (B.trainLevel(b.exp[id]) > before) { this.toast(G.t('{name} 升到 Lv{n}！', { name: tr.name, n: B.trainLevel(b.exp[id]) }), C.mint); A.sfx('levelup'); }
+        }
+      }
+      if (g.buff) {
+        S.buffs[g.buff] = true;
+        this.toast(G.t('御守：下次委託撐住一次致命傷'), C.gold);
+      }
+      pops.forEach(([text, col], i) => this.floatText(x, y - i * 2, text, col, i * 14));
+      if (taste === 'secret') {
+        this.speak(L.giftSecret[1], 'blush');
+        this.emote('heart', 90);
+        this.fx({ kind: 'bigheart', tier: 'like', x, y: y - 16, vy: -0.3, life: 44 });
+      } else {
+        const use = g.stamina ? 'stamina' : g.exp ? 'study' : g.buff ? 'charm' : g.mood ? 'mood' : null;
+        if (use) this.speak(L.giftUse[use], taste === 'meh' ? 'normal' : 'happy');
+      }
+      if (g.stamina) this.aura(x, y + 8, 5);
+      G.persist();
     },
     trainMenu() {
       const b = bond();
@@ -1123,6 +1399,10 @@
       this.maid.prop = null;
       this.panel = { kind: 'train', tr, gainExp, before, after, ups, moodMul, t: 0 };
       this.mode = 'panel';
+      const ms = this.maidScreen();
+      this.ring(ms.x + 8, ms.y + 2, 2, after > before ? 22 : 14, this.auraColor(), 16);
+      this.aura(ms.x + 8, ms.y - 2, after > before ? 10 : 5);
+      if (after > before) this.confetti(ms.x + 8, ms.y - 20, 24);
       if (after > before) A.sfx('levelup'); else A.sfx('item');
       this.guideDone('train');
       G.persist();
@@ -1372,14 +1652,16 @@
       this.mode = 'dialog';
       const first = queue[0];
       if (first && first.who) this.setFace(first.face || 'normal', 9999);
-      if (first && first.levelUp) this.hearts(this.maidScreen().x + 8, this.maidScreen().y - 8, 8);
+      if (first && first.levelUp) this.celebrate();
     },
     updateDialog() {
       const d = this.dialog;
       const cur = d.queue[d.i];
       if (d.chars < cur.text.length) {
-        d.chars = Math.min(cur.text.length, d.chars + 0.6);
-        if (this.t % 4 === 0) A.sfx('blip');
+        const tr = cur.who && G.traitOf(cur.who);
+        d.chars = Math.min(cur.text.length, d.chars + talkStep(cur.text, d.chars, tr ? tr.talk : 0.7));
+        const voice = tr ? tr.voice : ['blip', 4];
+        if (this.t % voice[1] === 0 && cur.text[Math.floor(d.chars)] !== '…') A.sfx(voice[0]);
       }
       if (E.menuPressed('a') || E.menuPressed('b') || E.pointer.pressed) {
         if (d.chars < cur.text.length) d.chars = cur.text.length;
@@ -1388,7 +1670,7 @@
           d.chars = 0;
           const nx = d.queue[d.i];
           if (nx.who) this.setFace(nx.face || 'normal', 9999);
-          if (nx.levelUp) this.hearts(this.maidScreen().x + 8, this.maidScreen().y - 8, 8);
+          if (nx.levelUp) this.celebrate();
           A.sfx('select');
         } else {
           this.dialog = null;
@@ -1400,11 +1682,12 @@
       }
     },
     openMenu(title, items, anchor) {
-      const W = Math.max(E.textWidth(title) + 16, ...items.map((it) => E.textWidth(it.label) + (it.icon ? 22 : 12) + (it.note ? E.textWidth(it.note) + 10 : 0))) + 12;
-      const H = 22 + items.length * 16;
+      const W = Math.max(E.textWidth(title) + 16, ...items.map((it) => (it.desc ? E.textWidth(it.desc) + 2 : 0)), ...items.map((it) => E.textWidth(it.label) + (it.icon ? Math.max(22, it.icon.width + 12) : 12) + (it.note ? E.textWidth(it.note) + 10 : 0) + (it.badge ? 16 : 0))) + 12;
+      const H = 22 + items.length * 16 + (items.some((it) => it.desc) ? 19 : 0);
       const ax = anchor ? anchor.x : this.glove.x + 10;
       const ay = anchor ? anchor.y : this.glove.y - H / 2;
-      this.menu = { title, items, sel: Math.max(0, items.findIndex((it) => !it.disabled)), x: clamp(Math.round(ax), 4, E.W - W - 4), y: clamp(Math.round(ay), 60, E.H - H - 18), w: W, h: H };
+      // a long list may cover the tool buttons, but never runs under the hint bar
+      this.menu = { title, items, sel: Math.max(0, items.findIndex((it) => !it.disabled)), x: clamp(Math.round(ax), 4, E.W - W - 4), y: clamp(Math.round(ay), Math.min(60, E.H - H - 18), E.H - H - 18), w: W, h: H };
       this.mode = 'menu';
     },
     updateMenu() {
@@ -1727,6 +2010,14 @@
       } else gl.speed = 1.4;
       if (P.moved && P.inside) { gl.x = P.x; gl.y = P.y; gl.usingPointer = true; }
       this.hover = this.hitTest(gl.x, gl.y);
+      const onMaid = !!(this.hover && this.hover.kind === 'maid');
+      if (onMaid && !this.wasOnMaid && this.hoverCD <= 0 && !this.glove.act && this.maid.state !== 'sleep' && !this.maid.emote) {
+        const hv = trait().hover;
+        this.emote(hv.emote, 50);
+        if (hv.hop) this.maid.hop = hv.hop;
+        this.hoverCD = 300;
+      }
+      this.wasOnMaid = onMaid;
       if (this.mode === 'tabs') {
         const d = E.menuDir();
         if (d === 'left') { this.tab = (this.tab + TABS.length - 1) % TABS.length; A.sfx('select'); }
@@ -1765,11 +2056,16 @@
       this.updateTouch();
       for (let i = this.particles.length - 1; i >= 0; i--) {
         const p = this.particles[i];
-        p.t++;
-        p.x += p.vx || 0;
+        if (++p.t <= 0) continue;
+        if (p.g) p.vy = (p.vy || 0) + p.g;
+        if (p.drag) { p.vx = (p.vx || 0) * p.drag; p.vy = (p.vy || 0) * p.drag; }
+        p.x += (p.vx || 0) + (p.sway ? Math.sin((p.t + (p.ph || 0)) * 0.12) * p.sway : 0);
         p.y += p.vy || 0;
         if (p.t >= p.life) this.particles.splice(i, 1);
       }
+      if (this.shakeT > 0) this.shakeT--;
+      if (this.hoverCD > 0) this.hoverCD--;
+      if (this.flashFx && ++this.flashFx.t >= this.flashFx.life) this.flashFx = null;
       for (let i = this.toasts.length - 1; i >= 0; i--) if (++this.toasts[i].t > 110) this.toasts.splice(i, 1);
       this.updateMaid();
       if (this.pendingLevelUp && this.mode === 'free' && !this.anim) {
@@ -1795,6 +2091,7 @@
       an.t++;
       const m = this.maid;
       const ms = this.maidScreen();
+      if (an.kind === 'gift') return this.updateGiftAnim(an);
       if (an.kind === 'train') {
         const kind = an.tr.anim;
         if (kind === 'jump') { if (an.t % 20 === 0) m.hop = 7; if (an.t % 30 === 0) this.emote('sweat', 25); }
@@ -1807,7 +2104,7 @@
       }
       if (an.kind === 'tea') {
         if (an.t % 18 === 0) this.particles.push({ kind: 'steam', x: ms.x + 12, y: ms.y + 2, vx: 0, vy: -0.4, t: 0, life: 30 });
-        if (an.t === 40) { this.emote('heart', 60); this.hearts(ms.x + 8, ms.y - 8, 3); }
+        if (an.t === 40) { this.emote('heart', 60); this.hearts(ms.x + 8, ms.y - 8, 3); this.aura(ms.x + 8, ms.y - 4, 4); }
         if (an.t >= an.dur) {
           this.anim = null;
           this.maid.state = 'idle';
@@ -1856,9 +2153,20 @@
     draw() {
       const ctx = E.ctx;
       UI.bg(this.t);
+      const shook = this.shakeT > 0;
+      if (shook) { ctx.save(); ctx.translate(E.randi(-1, 1) * Math.min(2, Math.ceil(this.shakeT / 3)), E.randi(-1, 1)); }
       this.drawRoom();
+      this.drawGiftAnim();
       for (const p of this.particles) this.drawParticle(p);
+      if (this.flashFx) {
+        const f = this.flashFx;
+        const g = geom();
+        ctx.globalAlpha = 0.55 * (1 - f.t / f.life);
+        E.rect(g.x0 - 4, g.wallY - 4, g.w * T + 8, WALL_H + g.h * T + 8, f.col);
+        ctx.globalAlpha = 1;
+      }
       this.drawMaidOverlay();
+      if (shook) ctx.restore();
       if (this.anim && this.anim.kind === 'train') {
         const an = this.anim;
         const g = geom();
@@ -2029,23 +2337,98 @@
         ctx.drawImage(E.spr.room.emotes[m.emote], ms.x + 9, headY - 11 + bob);
       }
       if (m.speech && !this.dialog) {
+        // her own bubble (G.TRAITS bubble): Berry's warm and loud, Honey's buttery, Yukino's cool blue, Yoru's dark
+        const tb = trait().bubble;
         const lines = E.wrap(m.speech, 104);
         const w = Math.max(...lines.map((l) => E.textWidth(l))) + 10;
         const h = lines.length * 14 + 6;
         const bx = clamp(ms.x + 8 - w / 2, 4, E.W - w - 4);
-        const by = Math.max(60, headY - h - 6);
-        E.panel(Math.round(bx), by, Math.round(w), h, '#ffffff', C.plum, {});
-        E.rect(ms.x + 6, by + h - 1, 4, 3, '#ffffff');
-        E.rect(ms.x + 7, by + h + 2, 2, 2, C.plum);
-        lines.forEach((l, i) => E.text(l, Math.round(bx) + 5, by + 4 + i * 14, { color: C.plum }));
+        const since = Math.floor(m.speechChars / Math.max(0.1, trait().talk));
+        const by = Math.max(60, headY - h - 6) + (since < 6 ? [3, 2, 1, 0, -1, 0][since] : 0);
+        E.panel(Math.round(bx), by, Math.round(w), h, tb.bg, tb.edge, {});
+        E.rect(ms.x + 6, by + h - 1, 4, 3, tb.bg);
+        E.rect(ms.x + 7, by + h + 2, 2, 2, tb.edge);
+        let left = Math.floor(m.speechChars);
+        lines.forEach((l, i) => {
+          if (left <= 0) return;
+          E.text(l.slice(0, left), Math.round(bx) + 5, by + 4 + i * 14, { color: tb.ink });
+          left -= l.length;
+        });
+      }
+    },
+    // the wrapped present: down it comes, wiggles, pops, and the gift rises out of it and settles into her arms
+    drawGiftAnim() {
+      const an = this.anim;
+      if (!an || an.kind !== 'gift') return;
+      const ctx = E.ctx;
+      const FX = E.spr.fx;
+      const ms = this.maidScreen();
+      const t = an.t;
+      const bx = ms.x + 1, top = ms.y - 30;
+      if (t < 24) ctx.drawImage(FX.giftbox.closed, bx, Math.round(top - 44 + 44 * E.ease.outCubic(t / 24)));
+      else if (t < 36) ctx.drawImage(FX.giftbox.closed, bx + (t > 28 ? ((t >> 1) % 2 ? 1 : -1) : 0), top + (t < 27 ? 1 : 0));
+      else if (t < 60 && !(t > 52 && t % 2)) ctx.drawImage(FX.giftbox.open, bx, top);
+      if (t >= 36) {
+        const rise = E.ease.outCubic(Math.min(1, (t - 36) / 16));
+        const settle = t > 74 ? Math.min(1, (t - 74) / 12) : 0;
+        const gy = Math.round(top + 2 - 16 * rise + (30 * settle) + Math.sin(t * 0.15) * (1 - settle));
+        if (settle < 1) {
+          if (t < 74 && (t >> 2) % 2) { G.pixelRing(bx + 7, gy + 7, 11, '#fff3a0'); }
+          ctx.drawImage(E.spr.room.gifts[an.g.id], bx - 1, gy);
+        }
       }
     },
     drawParticle(p) {
+      if (p.t <= 0) return;
       const ctx = E.ctx;
-      if (p.kind === 'heart') ctx.drawImage(E.spr.fx.heart, Math.round(p.x - 2), Math.round(p.y - 2));
-      else if (p.kind === 'sparkle') ctx.drawImage(E.spr.fx.sparkle[(p.t >> 3) % 3], Math.round(p.x - 2), Math.round(p.y - 2));
-      else if (p.kind === 'steam') { ctx.fillStyle = 'rgba(255,255,255,' + (1 - p.t / p.life) + ')'; ctx.fillRect(Math.round(p.x + Math.sin(p.t * 0.3) * 2), Math.round(p.y), 2, 2); }
-      else if (p.kind === 'note') E.text('♪', Math.round(p.x), Math.round(p.y), { color: '#6b5a8e' });
+      const FX = E.spr.fx;
+      const x = Math.round(p.x), y = Math.round(p.y);
+      // most things blink out over their last frames
+      if (p.t > p.life - 8 && (p.t & 1) && p.kind !== 'text' && p.kind !== 'ring' && p.kind !== 'steam') return;
+      switch (p.kind) {
+        case 'heart': ctx.drawImage(FX.heart, x - 2, y - 2); break;
+        case 'sparkle': ctx.drawImage(FX.sparkle[(p.t >> 3) % 3], x - 2, y - 2); break;
+        case 'steam': ctx.fillStyle = 'rgba(255,255,255,' + (1 - p.t / p.life) + ')'; ctx.fillRect(Math.round(p.x + Math.sin(p.t * 0.3) * 2), y, 2, 2); break;
+        case 'note': E.text('♪', x, y, { color: p.col || '#6b5a8e' }); break;
+        case 'ring': {
+          const k = p.t / p.life;
+          if (k > 0.7 && p.t % 2) break;
+          G.pixelRing(p.x, p.y, p.r0 + (p.r1 - p.r0) * E.ease.outCubic(k), p.col);
+          break;
+        }
+        case 'flame': ctx.drawImage(FX.flame[(p.t >> 2) % 3], x - 2, y - 3); break;
+        case 'bubble': {
+          const b = FX.bubble[p.big ? 1 : 0];
+          if (p.t > p.life - 3) { ctx.drawImage(FX.sparkle[2], x - 2, y - 2); break; } // pop
+          ctx.drawImage(b, x - (b.width >> 1), y - (b.height >> 1));
+          break;
+        }
+        case 'snow': ctx.drawImage(FX.snow[p.small ? 1 : 0], x - 2, y - 2); break;
+        case 'petal': ctx.drawImage(FX.petal[p.pal || 'rose'][(p.t >> 3) % 3], x - 1, y - 1); break;
+        case 'blossom': ctx.drawImage(FX.blossom, x - 2, y - 2); break;
+        case 'glint': ctx.drawImage(FX.glint[p.t < p.life * 0.3 || p.t > p.life * 0.7 ? 1 : 0], x - 3, y - 3); break;
+        case 'star': ctx.drawImage(FX.star[(p.t >> 3) % 2], x - 2, y - 2); break;
+        case 'orbit': { // dizzy stars going round her head
+          const a = p.t * 0.18 + p.ph;
+          ctx.drawImage(FX.star[(p.t >> 3) % 2], Math.round(p.cx + Math.cos(a) * 7) - 2, Math.round(p.cy + Math.sin(a) * 2.5) - 2);
+          break;
+        }
+        case 'confetti': { const f = (p.t >> 2) % 2; E.rect(x, y, f ? 2 : 1, f ? 1 : 2, p.col); break; }
+        case 'dust': { const r = p.t < 6 ? 1 : 2; E.rect(x - r, y - r, r * 2, r * 2, p.t < p.life / 2 ? '#f4e8d8' : '#d8c8b4'); break; }
+        case 'bigheart': {
+          const bob = p.t < 8 ? [0, -3, -4, -3, -1, 0, 1, 0][p.t] : 0;
+          ctx.drawImage(FX.bigHeart[p.tier || 'love'], x - 5, y - 5 + bob);
+          break;
+        }
+        case 'gloom': {
+          ctx.drawImage(FX.gloom, x - 5, y - 3);
+          if ((p.t >> 3) % 2) { E.rect(x - 2, y + 5, 1, 2, '#6a8ad0'); E.rect(x + 2, y + 7, 1, 2, '#6a8ad0'); }
+          break;
+        }
+        case 'slash': ctx.drawImage(FX.slashL[Math.min(2, p.t >> 2)], x, y); break;
+        case 'lid': ctx.drawImage(FX.giftbox.lid, x - 7, y - 3); break;
+        case 'text': E.text(p.text, x, y, { color: p.col, outline: '#2a1b30', align: 'center' }); break;
+      }
     },
     drawHUD() {
       const ctx = E.ctx;
@@ -2189,8 +2572,14 @@
         if (it.icon) { E.ctx.drawImage(it.icon, x, y + (it.icon.height > 10 ? -2 : 3)); x += it.icon.width + 3; }
         E.text(it.label, x, y + 1, { color: it.disabled ? C.gray : on ? C.red : C.plum });
         if (it.note) E.text(it.note, mn.x + mn.w - 6, y + 1, { color: it.disabled ? C.red : C.dim, align: 'right' });
+        if (it.badge) E.ctx.drawImage(it.badge, mn.x + mn.w - 13, y + 4);
         if (on) UI.heartCursor(mn.x + 4, y + 4);
       });
+      const sel = mn.items[mn.sel];
+      if (sel && sel.desc) {
+        E.rect(mn.x + 4, mn.y + mn.h - 20, mn.w - 8, 1, C.pink);
+        E.text(sel.desc, mn.x + 7, mn.y + mn.h - 17, { color: C.dim, fit: mn.w - 14 });
+      }
     },
     drawDialog() {
       const d = this.dialog;

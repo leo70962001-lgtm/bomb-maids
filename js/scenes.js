@@ -1194,7 +1194,8 @@
           E.text(G.t('已點餐點：'), 152, 204, { color: C.ink });
           buffs.forEach((b, i) => {
             const food = G.MENU_FOOD.find((f) => f.id === b);
-            E.ctx.drawImage(E.spr.ui[food.icon === 'tea' ? 'bomb' : food.icon], 300 - (buffs.length - i) * 14, 207);
+            if (food) E.ctx.drawImage(E.spr.ui[food.icon === 'tea' ? 'bomb' : food.icon], 300 - (buffs.length - i) * 14, 207);
+            else if (E.spr.room.gifts[b]) E.ctx.drawImage(E.spr.room.gifts[b], 300 - (buffs.length - i) * 14 - 2, 203, 12, 12);
           });
         }
       }
@@ -1252,17 +1253,7 @@
         return;
       }
       const list = this.listFor(this.tab);
-      if (this.tab === 1) {
-        // 2-column grid
-        if (d === 'up') { this.row = (this.row + list.length - 2) % list.length; A.sfx('select'); }
-        if (d === 'down') { this.row = (this.row + 2) % list.length; A.sfx('select'); }
-        if (d === 'right') { this.row = Math.min(list.length - 1, this.row + 1); A.sfx('select'); }
-        if (d === 'left') {
-          if (this.row % 2 === 0) { this.focus = 'tabs'; A.sfx('cancel'); this.msg = ''; return; }
-          this.row--; A.sfx('select');
-        }
-        if (E.menuPressed('b')) { this.focus = 'tabs'; A.sfx('cancel'); this.msg = ''; }
-      } else {
+      {
         if (d === 'up') { this.row = (this.row + list.length - 1) % list.length; A.sfx('select'); }
         if (d === 'down') { this.row = (this.row + 1) % list.length; A.sfx('select'); }
         if (E.menuPressed('b') || d === 'left') { this.focus = 'tabs'; A.sfx('cancel'); this.msg = ''; }
@@ -1387,19 +1378,29 @@
     drawGifts() {
       E.text(G.t('禮物專櫃'), 106, 30, { color: C.red, size: 14 });
       E.text(G.t('回房間送給女僕'), 306, 32, { color: C.dim, align: 'right' });
-      G.GIFTS.forEach((g, i) => {
-        const col = i % 2, row = (i / 2) | 0;
-        const x = 104 + col * 104, y = 50 + row * 48;
+      const list = G.GIFTS;
+      // what you have found out about the hired maids' tastes: a heart for a favourite, a drop for a miss
+      const hired = G.MAID_ORDER.filter((k) => SAVE.hired[k]);
+      for (let i = this.scroll; i < Math.min(list.length, this.scroll + 4); i++) {
+        const g = list[i];
+        const y = 50 + (i - this.scroll) * 37;
         const on = this.focus === 'list' && i === this.row;
-        E.panel(x, y, 98, 44, on ? '#fff' : C.paper2, on ? C.red : C.pink);
-        E.ctx.drawImage(E.spr.room.gifts[g.id], x + 5, y + 6);
-        E.text(g.name, x + 25, y + 4, { color: C.plum, fit: 70 });
-        const fav = g.fav === 'all' ? G.t('大家都喜歡') : G.t('{name}最愛', { name: G.MAID_DATA[g.fav].name });
-        E.text(fav, x + 25, y + 18, { color: g.fav === 'all' ? C.red : C.ink, fit: 70 });
-        coinLabel(x + 6, y + 31, g.price);
-        E.text(G.t('持有 {n}', { n: SAVE.gifts[g.id] || 0 }), x + 92, y + 30, { color: C.dim, align: 'right' });
-        if (on) heartCursor(x - 8, y + 16);
-      });
+        E.panel(104, y, 202, 34, on ? '#fff' : C.paper2, on ? C.red : C.pink);
+        E.ctx.drawImage(E.spr.room.gifts[g.id], 113, y + 9);
+        E.text(g.name, 136, y + 3, { color: C.plum, fit: 80 });
+        E.text(g.desc, 136, y + 18, { color: C.ink, fit: 112 });
+        coinLabel(256, y + 3, g.price);
+        E.text(G.t('持有 {n}', { n: SAVE.gifts[g.id] || 0 }), 300, y + 19, { color: C.dim, align: 'right' });
+        const marks = hired.map((k) => [k, (SAVE.tastes[k] || {})[g.id] || (g.fav === k ? 'love' : null)]).filter(([, t]) => t && t !== 'normal');
+        marks.forEach(([k, taste], j) => {
+          const hx = 252 - (marks.length - j) * 9;
+          E.rect(hx, y + 3, 9, 9, G.MAID_DATA[k].color);
+          E.ctx.drawImage(E.spr.ui.taste[taste], hx + 1, y + 5);
+        });
+        if (on) heartCursor(96, y + 12);
+      }
+      if (this.scroll > 0) E.text('▲', 300, 42, { color: C.red, align: 'right' });
+      if (this.scroll + 4 < list.length) E.text('▼', 300, 199, { color: C.red, align: 'right' });
     },
     drawFurniture() {
       E.text(G.t('家具店'), 106, 30, { color: C.red, size: 14 });
@@ -1617,6 +1618,7 @@
       if (buffs.cake) st.hearts++;
       if (buffs.pudding) st.fire++;
       if (buffs.latte) st.speed++;
+      if (buffs.charm) { if (pk.guard) st.hearts++; else pk.guard = true; }
       st.hearts += pk.heartBonus;
       const sp = buffs.tea ? 100 : Math.min(100, 30 + pk.spStart);
       this.perks = pk;
@@ -1724,6 +1726,7 @@
         E.bar(12 + nameW, 228, 222 - nameW, 8, w.boss.hp / w.boss.maxHp, w.boss.hitT > 0 && (E.frame >> 2) % 2 ? C.white : C.red);
       } else marquee(G.t(this.tip), 4, 226, 232, C.gray);
       drawStoryPanel(w);
+      drawCutin(w, 240);
 
       if (w.state === 'ready') {
         const t = w.stateT;
@@ -1756,6 +1759,47 @@
       }
     },
   };
+
+  // A special skill flashes her face across the middle of the field for a moment: a band in her colours with sliding
+  // stripes and speed lines, her CG face coming in from the left and the skill's name from the right. It never pauses play.
+  const CUTIN_COL = { berry: ['#ff8aa8', '#e2402a'], honey: ['#ffe070', '#e0a010'], yukino: ['#8fd8ff', '#3d86f0'], yoru: ['#a88ad8', '#3a2458'] };
+  function drawCutin(w, fieldW) {
+    const c = w.cutins && w.cutins[0];
+    if (!c) return;
+    const ctx = E.ctx;
+    const t = c.t, dur = G.CUTIN_FRAMES;
+    const open = t < 6 ? t / 6 : t > dur - 6 ? Math.max(0, (dur - t) / 6) : 1;
+    const h = Math.round(32 * open);
+    if (h < 2) return;
+    const y = 100 - (h >> 1);
+    const [light, deep] = CUTIN_COL[c.key] || ['#ffc8e0', '#c86a90'];
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, y, fieldW, h);
+    ctx.clip();
+    E.rect(0, y, fieldW, h, deep);
+    ctx.fillStyle = light;
+    for (let i = -3; i < fieldW / 14 + 3; i++) {
+      const x = i * 14 - ((t * 3) % 14);
+      ctx.beginPath();
+      ctx.moveTo(x, y + h); ctx.lineTo(x + 6, y + h); ctx.lineTo(x + 6 + h * 0.6, y); ctx.lineTo(x + h * 0.6, y);
+      ctx.fill();
+    }
+    for (let i = 0; i < 7; i++) {
+      const ly = y + 3 + ((i * 11 + t * 2) % Math.max(1, h - 6));
+      const lx = fieldW - ((t * 11 + i * 47) % (fieldW + 60));
+      E.rect(lx, ly, 18 + (i % 3) * 10, 1, 'rgba(255,255,255,0.75)');
+    }
+    ctx.restore();
+    E.rect(0, y, fieldW, 1, '#ffffff');
+    E.rect(0, y + h - 1, fieldW, 1, '#ffffff');
+    if (h >= 24) {
+      const fx = Math.round(Math.min(10, -70 + t * 16) + Math.max(0, t - 6) * 0.3);
+      E.art('cutin-face', CG_ART, fx, y + 1, 68, h - 2, CG_CROP.face[c.key]);
+      const tx = Math.round(Math.max(fieldW - 10, fieldW + 140 - t * 34));
+      E.text(G.MAID_DATA[c.key].skill, tx, y + (h >> 1) - 8, { color: '#ffffff', outline: '#2a1b30', align: 'right', size: 14 });
+    }
+  }
 
   // orange-rimmed white box like the original HUD's item slots
   function slot(x, y, w, h) { E.panel(x, y, w, h, '#ffffff', '#ff8a1a', { outline: '#000000' }); }
@@ -2189,6 +2233,7 @@
       E.rect(0, 224, 240, 16, '#000000'); E.rect(0, 224, 240, 1, '#f8b000');
       edgeBar({ y: 224, h: 16, rule: 224 });
       E.text(G.t(w.sudden ? '外圈開始封鎖！往中間移動！' : '最後站著的女僕就是贏家'), 120, 226, { color: w.sudden ? C.pink : C.gray, align: 'center' });
+      drawCutin(w, 240);
       // side panel
       goldBar(240, 0, 80, 240);
       w.maids.forEach((m, i) => {

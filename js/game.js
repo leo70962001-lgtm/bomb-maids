@@ -29,6 +29,9 @@
     }
   }
 
+  const CUTIN_FRAMES = 36;
+  G.CUTIN_FRAMES = CUTIN_FRAMES;
+
   class World {
     constructor(cfg) {
       this.cfg = cfg;
@@ -51,6 +54,7 @@
       this.fireballs = [];
       this.particles = [];
       this.floaters = [];
+      this.cutins = []; // skill cut-ins: { key, slot, t }, drawn by the scene over the field
       this.falling = [];
       this.frame = 0;
       this.state = 'ready';
@@ -659,6 +663,8 @@
       const pay = () => {
         if (m.sp < m.skillCost) { sfx('denied'); m.cool = 10; return false; }
         m.sp -= m.skillCost;
+        // the player's own skills get the cut-in; CPU rivals using theirs would keep covering the field
+        if (m.human) this.cutins = [{ key: m.maidKey, slot: this.maids.indexOf(m), t: 0 }];
         return true;
       };
       switch (m.maidKey) {
@@ -1323,6 +1329,8 @@
         f.t++;
         if (f.t > (f.big ? 110 : 50)) this.floaters.splice(i, 1);
       }
+      for (const c of this.cutins) c.t++;
+      if (this.cutins.length && this.cutins[0].t > CUTIN_FRAMES) this.cutins = [];
       for (let k = 0; k < this.items.length; k++) if (this.items[k]) this.items[k].age++;
     }
 

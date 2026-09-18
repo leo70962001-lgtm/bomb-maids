@@ -617,6 +617,14 @@
     train: () => { noise({ f: 3000, f2: 900, d: 0.14, v: 0.12, filter: 'bandpass' }); tone({ f: 440, f2: 660, d: 0.08, v: 0.08, delay: 0.05 }); },
     water: () => { [1760, 1397, 1175].forEach((f, i) => tone({ f, f2: f * 0.8, d: 0.08, v: 0.06, delay: i * 0.07, type: 'triangle' })); },
     angry: () => { tone({ f: 300, f2: 200, d: 0.12, v: 0.14 }); tone({ f: 280, f2: 180, d: 0.12, v: 0.14, delay: 0.12 }); },
+    // the maids' voices as their lines type on: Berry bright and quick, Honey soft, Yoru low
+    blipHi: () => tone({ f: 980 + Math.random() * 140, d: 0.022, v: 0.05, type: 'square' }),
+    blipSoft: () => tone({ f: 640 + Math.random() * 90, d: 0.03, v: 0.05, type: 'triangle' }),
+    blipLo: () => tone({ f: 400 + Math.random() * 60, d: 0.035, v: 0.055, type: 'triangle' }),
+    punch: () => { tone({ f: 160, f2: 60, d: 0.14, v: 0.32, type: 'triangle' }); noise({ f: 1400, f2: 300, d: 0.12, v: 0.25 }); },
+    pop: () => { noise({ f: 2400, f2: 600, d: 0.08, v: 0.18, filter: 'bandpass' }); tone({ f: 520, f2: 1040, d: 0.1, v: 0.12, type: 'triangle' }); },
+    love: () => { [1046, 1318, 1568, 2093, 1568, 2093, 2637].forEach((f, i) => tone({ f, d: 0.12, v: 0.08, delay: i * 0.055, type: 'triangle' })); },
+    meh: () => { tone({ f: 392, f2: 330, d: 0.18, v: 0.1, type: 'triangle' }); tone({ f: 330, f2: 262, d: 0.22, v: 0.1, type: 'triangle', delay: 0.16 }); },
   };
   A.sfx = function (name) {
     if (!A.ctx || !A.sound) return;

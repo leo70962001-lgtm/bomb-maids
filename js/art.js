@@ -2032,6 +2032,70 @@
     }
     return p;
   }
+  // ---- room effects: what the maids' reactions and gifts throw into the air
+  const FX_ROWS = {
+    flame: [
+      ['..o..', '..o..', '.oyo.', '.oyo.', 'oywyo', 'oywyo', '.rrr.'],
+      ['.o...', '.oo..', '.oyo.', 'oyyo.', 'oywyo', 'oywyo', '.rrr.'],
+      ['.....', '..o..', '..o..', '.oyo.', 'oywyo', 'oyyyo', '.rrr.'],
+    ],
+    bubble: [
+      ['.bbb.', 'bw..b', 'b...b', 'b...b', '.bbb.'],
+      ['..bbb..', '.bw..b.', 'bw....b', 'b.....b', 'b.....b', '.b...b.', '..bbb..'],
+    ],
+    snow: [
+      ['..w..', 'w.w.w', '.wbw.', 'w.w.w', '..w..'],
+      ['.....', '..w..', '.wbw.', '..w..', '.....'],
+    ],
+    petal: [['.pp', 'pPp', 'pp.'], ['pp.', 'pPp', '.pp'], ['.p.', 'pPp', '.p.']],
+    blossom: [['.pp.', 'pyyp', 'pyyp', '.pp.']],
+    glint: [
+      ['...w...', '...w...', '..wyw..', 'wwyWyww', '..wyw..', '...w...', '...w...'],
+      ['.......', '...w...', '...w...', '.wwWww.', '...w...', '...w...', '.......'],
+    ],
+  };
+  const FX_PAL = {
+    flame: { w: '#fff6c0', y: '#ffd23f', o: '#ff8a2a', r: '#d8402a' },
+    bubble: { b: '#ffb8d8', w: '#ffffff' },
+    snow: { w: '#ffffff', b: '#9fd8ff' },
+    rose: { p: '#ec3d5f', P: '#ff8aa8' },
+    sakura: { p: '#ffc8dc', P: '#ffffff' },
+    night: { p: '#4a1030', P: '#a01a48' },
+    blossom: { p: '#ffb0cc', y: '#ffd23f' },
+    glint: { w: '#ffffff', y: '#fff3a0', W: '#ffffff' },
+  };
+  const fxRows = (key, pal) => FX_ROWS[key].map((rows) => fromRows(rows, FX_PAL[pal || key]));
+  // a big outlined heart for the moments that deserve one
+  function buildBigHeart(col, dark) {
+    const p = fromRows(['...........', '..rrr.rrr..', '.rrwrrrrrR.', '.rwrrrrrrR.', '.rrrrrrrRR.', '..rrrrrRR..', '...rrrRR...', '....rRR....', '.....R.....', '...........'], { r: col, R: dark, w: '#ffffff' });
+    return p.outlined('#2a1b30');
+  }
+  // the wrapped present that comes down to her before she opens it (closed, then opened with the lid off)
+  const GIFTBOX_PAL = { p: '#ff9fbb', P: '#e2769c', L: '#ffd6e2', r: '#ec3d5f', R: '#a51f40', d: '#7a2848' };
+  const GIFTBOX_BODY = ['..pLpprrpppp..', '..pLpprrpppp..', '..ppppRRppPp..', '..ppppRRppPp..', '..ppppRRpPPp..', '..PPPPRRPPPP..', '..............'];
+  function buildGiftBox(open) {
+    const top = open
+      ? ['..............', '..............', '..............', '..............', '..............', '..............', '..dddddddddd..']
+      : ['..............', '....rr..rr....', '...rRRrrRRr...', '....rrrrrr....', '.LLLLLrrLLLLL.', '.pppppRRppppp.', '..PPPPrrPPPP..'];
+    return fromRows(top.concat(GIFTBOX_BODY), GIFTBOX_PAL).outlined('#2a1b30');
+  }
+  function buildGiftLid() {
+    return fromRows(['..............', '....rr..rr....', '...rRRrrRRr...', '....rrrrrr....', '.LLLLLrrLLLLL.', '.pppppRRppppp.', '..............'], GIFTBOX_PAL).outlined('#2a1b30');
+  }
+  // a grey little cloud for a gift that did not land
+  function buildGloom() {
+    return fromRows(['...........', '....ggg....', '..ggGGGgg..', '.gGGGGGGGg.', '.gGGGGGGGg.', '..ggggggg..', '...........'], { g: '#8a8aa0', G: '#b8b8cc' }).outlined('#2a1b30');
+  }
+  // how she felt about a gift, shown beside it in the menus once you know
+  const TASTE_ROWS = {
+    love: ['.rr.rr.', 'rwrrrrr', 'rrrrrrr', '.rrrrr.', '..rrr..', '...r...'],
+    like: ['.pp.pp.', 'pwppppp', 'ppppppp', '.ppppp.', '..ppp..', '...p...'],
+    normal: ['..ggg..', '.g...g.', 'g.....g', 'g.....g', '.g...g.', '..ggg..'],
+    meh: ['...b...', '..bb...', '.bbbb..', '.bwbb..', '.bbbb..', '..bb...'],
+    unknown: ['..kkk..', '.k...k.', '....k..', '...k...', '.......', '...k...'],
+  };
+  const TASTE_PAL = { r: '#ec3d5f', p: '#ff9fbb', w: '#ffffff', g: '#9a8ab0', b: '#3d86f0', k: '#9a8ab0' };
+
   function burnt(pix) {
     return pix.map((c) => {
       const lum = c[0] * 0.3 + c[1] * 0.59 + c[2] * 0.11;
@@ -2454,6 +2518,59 @@
         tri(p, 5, 9, 6, 7, '#b8f28a');
         p.rect(4, 10, 8, 2, '#ff6f91');
         for (const [x, y] of [[3, 3], [8, 2], [6, 6], [10, 5]]) { ball(p, x, y, 5, 5, '#ff9aae', '#ec3d5f', '#a51f40'); }
+        break;
+      case 'drink': // sports drink: a clear bottle of pale blue, blue cap, a label with a white wave
+        stamp(p, [
+          '......cCCc......',
+          '......cCCc......',
+          '......gwgg......',
+          '.....gwGGGg.....',
+          '....gwGGGGGD....',
+          '....gwGGGGGD....',
+          '....llllllll....',
+          '....lwwwlllL....',
+          '....llwwwwlL....',
+          '....lllllwwL....',
+          '....llllllll....',
+          '....gwGGGGGD....',
+          '....gwGGGGGD....',
+          '....gGGGGGDD....',
+        ], 0, 1, { c: '#2f6fd8', C: '#6aa8ff', g: '#dff5ff', G: '#9fdcff', D: '#5aaee8', w: '#ffffff', l: '#3d86f0', L: '#2a5cc0' });
+        break;
+      case 'novel': // a mystery novel: navy cloth cover, gold title band and magnifier, cream page block
+        stamp(p, [
+          '..dNNNNNNNNNp...',
+          '..dnnnnnnnnnpP..',
+          '..dnyyyyyyynpP..',
+          '..dnnnnnnnnnpP..',
+          '..dnnnwwwnnnpP..',
+          '..dnnwgggwnnpP..',
+          '..dnnwgGgwnnpP..',
+          '..dnnnwwwnnnpP..',
+          '..dnnnnnnYnnpP..',
+          '..dnnnnnnnYnpP..',
+          '..dnnnnnnnnnpP..',
+          '..dnnnnnnnnnpP..',
+          '...PPPPPPPPPPP..',
+        ], 0, 2, { d: '#141c48', N: '#5a6ac0', n: '#2a3a88', y: '#ffd23f', Y: '#c9920e', w: '#ffffff', g: '#bfe8ff', G: '#7fc0f0', p: '#fff4dc', P: '#d8c49a' });
+        break;
+      case 'charm': // omamori: a red brocade pouch with a gold crest, tied with a pale cord
+        stamp(p, [
+          '......cccc......',
+          '.....c....c.....',
+          '......cyyc......',
+          '.....rryyrr.....',
+          '....rLrrrrrR....',
+          '....rLryyrrR....',
+          '....rLyYYyrR....',
+          '....rLryyrrR....',
+          '....rLrrrrrR....',
+          '....rLyyyyrR....',
+          '....rLrrrrrR....',
+          '....rLrYrYrR....',
+          '....rrrrrrRR....',
+          '.....RRRRRR.....',
+        ], 0, 1, { r: '#ec3d5f', R: '#a51f40', L: '#ff8aa8', y: '#ffd23f', Y: '#c9920e', c: '#fff0a0' });
         break;
       case 'ribbon':
         tri(p, 1, 3, 7, 9, '#ff9fbb'); tri(p, 8, 3, 7, 9, '#ff9fbb');
@@ -3079,6 +3196,18 @@
     art.fx.sparkle = [0, 1, 2].map(buildSparkle);
     art.fx.puff = [0, 1, 2, 3].map(buildPuff);
     art.fx.slash = [0, 1, 2].map(buildSlash);
+    art.fx.slashL = art.fx.slash.map((f) => f.flipped());
+    art.fx.flame = fxRows('flame');
+    art.fx.bubble = fxRows('bubble');
+    art.fx.snow = fxRows('snow');
+    art.fx.petal = { rose: fxRows('petal', 'rose'), sakura: fxRows('petal', 'sakura'), night: fxRows('petal', 'night') };
+    art.fx.blossom = fxRows('blossom')[0];
+    art.fx.glint = fxRows('glint');
+    art.fx.bigHeart = { love: buildBigHeart('#ff5a82', '#c0284f'), like: buildBigHeart('#ff9fbb', '#e2769c') };
+    art.fx.giftbox = { closed: buildGiftBox(false), open: buildGiftBox(true), lid: buildGiftLid() };
+    art.fx.gloom = buildGloom();
+    art.ui.taste = {};
+    for (const k of Object.keys(TASTE_ROWS)) art.ui.taste[k] = fromRows(TASTE_ROWS[k], TASTE_PAL);
     art.room = {
       glove: { point: glovePose('point'), pat: [glovePose('pat0'), glovePose('pat1')], poke: glovePose('poke'), open: glovePose('open'), tickle: [glovePose('tickle0'), glovePose('tickle1')] },
       emotes: {},
@@ -3094,7 +3223,7 @@
     for (const k of ['bed', 'princess', 'desk', 'wardrobe', 'teatable', 'bookshelf', 'plant', 'plush', 'rug', 'piano', 'lamp', 'fishbowl', 'dresser', 'sofa', 'gramophone']) art.room.furniture[k] = softInk(bevel(buildFurniture(k)));
     for (const k of ['bunny', 'stripe', 'strawberry', 'night']) art.room.walls[k] = [buildWall(k, 0), buildWall(k, 1)];
     for (const k of ['wood', 'carpet', 'checker']) art.room.floors[k] = [buildFloor(k, 0), buildFloor(k, 1)];
-    for (const k of ['daifuku', 'matcha', 'honeycake', 'icecream', 'bouquet', 'ribbon']) art.room.gifts[k] = softInk(bevel(buildGift(k)));
+    for (const k of ['daifuku', 'honeycake', 'icecream', 'matcha', 'drink', 'novel', 'charm', 'bouquet', 'ribbon']) art.room.gifts[k] = softInk(bevel(buildGift(k)));
     if (ROW_ERRORS.length) throw new Error('sprite rows:\n' + ROW_ERRORS.join('\n'));
     return art;
   }
@@ -3143,12 +3272,18 @@
       nl();
       for (const m of [15, 10, 5, 2, 8, 1, 4]) for (let s = 0; s < 5; s++) put(art.flame[m][s]);
       nl();
-      for (const k of Object.keys(art.ui)) put(art.ui[k]);
+      for (const k of Object.keys(art.ui)) if (art.ui[k] instanceof Pix) put(art.ui[k]);
       for (const s of art.fx.star) put(s);
       put(art.fx.heart);
       for (const s of art.fx.sparkle) put(s);
       for (const s of art.fx.puff) put(s);
       for (const s of art.fx.slash) put(s);
+      nl();
+      for (const k of ['flame', 'bubble', 'snow', 'glint']) for (const f of art.fx[k]) put(f);
+      for (const k of Object.keys(art.fx.petal)) for (const f of art.fx.petal[k]) put(f);
+      put(art.fx.blossom); put(art.fx.bigHeart.love); put(art.fx.bigHeart.like);
+      put(art.fx.giftbox.closed); put(art.fx.giftbox.open); put(art.fx.giftbox.lid); put(art.fx.gloom);
+      for (const k of Object.keys(art.ui.taste)) put(art.ui.taste[k]);
     }
     if (want('room')) {
       nl();

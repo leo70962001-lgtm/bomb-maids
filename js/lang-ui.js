@@ -83,8 +83,6 @@
     '方向鍵 選擇　Z 購買　X 返回': ['十字キー えらぶ　Z 買う　X もどる', 'Arrows Choose  Z Buy  X Back'],
     '↑↓ 選擇　Z 購買　X 返回': ['↑↓ えらぶ　Z 買う　X もどる', '↑↓ Choose  Z Buy  X Back'],
     '回房間送給女僕': ['お部屋でプレゼント', 'Give them at home'],
-    '大家都喜歡': ['みんな大好き', 'Everyone loves'],
-    '{name}最愛': ['{name}の好物', '{name} loves it'],
     '持有 {n}': ['所持 {n}', 'Own {n}'],
     '買了會自動搬進房間': ['買うとお部屋に届きます', 'Delivered to your room'],
     '已擁有': ['所持ずみ', 'Owned'],
@@ -378,5 +376,9 @@
     '週六': ['土', 'Sat'],
     '休息中體力恢復了 +{n}': ['休んでいる間に体力が +{n} 回復', 'Rested: stamina +{n}'],
     '體力每小時恢復 {n}': ['体力は1時間に{n}ずつ回復します', 'Stamina recovers {n} per hour'],
+    '心情 +{n}': ['気分 +{n}', '+{n} Mood'],
+    '體力 +{n}': ['体力 +{n}', '+{n} STA'],
+    '{name} 升到 Lv{n}！': ['{name}がLv{n}に上がった！', '{name} is now Lv{n}!'],
+    '御守：下次委託撐住一次致命傷': ['お守り：次の依頼で一度だけ致命傷に耐える', 'Charm: survive one fatal hit next job'],
   });
 })(window);

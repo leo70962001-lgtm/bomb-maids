@@ -392,14 +392,30 @@
     walls: { bunny: true }, floors: { wood: true },
   };
 
+  // Every gift does something of its own, and the shop says what (desc): stamina, mood, training experience (exp, by
+  // training id) or a charm for the next job (buff). How much affection it brings, and how she takes it, depends on her
+  // taste (G.TRAITS[k].taste, see G.GIFT_TASTE); the effect itself is always what the shop promised.
   G.GIFTS = [
-    { id: 'daifuku', name: '草莓大福', price: 60, fav: 'berry', aff: 8 },
-    { id: 'matcha', name: '抹茶羊羹', price: 60, fav: 'yoru', aff: 8 },
-    { id: 'honeycake', name: '蜂蜜蛋糕', price: 60, fav: 'honey', aff: 8 },
-    { id: 'icecream', name: '香草冰淇淋', price: 60, fav: 'yukino', aff: 8 },
-    { id: 'bouquet', name: '玫瑰花束', price: 150, fav: 'all', aff: 15 },
-    { id: 'ribbon', name: '蕾絲髮帶', price: 320, fav: 'all', aff: 32 },
+    { id: 'daifuku', name: '草莓大福', price: 60, fav: 'berry', aff: 6, stamina: 20, desc: '體力 +20' },
+    { id: 'honeycake', name: '蜂蜜蛋糕', price: 60, fav: 'honey', aff: 6, stamina: 10, mood: 10, desc: '體力 +10・心情 +10' },
+    { id: 'icecream', name: '香草冰淇淋', price: 60, fav: 'yukino', aff: 6, mood: 25, desc: '心情 +25' },
+    { id: 'matcha', name: '抹茶羊羹', price: 60, fav: 'yoru', aff: 6, mood: 10, exp: { hou: 15 }, desc: '心情 +10・家事經驗 +15' },
+    { id: 'drink', name: '運動飲料', price: 90, aff: 3, stamina: 50, desc: '體力 +50' },
+    { id: 'novel', name: '推理小說', price: 120, aff: 8, exp: { bom: 25 }, desc: '爆破研究經驗 +25' },
+    { id: 'charm', name: '幸運御守', price: 180, aff: 8, buff: 'charm', desc: '下次委託免死一次' },
+    { id: 'bouquet', name: '玫瑰花束', price: 150, fav: 'all', aff: 15, mood: 100, desc: '好感 +15・心情全滿' },
+    { id: 'ribbon', name: '蕾絲髮帶', price: 320, fav: 'all', aff: 32, desc: '好感 +32' },
   ];
+  // what her taste does to a gift: affection multiplier and a little extra mood. 'secret' is Yoru's: she says she does
+  // not care for it and takes it like a gift she likes.
+  G.GIFT_TASTE = {
+    love: { aff: 2.5, mood: 15 },
+    like: { aff: 1.5, mood: 8 },
+    normal: { aff: 1, mood: 3 },
+    meh: { aff: 0.5, mood: 0 },
+    secret: { aff: 1.5, mood: 8 },
+  };
+  G.tasteOf = (maid, giftId) => (G.TRAITS[maid] && G.TRAITS[maid].taste[giftId]) || 'normal';
 
   // affection: points needed for Lv1..Lv5 and what each level unlocks
   G.AFF_LEVELS = [
@@ -461,6 +477,9 @@
       giftLike: '草莓大福！主人怎麼知道我最愛這個！',
       giftNormal: '謝謝主人！我會好好珍惜的！',
       giftMany: '今天收到好多禮物了，留到明天嘛！',
+      giftFond: '{gift}！好耶——謝謝主人，莓果收下了！',
+      giftMeh: '字、字好多……莓果看了頭會暈啦……不過我會努力讀讀看！',
+      giftUse: { stamina: '力氣全部回來了！現在就能出擊！', mood: '嘿嘿，心情超好的！', study: '唔……好像學到了什麼！', charm: '有這個在，下次委託莓果一定贏！' },
       tea: '呼～和主人喝茶好幸福喔。',
       tired: '呼……主人，讓我休息一下嘛……',
       train: '好！特訓開始！看我的！',
@@ -512,6 +531,10 @@
       giftLike: '……抹茶。……算你識相。',
       giftNormal: '……收下了。',
       giftMany: '……今天夠了。剩下的，明天再給。',
+      giftFond: '……{gift}。……還行。',
+      giftMeh: '……太甜了。……不過，吃完了。',
+      giftSecret: ['……蕾絲？這種東西，不適合我。', '……明天，戴給你看。'],
+      giftUse: { stamina: '……嗯。可以再陪你一會。', mood: '……哼。還不錯。', study: '……記住了。', charm: '……我不需要保護。……不過，收下了。' },
       tea: '……溫度剛好。……我可沒說謝謝。',
       tired: '……有點累。……不准笑。',
       train: '……開始。別眨眼。',
@@ -562,6 +585,9 @@
       giftLike: '蜂蜜蛋糕！主人怎麼知道……啊，我說過好幾次了對吧♪',
       giftNormal: '謝謝主人～蜜糖會好好收著的！',
       giftMany: '今天收好多禮物……咦，剛剛那個放哪去了？',
+      giftFond: '哇～{gift}！……咦，真的是給蜜糖的嗎？',
+      giftMeh: '苦、苦苦的……蜜糖會加油吃完的……嗚。',
+      giftUse: { stamina: '好像……充滿電了？蜜糖現在超有精神！', mood: '欸嘿嘿～好幸福喔～', study: '學、學到了……吧？欸嘿嘿。', charm: '要好好收著……先放口袋……咦，哪個口袋？' },
       tea: '啊、砂糖放了兩次……主人，這杯會很甜喔？',
       tired: '呼哇……主人，蜜糖的腳站不太住了……',
       train: '特訓……咦，今天是要練什麼來著？',
@@ -612,6 +638,9 @@
       giftLike: '冰淇淋……！呵呵，主人真懂姊姊。',
       giftNormal: '謝謝主人。姊姊會好好收下的。',
       giftMany: '呵呵，今天已經收很多了。留一些到明天吧。',
+      giftFond: '呵呵，{gift}呀。主人的品味不錯呢。',
+      giftMeh: '呵呵……姊姊不需要這麼有活力喔。不過，謝謝你。',
+      giftUse: { stamina: '精神好多了。主人也別太勉強自己喔。', mood: '呵呵，今天會是很好的一天呢。', study: '原來如此，又學到一課了。', charm: '下次委託，姊姊會帶著它。……也帶著主人的心意。' },
       tea: '紅茶泡好了。來，小心燙。',
       tired: '……抱歉，姊姊也有點累了呢。',
       train: '好，開始吧。姊姊會看著你的。',
@@ -645,7 +674,7 @@
 
   G.SAVE_DEFAULT = {
     v: 1, coins: 0, maid: null, hired: {}, cleared: {}, upgrades: { bombs: 0, fire: 0, speed: 0, hearts: 0 },
-    buffs: {}, cards: {}, sound: true, music: true, plays: 0, ending: false,
+    buffs: {}, tastes: {}, cards: {}, sound: true, music: true, plays: 0, ending: false,
     day: 1, bond: {}, room: null, gifts: {}, guide: 0, intro: false, lastJob: null, lang: 'ja', first: null, outfits: {}, closet: { maid: true }, titleCast: [],
     seen: 0,
   };
@@ -659,21 +688,37 @@
       pat: { face: 'happy', emote: 'heart', hop: 6 }, poke: { face: 'surprise', emote: 'exclaim' },
       tickle: { face: 'happy', emote: 'note' }, five: { face: 'happy', emote: 'exclaim', hop: 9 },
       cross: { face: 'angry', emote: 'anger' }, idle: ['punch', 'punch', 'clean'], mood: 'note',
+      // she runs everywhere and kicks up dust; talks fast; sparks and flames
+      walk: { speed: 1.4, dust: true }, talk: 1.1, voice: ['blipHi', 3], aura: 'flame', hover: { emote: 'exclaim', hop: 3 },
+      bubble: { bg: '#fff4ee', edge: '#e2402a', ink: '#5a1a14' },
+      taste: { daifuku: 'love', drink: 'like', charm: 'like', honeycake: 'like', bouquet: 'like', ribbon: 'like', novel: 'meh' },
     },
     honey: {
       pat: { face: 'blush', emote: 'note', hop: 4 }, poke: { face: 'surprise', emote: 'question' },
       tickle: { face: 'surprise', emote: 'sweat' }, five: { face: 'happy', emote: 'note', hop: 5 },
       cross: { face: 'tired', emote: 'sweat' }, idle: ['trip', 'dream', 'clean'], mood: 'heart',
+      // she wanders, sometimes stops mid-way to wonder where she was going; talks slowly; bubbles and blossoms
+      walk: { speed: 0.85, wobble: true }, talk: 0.5, voice: ['blipSoft', 5], aura: 'bubble', hover: { emote: 'question', hop: 1 },
+      bubble: { bg: '#fffbe4', edge: '#e0a010', ink: '#5a3c08' },
+      taste: { honeycake: 'love', icecream: 'like', daifuku: 'like', bouquet: 'like', ribbon: 'like', matcha: 'meh' },
     },
     yukino: {
       pat: { face: 'blush', emote: 'heart', hop: 2 }, poke: { face: 'blush', emote: 'dots' },
       tickle: { face: 'happy', emote: 'sweat' }, five: { face: 'happy', emote: 'heart', hop: 3 },
       cross: { face: 'angry', emote: 'dots' }, idle: ['tidy', 'read', 'clean'], mood: 'heart',
+      // she glides, unhurried, a glint trailing now and then; talks evenly; snowflakes and glints
+      walk: { speed: 0.8, glide: true }, talk: 0.65, voice: ['blip', 4], aura: 'snow', hover: { emote: 'heart', hop: 0 },
+      bubble: { bg: '#f0f7ff', edge: '#3d86f0', ink: '#16305c' },
+      taste: { icecream: 'love', novel: 'like', matcha: 'like', bouquet: 'like', ribbon: 'like', drink: 'meh' },
     },
     yoru: {
       pat: { face: 'blush', emote: 'dots', hop: 1 }, poke: { face: 'angry', emote: 'dots' },
       tickle: { face: 'surprise', emote: 'anger' }, five: { face: 'normal', emote: 'dots', hop: 2 },
       cross: { face: 'angry', emote: 'anger' }, idle: ['stare', 'blade', 'clean'], mood: 'dots',
+      // she moves without a sound and takes her time; her words come out slowly, with long silences; dark petals
+      walk: { speed: 0.7 }, talk: 0.38, voice: ['blipLo', 6], aura: 'night', hover: { emote: 'dots', hop: 0 },
+      bubble: { bg: '#262033', edge: '#8a6ac0', ink: '#f4ecff' },
+      taste: { matcha: 'love', novel: 'like', charm: 'like', bouquet: 'like', ribbon: 'secret', honeycake: 'meh' },
     },
   };
   G.traitOf = (k) => G.TRAITS[k] || G.TRAITS.berry;
