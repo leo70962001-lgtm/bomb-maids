@@ -368,5 +368,15 @@
     '房間裡可以直接用滑鼠點女僕和家具': ['お部屋ではマウスでメイドや家具をクリックできます', 'In your room, click the maid and furniture'],
     '支援手把・雙人對決 1P WASD+F/G、2P 方向鍵+K/L': ['ゲームパッド対応・2人対決 1P WASD+F/G、2P 十字キー+K/L', 'Gamepads OK · 2P battle: 1P WASD+F/G, 2P Arrows+K/L'],
     '特技': ['特技', 'Skill'],
+    // ---- the real clock, the weekday and resting
+    '週日': ['日', 'Sun'],
+    '週一': ['月', 'Mon'],
+    '週二': ['火', 'Tue'],
+    '週三': ['水', 'Wed'],
+    '週四': ['木', 'Thu'],
+    '週五': ['金', 'Fri'],
+    '週六': ['土', 'Sat'],
+    '休息中體力恢復了 +{n}': ['休んでいる間に体力が +{n} 回復', 'Rested: stamina +{n}'],
+    '體力每小時恢復 {n}': ['体力は1時間に{n}ずつ回復します', 'Stamina recovers {n} per hour'],
   });
 })(window);

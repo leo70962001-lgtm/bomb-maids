@@ -19,6 +19,50 @@
   const name = (k) => G.MAID_DATA[k || maidKey()].name;
   const clamp = E.clamp;
 
+  // ------------------------------------------------------------------ the sky in the window (real time of day + weather)
+  const SKY = {
+    morning: { top: '#ffd9a8', body: '#a8dcff' },
+    noon: { top: '#c9ecff', body: '#8fd3ff' },
+    evening: { top: '#ffb27a', body: '#ff93a8' },
+    night: { top: '#2b2f62', body: '#1b1f46' },
+  };
+  const SKY_WEATHER = {
+    cloud: { top: '#c8d2de', body: '#aab6c6' },
+    rain: { top: '#9aa6b8', body: '#7c8a9e' },
+    snow: { top: '#dfe8f2', body: '#c3d0de' },
+    storm: { top: '#7d8598', body: '#5d667a' },
+  };
+  // the window sprite's glass sits at (3,3)-(14,10); paint it, then put the white mullions back on top
+  function drawSky(x, y, w, t) {
+    const night = w.phase === 'night';
+    const over = !night && SKY_WEATHER[w.weather];
+    const base = SKY[w.phase];
+    E.rect(x + 3, y + 3, 12, 8, over ? over.body : base.body);
+    E.rect(x + 3, y + 3, 12, 3, over ? over.top : base.top);
+    if (night) {
+      E.rect(x + 11, y + 4, 2, 2, '#ffeaa0');
+      E.rect(x + 12, y + 4, 1, 1, '#fff6d0');
+      if (w.weather !== 'rain' && w.weather !== 'snow' && w.weather !== 'storm') {
+        for (let i = 0; i < 3; i++) E.rect(x + 4 + ((i * 5 + (t >> 6)) % 9), y + 4 + i * 2, 1, 1, '#fff6d0');
+      }
+    } else if (w.weather === 'sun' || w.weather === 'petal') {
+      E.rect(x + 11, y + 4, 2, 2, '#fff2a0');
+    }
+    if (w.weather === 'rain' || w.weather === 'storm') {
+      for (let i = 0; i < 4; i++) E.rect(x + 4 + ((i * 3 + (t >> 3)) % 10), y + 3 + ((i * 3 + (t >> 1)) % 7), 1, 2, '#cfe8ff');
+      if (w.weather === 'storm' && t % 200 < 4) { E.ctx.fillStyle = 'rgba(255,255,220,0.75)'; E.ctx.fillRect(x + 3, y + 3, 12, 8); }
+    } else if (w.weather === 'snow') {
+      for (let i = 0; i < 4; i++) E.rect(x + 4 + ((i * 4 + (t >> 5)) % 10), y + 3 + ((i * 3 + (t >> 3)) % 8), 1, 1, '#ffffff');
+    } else if (w.weather === 'petal') {
+      for (let i = 0; i < 3; i++) E.rect(x + 4 + ((i * 5 + (t >> 5)) % 10), y + 3 + ((i * 4 + (t >> 3)) % 8), 1, 1, '#ffc0d8');
+    } else if (w.weather === 'cloud') {
+      E.rect(x + 4, y + 5, 5, 2, '#eef2f8');
+      E.rect(x + 9, y + 7, 4, 2, '#e2e8f2');
+    }
+    E.rect(x + 8, y + 3, 1, 8, '#ffffff');
+    E.rect(x + 3, y + 6, 12, 1, '#ffffff');
+  }
+
   // ------------------------------------------------------------------ room geometry + furniture helpers
   function geom() {
     const room = B.getRoom();
@@ -574,6 +618,13 @@
       this.decor = null;
       this.toasts = [];
       this.particles = [];
+      // the real world: the clock and sky the room follows, and the rest the maids got while the game was closed
+      this.world = G.world();
+      const rested = G.restTick();
+      if (rested >= 1) {
+        G.persist();
+        this.toast(G.t('休息中體力恢復了 +{n}', { n: Math.round(rested) }), C.mint);
+      }
       const g = geom();
       this.glove = { x: 160, y: g.floorY + g.h * 8, pat: 0, usingPointer: false };
       this.spawnMaid();
@@ -602,7 +653,11 @@
           this.say(q);
         } else this.say([{ who: k, face: 'tired', text: L.jobFail }]);
       } else {
-        this.speak(E.pick(L.greet), 'happy');
+        // she greets by the hour, and sometimes by the weekday or the sky outside
+        const ctx = G.contextLines(k, this.world);
+        const r = Math.random();
+        const line = (r < 0.45 ? ctx.time : r < 0.7 ? ctx.week : r < 0.9 ? ctx.sky : null) || E.pick(L.greet);
+        this.speak(line, this.world.phase === 'night' ? 'normal' : 'happy');
       }
     },
 
@@ -908,7 +963,11 @@
       const lv = B.affLevel(bond().aff);
       const pool = Math.random() < 0.65 ? L.talk[lv] : L.talk[E.randi(0, lv)];
       const face = lv >= 3 ? 'blush' : E.pick(['normal', 'happy']);
-      this.say([{ who: k, face, text: E.pick(pool) }], () => {
+      // now and then she talks about the day itself: the hour, the weekday or the weather
+      const say = G.contextLines(k, this.world);
+      const about = [say.time, say.week, say.sky].filter(Boolean);
+      const text = Math.random() < 0.3 && about.length ? E.pick(about) : E.pick(pool);
+      this.say([{ who: k, face, text }], () => {
         this.gain('aff', 3);
         this.gain('mood', 2);
         this.guideDone('talk');
@@ -1628,6 +1687,11 @@
     // ---------------------------------------------------------------- main update
     update() {
       this.t++;
+      // follow the real clock; the maids also keep resting while the room is open
+      if (this.t % 60 === 0) {
+        this.world = G.world();
+        if (this.t % 1800 === 0 && G.restTick() >= 1) G.persist();
+      }
       if (this.glove.pat > 0) this.glove.pat--;
       this.updateTouch();
       for (let i = this.particles.length - 1; i >= 0; i--) {
@@ -1764,7 +1828,12 @@
       E.rect(g.x0 - 3, g.wallY - 3, W + 6, 2, '#6b5a8e');
       for (let c = 0; c < g.w; c++) ctx.drawImage(E.spr.room.walls[room.wall][c % 2], g.x0 + c * T, g.wallY);
       const wins = g.w >= 8 ? [Math.floor(g.w * 0.25), Math.floor(g.w * 0.75) - 1] : [Math.floor(g.w / 2) - 1];
-      for (const c of wins) ctx.drawImage(E.spr.room.window, g.x0 + c * T + 7, g.wallY + 1);
+      const world = this.world || (this.world = G.world());
+      for (const c of wins) {
+        const wx = g.x0 + c * T + 7, wy = g.wallY + 1;
+        ctx.drawImage(E.spr.room.window, wx, wy);
+        drawSky(wx, wy, world, this.t);
+      }
       for (let r = 0; r < g.h; r++) for (let c = 0; c < g.w; c++) ctx.drawImage(E.spr.room.floors[room.floor][(c + r) % 2], g.x0 + c * T, g.floorY + r * T);
       ctx.fillStyle = 'rgba(42,27,48,0.18)';
       ctx.fillRect(g.x0, g.floorY, W, 3);
@@ -1799,6 +1868,15 @@
           const hv = this.hover && this.hover.kind === 'furniture' && this.hover.p === d.p && (this.mode === 'free');
           if (hv && (this.t >> 4) % 2 === 0) { ctx.strokeStyle = C.gold; ctx.lineWidth = 1; ctx.strokeRect(x - 0.5, y - 0.5, img.width + 1, img.height + 1); }
         } else if (this.maid.state !== 'sleep') this.drawMaid();
+      }
+      // the light in the room follows the hour; a lamp keeps the night warm
+      const lamp = B.roomHas('lamp');
+      const tint = world.phase === 'night' ? (lamp ? 'rgba(52,44,110,0.16)' : 'rgba(26,30,86,0.30)')
+        : world.phase === 'evening' ? 'rgba(255,146,86,0.13)'
+          : world.phase === 'morning' ? 'rgba(255,214,150,0.09)' : null;
+      if (tint) {
+        ctx.fillStyle = tint;
+        ctx.fillRect(g.x0, g.wallY, W, WALL_H + g.h * T);
       }
     },
     drawSleeper(p, x, y) {
@@ -1921,6 +1999,13 @@
       E.bar(sx + 41, 7, wide ? 62 : 26, 5, ai.t, C.pink);
       ctx.drawImage(E.spr.ui.coin, 314 - E.textWidth(String(S.coins)) - 9, 6);
       E.text(String(S.coins), 314, 5, { color: C.text, align: 'right' });
+      // the real clock and today's sky; the weekday turns red at the weekend
+      const w = this.world || (this.world = G.world());
+      let wx = 314 - E.textWidth(String(S.coins)) - 20;
+      wx -= E.text(w.hhmm, wx, 5, { color: C.text, align: 'right' }) + 5;
+      wx -= E.text(G.t(w.weekName), wx, 5, { color: w.weekend ? C.red : C.text, align: 'right' }) + 4;
+      const sky = E.spr.ui.weather[w.weather];
+      if (sky) ctx.drawImage(sky, wx - 9, 5);
       E.text(G.t('體力'), sx, 21, { color: C.text });
       E.bar(sx + 25, 24, barW, 7, b.stamina / 100, b.stamina < G.JOB_STAMINA ? C.red : C.mint);
       const mx = sx + 25 + barW + 6;

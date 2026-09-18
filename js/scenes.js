@@ -70,6 +70,8 @@
     if (SAVE.maid && !SAVE.first) SAVE.first = G.MAID_ORDER.find((k) => SAVE.hired[k]) || SAVE.maid;
     // the single boss of older versions is now BOSS3
     if (SAVE.cleared.BOSS) { SAVE.cleared.BOSS3 = SAVE.cleared.BOSS3 || SAVE.cleared.BOSS; delete SAVE.cleared.BOSS; }
+    // the maids rested while the game was closed
+    if (G.restTick() >= 1) persist();
     syncUnlocks();
   };
   function cycleLang(step) {
@@ -1097,6 +1099,7 @@
       let first = 0;
       for (let i = 0; i < G.STAGES.length; i++) if (stageUnlocked(i)) first = i;
       this.sel = arg && arg.sel != null ? arg.sel : first;
+      if (G.restTick() >= 1) persist(); // stamina keeps coming back with the real clock
       A.playMusic('cafe');
     },
     update() {
@@ -1119,6 +1122,12 @@
       bg(this.t);
       header(G.t('委託看板'), '');
       coinLabel(312, 5, SAVE.coins, 'right');
+      // the real clock and today's sky, so the board reads like a real morning (or a rainy night)
+      const w = G.world();
+      const sky = E.spr.ui.weather[w.weather];
+      if (sky) E.ctx.drawImage(sky, 96, 5);
+      const tw = E.text(w.hhmm, 108, 3, { color: C.paper });
+      E.text(G.t(w.weekName), 108 + tw + 5, 3, { color: w.weekend ? C.gold : C.paper });
       const bond = getBond(SAVE.maid);
       E.text(G.t('體力'), 200, 3, { color: C.paper });
       E.bar(226, 6, 40, 7, bond.stamina / 100, bond.stamina < G.JOB_STAMINA ? C.red : C.mint);
@@ -1192,6 +1201,7 @@
       if (this.warn > 0) {
         E.rect(144, 196, 170, 22, C.plum);
         E.text(G.t('女僕太累了！先回房間休息吧'), 229, 201, { color: C.pink, align: 'center' });
+        E.text(G.t('體力每小時恢復 {n}', { n: G.REST_PER_HOUR }), 229, 209, { color: C.paper, align: 'center' });
       }
       hint(G.t('Z 出發（體力 -{n}）　X 回房間　ESC 標題', { n: G.JOB_STAMINA }));
     },

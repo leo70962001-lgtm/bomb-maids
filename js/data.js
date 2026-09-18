@@ -471,6 +471,23 @@
       sleep: '主人晚安……明天見……',
       levelUp: '和主人的距離，好像又更近了一點呢！',
       piano: '嘿嘿，我只會彈「小星星」啦♪',
+      // greetings by the real clock, the real weekday and today's sky
+      hello: {
+        morning: '主人早安！今天也從打掃開始吧！',
+        noon: '主人午安！中午了，要不要吃點什麼？',
+        evening: '主人，太陽快下山了，今天也辛苦了！',
+        night: '這麼晚還沒睡？莓果陪主人到你想睡為止！',
+      },
+      week: {
+        weekday: '平日的主人也很努力呢，我也要加油！',
+        weekend: '今天是假日耶！要不要一起出門走走？',
+      },
+      sky: {
+        sun: '今天天氣真好！把被子拿去曬一曬吧！',
+        cloud: '陰陰的天氣，打掃起來反而不會熱呢。',
+        rain: '下雨了……不過雨聲聽起來很舒服對吧？',
+        snow: '下雪了！主人，等一下來堆雪人嘛！',
+      },
     },
     yoru: {
       intro: '初次見面，主人。我是夜子。今後，請讓我侍奉您。',
@@ -503,6 +520,22 @@
       sleep: '主人，晚安。請做個好夢。',
       levelUp: '……主人。今後也請多多指教。',
       piano: '……這首是祖母教我的曲子。',
+      hello: {
+        morning: '主人，早。……今天的空氣很乾淨。',
+        noon: '午安。……這個時間，最適合泡茶。',
+        evening: '日落了。……夜子的時間要開始了。',
+        night: '夜晚安靜得剛剛好。……主人還醒著嗎？',
+      },
+      week: {
+        weekday: '平日的街上很安靜。……我喜歡這樣。',
+        weekend: '假日呢……人多了一些。主人想去哪裡？',
+      },
+      sky: {
+        sun: '陽光有點刺眼。……不過，很溫暖。',
+        cloud: '雲層很厚。……像是要下雨了。',
+        rain: '雨聲……讓人靜下心來。',
+        snow: '下雪了。……在雪裡，刀光會更清楚。',
+      },
     },
     honey: {
       intro: '主人好～我是蜜糖！以後每天都做點心給主人吃喔♪',
@@ -535,6 +568,22 @@
       sleep: '晚安，主人～夢裡也要一起吃蛋糕喔♪',
       levelUp: '主人對蜜糖的好感度……爆表了♪',
       piano: '這首曲子叫「鬆餅圓舞曲」喔♪',
+      hello: {
+        morning: '主人早安～今天的紅茶已經泡好囉♪',
+        noon: '主人午安～要不要休息一下吃塊蛋糕？',
+        evening: '傍晚了呢～主人晚餐想吃什麼呀？',
+        night: '夜深了喔，別太勉強……蜜糖陪著主人♪',
+      },
+      week: {
+        weekday: '平日辛苦了～回到這裡就好好放鬆吧♪',
+        weekend: '今天是假日呢～要慢慢過，還是出去玩？',
+      },
+      sky: {
+        sun: '陽光好舒服～小兔子也在曬太陽呢♪',
+        cloud: '雲有點多呢，出門記得帶把傘喔。',
+        rain: '雨天的午後，最適合配紅茶了♪',
+        snow: '下雪了……主人，手會不會冷呀？',
+      },
     },
     yukino: {
       intro: '我是雪乃。……既然被雇用了，我會盡到女僕的責任。',
@@ -567,6 +616,22 @@
       sleep: '晚安，主人。……明天見。',
       levelUp: '好感度參數……上升了。不是壞事。',
       piano: '這首的節拍，我練習了一百次。',
+      hello: {
+        morning: '早安，主人。今天的行程已經整理好了。',
+        noon: '中午了。建議先補充水分。',
+        evening: '傍晚了。效率會下降，請適度休息。',
+        night: '已經這麼晚了。……主人，該睡了。',
+      },
+      week: {
+        weekday: '平日行程比較緊湊，請注意體力分配。',
+        weekend: '今天是假日。……偶爾放空，也是必要的。',
+      },
+      sky: {
+        sun: '晴天。適合曬棉被和擦窗戶。',
+        cloud: '陰天。紫外線較弱，適合外出。',
+        rain: '降雨中。地板會濕滑，請小心。',
+        snow: '積雪了。……雪的結晶，很美。',
+      },
     },
   };
 
@@ -574,6 +639,95 @@
     v: 1, coins: 0, maid: null, hired: {}, cleared: {}, upgrades: { bombs: 0, fire: 0, speed: 0, hearts: 0 },
     buffs: {}, cards: {}, sound: true, music: true, plays: 0, ending: false,
     day: 1, bond: {}, room: null, gifts: {}, guide: 0, intro: false, lastJob: null, lang: 'ja', first: null, outfits: {}, closet: { maid: true }, titleCast: [],
+    seen: 0,
+  };
+
+  // ------------------------------------------------------------------ the real world: clock, weather, resting
+  // The room follows the device clock: the window and the lighting change with the hour, the maids greet by the time of
+  // day and know a weekday from a weekend. The weather is made up from the date instead of fetched, so it needs no network
+  // and no location: every player sees the same sky on the same day, and it follows the season.
+  const PHASE_NAMES = { morning: '早上', noon: '白天', evening: '傍晚', night: '晚上' };
+  const WEEK_NAMES = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+  G.WEATHER_NAMES = { sun: '晴天', cloud: '陰天', rain: '雨天', snow: '下雪', petal: '櫻花紛飛', storm: '雷雨' };
+  // seasonal odds, in order; the last one takes the rest
+  const SKY_ODDS = {
+    spring: [['sun', 0.42], ['cloud', 0.24], ['rain', 0.2], ['petal', 0.14]],
+    summer: [['sun', 0.48], ['cloud', 0.2], ['rain', 0.2], ['storm', 0.12]],
+    autumn: [['sun', 0.44], ['cloud', 0.3], ['rain', 0.26]],
+    winter: [['sun', 0.3], ['cloud', 0.32], ['snow', 0.38]],
+  };
+  const noise = (n) => {
+    let x = Math.imul(n ^ 0x9e3779b9, 0x85ebca6b);
+    x = Math.imul(x ^ (x >>> 13), 0xc2b2ae35);
+    return ((x ^ (x >>> 16)) >>> 0) / 4294967296;
+  };
+  G.seasonOf = (month) => (month <= 2 || month === 12 ? 'winter' : month <= 5 ? 'spring' : month <= 8 ? 'summer' : 'autumn');
+  // the clock and the calendar the game plays by (the device's own)
+  G.clock = function (when) {
+    const d = when || new Date();
+    const h = d.getHours(), min = d.getMinutes();
+    const dow = d.getDay();
+    const month = d.getMonth() + 1;
+    return {
+      date: d, h, min, dow, month,
+      hhmm: String(h).padStart(2, '0') + ':' + String(min).padStart(2, '0'),
+      phase: h < 5 ? 'night' : h < 10 ? 'morning' : h < 16 ? 'noon' : h < 19 ? 'evening' : 'night',
+      phaseName: PHASE_NAMES[h < 5 ? 'night' : h < 10 ? 'morning' : h < 16 ? 'noon' : h < 19 ? 'evening' : 'night'],
+      weekName: WEEK_NAMES[dow],
+      weekend: dow === 0 || dow === 6,
+      season: G.seasonOf(month),
+    };
+  };
+  // one sky per six-hour block, drawn from the season's odds
+  G.weatherAt = function (when) {
+    const c = when && when.date ? when : G.clock(when);
+    const d = c.date;
+    const block = Math.floor(c.h / 6);
+    const r = noise(d.getFullYear() * 100000 + (d.getMonth() + 1) * 2000 + d.getDate() * 31 + block * 7919);
+    let acc = 0;
+    const odds = SKY_ODDS[c.season];
+    for (const [id, p] of odds) { acc += p; if (r < acc) return id; }
+    return odds[odds.length - 1][0];
+  };
+  // everything a scene needs about the moment: { h, min, hhmm, phase, weekName, weekend, season, weather }
+  G.world = function (when) {
+    const c = G.clock(when);
+    c.weather = G.weatherAt(c);
+    c.weatherName = G.WEATHER_NAMES[c.weather];
+    return c;
+  };
+
+  // what a maid has to say about this moment: the time of day, whether it is a workday, and the sky
+  G.contextLines = function (maid, when) {
+    const L = G.LINES[maid] || {};
+    const w = when && when.weather ? when : G.world(when);
+    const sky = { sun: 'sun', petal: 'sun', cloud: 'cloud', rain: 'rain', storm: 'rain', snow: 'snow' }[w.weather] || 'sun';
+    return {
+      time: L.hello && L.hello[w.phase],
+      week: L.week && L.week[w.weekend ? 'weekend' : 'weekday'],
+      sky: L.sky && L.sky[sky],
+    };
+  };
+
+  // the maids rest while the game is closed: stamina comes back with the real clock (SAVE.seen is the last time we looked)
+  G.REST_PER_HOUR = 20;
+  G.restTick = function () {
+    const S = G.getSave && G.getSave();
+    if (!S) return 0;
+    const now = Date.now();
+    if (!S.seen || now < S.seen) { S.seen = now; return 0; }
+    const hours = (now - S.seen) / 3600000;
+    if (hours * 60 < 1) return 0;
+    let best = 0;
+    for (const k of Object.keys(S.bond || {})) {
+      const b = S.bond[k];
+      if (!b || typeof b.stamina !== 'number' || b.stamina >= 100) continue;
+      const before = b.stamina;
+      b.stamina = Math.min(100, b.stamina + hours * G.REST_PER_HOUR);
+      best = Math.max(best, b.stamina - before);
+    }
+    S.seen = now;
+    return best;
   };
 
   // ------------------------------------------------------------------ music

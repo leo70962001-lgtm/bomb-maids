@@ -2036,6 +2036,17 @@
   };
   const UI_PAL = Object.assign({}, ICON_PAL, { d: '#6b5a8e', g: '#a9a2c2', Y: '#e09a14' });
 
+  // today's sky, shown beside the clock (9x9)
+  const WEATHER_ICONS = {
+    sun: ['...yky...', '.y.kkk.y.', '..kyyyk..', 'ykyyyyyky', '.kyyoyyk.', 'ykyyyyyky', '..kyyyk..', '.y.kkk.y.', '...yky...'],
+    cloud: ['.........', '...kkk...', '..kwwwkk.', '.kwwwwwwk', 'kwwwwwwwk', 'kwcwwcwwk', '.kkkkkkk.', '.........', '.........'],
+    rain: ['...kkk...', '..kwwwkk.', '.kwwwwwwk', 'kwcwwcwwk', '.kkkkkkk.', '..b..b..b', '.b..b..b.', 'b..b..b..', '.........'],
+    snow: ['...kkk...', '..kwwwkk.', '.kwwwwwwk', 'kwcwwcwwk', '.kkkkkkk.', '..s..s..s', '.s..s..s.', 's..s..s..', '.........'],
+    petal: ['...yky...', '.y.kkk.y.', '..kyyyk..', 'ykyyyyyky', '.kyyyyk..', '.pkyyk.p.', 'p..pp....', '...p..p..', '.p.....p.'],
+    storm: ['...kkk...', '..kgggkk.', '.kgggggdk', 'kgcggcggk', '.kkkkkkk.', '....ky...', '...ky....', '..kyyy...', '....ky...'],
+  };
+  const WEATHER_PAL = { k: '#2a1b30', y: '#ffd23f', o: '#f5921e', w: '#ffffff', c: '#c9d6e8', g: '#a9a2c2', d: '#6b5a8e', b: '#4d93d6', s: '#e6f4ff', p: '#ff9fbb' };
+
   // ---------------------------------------------------------------- pixel font 5x7 (ASCII subset)
   const FONT5 = {
     '0': ['.###.', '#...#', '#..##', '#.#.#', '##..#', '#...#', '.###.'],
@@ -3037,6 +3048,8 @@
     art.items.coin = [0, 1, 2, 3].map(buildCoin);
     art.items.dust = [0, 1, 2].map(buildDust);
     for (const k of Object.keys(UI)) art.ui[k] = fromRows(UI[k], UI_PAL);
+    art.ui.weather = {};
+    for (const k of Object.keys(WEATHER_ICONS)) art.ui.weather[k] = fromRows(WEATHER_ICONS[k], WEATHER_PAL, 9);
     // status-bar badges like the original's: a gold sunburst with a green orb, and a bunny head
     art.ui.emblem = fromRows(['...y.y...', '.y.yyy.y.', '..kGGGk..', 'yykGgwGky', '.yGgggGy.', 'yykGggGky', '..kGGGk..', '.y.yyy.y.', '...y.y...'], { y: '#ffc020', k: '#000000', G: '#2e8a2a', g: '#6ad04a', w: '#e8ffd0' });
     art.ui.bunny = fromRows(['.o...o.', 'oio.oio', 'oio.oio', 'owoooow', 'owwwwwo', 'owewewo', 'owwnwwo', '.owwwo.', '..ooo..'], { o: '#e89ab4', i: '#ffb6cc', w: '#ffffff', e: '#6a3a50', n: '#ff8aa8' });
