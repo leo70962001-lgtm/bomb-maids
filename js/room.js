@@ -628,6 +628,10 @@
       this.flashFx = null;
       this.hoverCD = 0;
       this.wasOnMaid = false;
+      this.furn = new Map(); // what each placed piece is doing: { kind, t, dur }
+      this.lights = [];
+      this.fish = null;
+      this.recordOn = false;
       // the real world: the clock and sky the room follows, and the rest the maids got while the game was closed
       this.world = G.world();
       const rested = G.restTick();
@@ -921,6 +925,8 @@
             const flavor = { desk: ['book', 'dots'], bed: [null, b.stamina < 50 ? 'zzz' : 'note'], wardrobe: [null, 'sparkle'], teatable: ['cup', 'heart'], bookshelf: ['book', 'question'], plant: [null, 'sparkle'], plush: [null, 'heart'], piano: [null, 'note'], lamp: [null, 'sparkle'], princess: [null, 'heart'] }[p.id] || [null, 'note'];
             m.prop = flavor[0];
             this.emote(flavor[1], 120);
+            const life = { desk: ['study', 150], wardrobe: ['open', 150], teatable: ['steam', 150], plant: ['water', 48], plush: ['squish', 40], piano: ['keys', 150], fishbowl: ['watch', 150], dresser: ['mirror', 60], sofa: ['squish', 40], bed: ['bounce', 24], princess: ['bounce', 24], bookshelf: ['book', 34] }[p.id];
+            if (life) this.furnStart(p, life[0], life[1]);
           };
           if (spot.c === m.c && spot.r === m.r) done();
           else this.walkTo(spot.c, spot.r, done);
@@ -1098,6 +1104,138 @@
         A.sfx('angry');
       }
       G.persist();
+    },
+    // ---- furniture that comes alive. One activity per placed piece ({ kind, t, dur }): drawFurniture() bounces,
+    // squashes or dresses the piece up while it lasts, and furnitureTick() sends out what it gives off. Some things move
+    // by themselves: the goldfish swims, a lit lamp glows once evening comes, a record turns while it plays.
+    furnStart(p, kind, dur, extra) { if (p) this.furn.set(p, Object.assign({ kind, t: 0, dur: dur || 40 }, extra)); },
+    placedOf(id) { return B.getRoom().placed.find((q) => q.id === id); },
+    // where a piece is drawn on screen (its sprite's top-left and size)
+    furnBox(p) {
+      const g = geom();
+      const F = G.FURNITURE[p.id];
+      const img = E.spr.room.furniture[p.id];
+      const x = g.x0 + p.c * T;
+      const y = F.layer === 'floor' ? g.floorY + p.r * T : g.floorY + (p.r + F.h) * T - img.height;
+      return { x, y, w: img.width, h: img.height };
+    },
+    // walk over to a piece and face it, then do fn (at once if she is already there, or cannot get there)
+    goUse(p, fn) {
+      const m = this.maid;
+      if (m.state === 'pose' || m.state === 'use') { m.state = 'idle'; m.prop = null; }
+      m.pauseT = 0;
+      const spot = this.useSpot(p);
+      const begin = () => { if (spot) m.dir = spot.face; fn(); };
+      if (spot && !(spot.c === m.c && spot.r === m.r) && this.walkTo(spot.c, spot.r, begin)) this.mode = 'wait';
+      else begin();
+    },
+    lampLit() { return B.roomHas('lamp') && !B.getRoom().lampOff; },
+    // the glove flips the lamp's switch
+    toggleLamp(p) {
+      const room = B.getRoom();
+      room.lampOff = !room.lampOff;
+      this.furnStart(p, 'flicker', 14);
+      A.sfx('remote');
+      const b = this.furnBox(p);
+      if (!room.lampOff) {
+        this.ring(b.x + 8, b.y + 5, 2, 14, '#ffe6a0', 14);
+        this.fx({ kind: 'glint', x: b.x + 8, y: b.y + 5, life: 16 });
+      }
+      this.emote(room.lampOff ? 'dots' : 'sparkle', 60);
+      this.speak(G.t(room.lampOff ? '關燈了。……房間暗下來了呢。' : '燈光好溫暖呢。'), 'normal');
+      G.persist();
+    },
+    // a book slides out of the shelf, glowing, before the diary opens
+    openShelf(p) {
+      this.furnStart(p, 'book', 34);
+      A.sfx('select');
+      this.anim = { kind: 'wait', t: 0, dur: 24, then: () => this.openDiary() };
+      this.mode = 'anim';
+    },
+    furnitureTick() {
+      for (const [p, a] of this.furn) if (++a.t >= a.dur) this.furn.delete(p);
+      if (this.recordOn && A.trackName !== 'lullaby') this.recordOn = false;
+      for (const p of B.getRoom().placed) {
+        const a = this.furn.get(p);
+        const b = this.furnBox(p);
+        if (p.id === 'fishbowl') this.fishTick(b, a);
+        if (p.id === 'gramophone' && this.recordOn && this.t % 36 === 0) {
+          this.fx({ kind: 'note', x: b.x + 8 + E.rand(-3, 3), y: b.y + 2, vx: E.rand(-0.4, 0.4), vy: -0.5, sway: 0.2, ph: this.t, life: 50, col: E.pick(['#ec3d5f', '#e0a010', '#3d86f0', '#8a6ac0']) });
+        }
+        if (!a) continue;
+        const t = a.t;
+        switch (a.kind) {
+          case 'steam': // tea on the table
+            if (t % 10 === 0) this.fx({ kind: 'steam', x: b.x + 6 + E.rand(0, 2), y: b.y + 3, vx: 0, vy: -0.35, life: 30 });
+            if (t === 1) this.fx({ kind: 'glint', x: b.x + 7, y: b.y + 3, life: 14 });
+            break;
+          case 'sleep': // z's rising from the bed
+            if (t % 44 === 10) this.fx({ kind: 'z', x: b.x + b.w / 2 + 2, y: b.y + 4, vx: 0.25, vy: -0.35, sway: 0.3, ph: t, big: t % 88 === 10, life: 60 });
+            break;
+          case 'study': // papers fly off the desk under the lamp
+            if (t % 18 === 0) this.fx({ kind: 'paper', x: b.x + 4 + E.rand(0, 3), y: b.y + 8, vx: E.rand(-0.4, 0.4), vy: -0.7, g: 0.03, sway: 0.4, ph: t, life: 36 });
+            if (t % 30 === 15) this.fx({ kind: 'glint', x: b.x + 12, y: b.y + 2, life: 14 });
+            break;
+          case 'water': // drops rain on the leaves, then a flower pops open
+            if (t < 30 && t % 3 === 0) this.fx({ kind: 'drop', x: b.x + E.rand(2, 13), y: b.y - 14, vx: 0, vy: 1.1, g: 0.06, life: 14 });
+            if (t === 32) {
+              for (let i = 0; i < 3; i++) this.fx({ kind: 'glint', x: b.x + E.rand(2, 14), y: b.y + E.rand(1, 11), life: 16 + i * 4 });
+              this.fx({ kind: 'blossom', x: b.x + 8, y: b.y + 2, vy: -0.5, g: 0.01, sway: 0.2, ph: t, life: 40 });
+            }
+            break;
+          case 'squish': // the plush gives out hearts, the sofa a puff of dust
+            if (t === 1) {
+              if (p.id === 'plush') this.hearts(b.x + 8, b.y + 6, 3);
+              else for (const dx of [6, b.w - 6]) this.fx({ kind: 'dust', x: b.x + dx, y: b.y + b.h - 8, vx: dx < 10 ? -0.5 : 0.5, vy: -0.3, life: 16 });
+            }
+            break;
+          case 'glow': // hearts rise off the rug
+            if (t % 6 === 0 && t < 30) this.fx({ kind: 'heart', x: b.x + E.rand(4, b.w - 4), y: b.y + E.rand(4, b.h - 4), vy: -0.6, life: 30 });
+            break;
+          case 'mirror':
+            if (t === 12 || t === 30) this.fx({ kind: 'glint', x: b.x + E.rand(5, 10), y: b.y + E.rand(2, 8), life: 16 });
+            break;
+          case 'open':
+            if (t === 9) this.fx({ kind: 'glint', x: b.x + 8, y: b.y + 10, life: 16 });
+            break;
+          case 'book':
+            if (t % 5 === 0 && t < 24) this.fx({ kind: 'glint', x: b.x + 8 + E.rand(-5, 5), y: b.y + 12 - t * 0.8, life: 12 });
+            break;
+          case 'bounce':
+            if (t === 1) for (const dx of [3, b.w - 3]) this.fx({ kind: 'dust', x: b.x + dx, y: b.y + b.h - 1, vx: dx < 10 ? -0.4 : 0.4, vy: -0.2, life: 14 });
+            break;
+        }
+      }
+    },
+    // the goldfish swims to and fro, blowing a bubble now and then; fed, it darts up for the flakes; watched, it comes
+    // to the glass
+    fishTick(b, a) {
+      const f = this.fish || (this.fish = { x: 3, y: 8, dir: -1, t: 0, tail: 0 });
+      f.t++;
+      const feeding = a && a.kind === 'feed';
+      let tx, ty;
+      if (feeding && a.t > 6) { tx = a.fx != null ? a.fx : 3; ty = 6; }
+      else if (a && a.kind === 'watch') { tx = 3; ty = 8 + Math.round(Math.sin(f.t * 0.2)); }
+      else { tx = 3.5 + 2.6 * Math.sin(f.t * 0.017); ty = 8 + Math.sin(f.t * 0.045) * 1.2; }
+      tx = Math.max(1, Math.min(6, tx));
+      const sp = feeding ? 0.25 : 0.12;
+      const dx = tx - f.x;
+      f.x += Math.max(-sp, Math.min(sp, dx));
+      f.y += Math.max(-sp, Math.min(sp, ty - f.y));
+      if (Math.abs(dx) > 0.05) f.dir = dx < 0 ? -1 : 1;
+      f.tail = (f.t >> (feeding ? 2 : 3)) % 2;
+      if (f.t % (feeding ? 12 : 80) === 0) {
+        const mx = f.dir < 0 ? f.x : f.x + 8;
+        this.fx({ kind: 'fbubble', x: b.x + mx, y: b.y + f.y, vy: -0.25, sway: 0.15, ph: f.t, life: Math.max(6, Math.round((f.y - 5) / 0.25)) });
+      }
+      if (feeding) {
+        if (a.t < 18 && a.t % 3 === 0) {
+          const x = E.rand(3, 12);
+          a.fx = x - 4;
+          this.fx({ kind: 'flake', x: b.x + x, y: b.y + 6, vy: 0.08, sway: 0.2, ph: a.t, life: 40 });
+        }
+        if (a.t === 40) { this.ring(b.x + f.x + 4, b.y + 6, 1, 6, '#ffffff', 10); A.sfx('water'); }
+      }
     },
     // enough is enough: each one shows it her own way
     crossFx() {
@@ -1368,12 +1506,19 @@
       const b = bond();
       const k = maidKey();
       if (b.stamina < tr.stamina) { this.say([{ who: k, face: 'tired', text: lines(k).tired }]); return; }
+      // bomb research happens at the desk: its lamp comes on and papers fly while she works
+      const desk = tr.anim === 'study' ? this.placedOf('desk') : null;
+      if (desk) this.goUse(desk, () => { this.beginTraining(tr, true); this.furnStart(desk, 'study', 150); });
+      else this.beginTraining(tr, false);
+    },
+    beginTraining(tr, atDesk) {
+      const k = maidKey();
       const m = this.maid;
       m.path = [];
       m.state = 'hold';
-      m.dir = 'down';
+      if (!atDesk) m.dir = 'down';
       this.speak(lines(k).train, 'happy');
-      this.anim = { kind: 'train', tr, t: 0, dur: 150 };
+      this.anim = { kind: 'train', tr, t: 0, dur: 150, atDesk };
       this.mode = 'anim';
       A.sfx('train');
     },
@@ -1422,6 +1567,7 @@
         this.maid.prop = 'cup';
         this.anim = { kind: 'tea', t: 0, dur: 110 };
         this.mode = 'anim';
+        this.furnStart(p, 'steam', 120);
       };
       if (spot && !(spot.c === this.maid.c && spot.r === this.maid.r) && this.walkTo(spot.c, spot.r, begin)) this.mode = 'wait';
       else begin();
@@ -1436,6 +1582,7 @@
         this.maid.state = 'hold';
         this.anim = { kind: 'piano', t: 0, dur: 160 };
         this.mode = 'anim';
+        this.furnStart(p, 'keys', 160, { step: 20 });
       };
       if (spot && !(spot.c === this.maid.c && spot.r === this.maid.r) && this.walkTo(spot.c, spot.r, begin)) this.mode = 'wait';
       else begin();
@@ -1571,79 +1718,95 @@
       items.push({ label: G.t('取消'), action: () => {} });
       this.openMenu(G.t('{name}　好感 Lv{lv}', { name: name(), lv: affInfo().lv + 1 }), items);
     },
+    // A click on furniture: the piece answers at once (a bounce, a squash, the lamp's switch), and for the things she
+    // does with it she walks over first; done for the day, the piece still answers.
     furnitureAction(p) {
       const F = G.FURNITURE[p.id];
-      const k = maidKey();
+      const b = this.furnBox(p);
       switch (F.use) {
-        case 'sleep': return this.sleepConfirm();
-        case 'train': return this.trainMenu();
-        case 'wardrobe': return this.wardrobeMenu();
+        case 'sleep': this.furnStart(p, 'bounce', 24); return this.sleepConfirm();
+        case 'train': this.furnStart(p, 'bounce', 20); return this.trainMenu();
+        case 'wardrobe': this.furnStart(p, 'open', 120); A.sfx('door'); return this.wardrobeMenu();
         case 'tea': return this.teaTime();
-        case 'diary': return this.openDiary();
+        case 'diary': return this.openShelf(p);
         case 'piano': return this.playPiano();
+        case 'lamp': return this.toggleLamp(p);
         case 'water':
-          if (this.daily('water') >= 1) { this.speak(G.t('今天已經澆過水了！'), 'normal'); return; }
-          this.bumpDaily('water');
-          this.gain('mood', 4);
-          this.emote('sparkle', 90);
-          A.sfx('water');
-          this.speak(G.t('盆栽今天也要長高高喔♪'), 'happy');
-          G.persist();
-          return;
+          if (this.daily('water') >= 1) { this.furnStart(p, 'bounce', 20); this.speak(G.t('今天已經澆過水了！'), 'normal'); return; }
+          return this.goUse(p, () => {
+            this.bumpDaily('water');
+            this.gain('mood', 4);
+            this.emote('sparkle', 90);
+            A.sfx('water');
+            this.furnStart(p, 'water', 48);
+            this.speak(G.t('盆栽今天也要長高高喔♪'), 'happy');
+            G.persist();
+          });
         case 'hug':
-          if (this.daily('hug') >= 1) { this.speak(G.t('兔兔抱枕軟綿綿的～'), 'happy'); return; }
-          this.bumpDaily('hug');
-          this.gain('mood', 5);
-          this.emote('heart', 90);
-          this.hearts(this.maidScreen().x + 8, this.maidScreen().y - 6, 3);
-          A.sfx('pat');
-          this.speak(G.t('借我抱一下兔兔嘛～'), 'blush');
-          G.persist();
-          return;
-        case 'lamp':
-          this.emote('sparkle', 60);
-          this.speak(G.t('燈光好溫暖呢。'), 'normal');
-          return;
+          if (this.daily('hug') >= 1) { this.furnStart(p, 'squish', 30); this.speak(G.t('兔兔抱枕軟綿綿的～'), 'happy'); return; }
+          return this.goUse(p, () => {
+            this.bumpDaily('hug');
+            this.gain('mood', 5);
+            this.emote('heart', 90);
+            this.furnStart(p, 'squish', 44);
+            this.hearts(b.x + 8, b.y + 4, 3);
+            A.sfx('pat');
+            this.speak(G.t('借我抱一下兔兔嘛～'), 'blush');
+            G.persist();
+          });
         case 'fish':
-          if (this.daily('fish') >= 1) { this.speak(G.t('金魚已經吃飽囉～'), 'happy'); return; }
-          this.bumpDaily('fish');
-          this.gain('mood', 4);
-          this.emote('note', 90);
-          A.sfx('water');
-          this.speak(G.t('小金魚，開飯囉～'), 'happy');
-          G.persist();
-          return;
+          if (this.daily('fish') >= 1) { this.furnStart(p, 'watch', 60); this.speak(G.t('金魚已經吃飽囉～'), 'happy'); return; }
+          return this.goUse(p, () => {
+            this.bumpDaily('fish');
+            this.gain('mood', 4);
+            this.emote('note', 90);
+            A.sfx('water');
+            this.furnStart(p, 'feed', 90);
+            this.speak(G.t('小金魚，開飯囉～'), 'happy');
+            G.persist();
+          });
         case 'dresser':
-          if (this.daily('dress') >= 1) { this.speak(G.t('今天已經打扮好了！'), 'happy'); return; }
-          this.bumpDaily('dress');
-          this.gain('mood', 6);
-          this.emote('sparkle', 90);
-          A.sfx('gift');
-          this.speak(G.t('緞帶綁好了……主人，好看嗎？'), 'blush');
-          G.persist();
-          return;
+          if (this.daily('dress') >= 1) { this.furnStart(p, 'mirror', 50); this.speak(G.t('今天已經打扮好了！'), 'happy'); return; }
+          return this.goUse(p, () => {
+            this.bumpDaily('dress');
+            this.gain('mood', 6);
+            this.emote('sparkle', 90);
+            A.sfx('gift');
+            this.furnStart(p, 'mirror', 60);
+            const ms = this.maidScreen();
+            this.aura(ms.x + 8, ms.y - 4, 5);
+            this.speak(G.t('緞帶綁好了……主人，好看嗎？'), 'blush');
+            G.persist();
+          });
         case 'sofa':
-          if (this.daily('sofa') >= 1) { this.speak(G.t('沙發好舒服……不過今天已經休息夠了。'), 'normal'); return; }
-          this.bumpDaily('sofa');
-          this.gain('stamina', 15);
-          this.emote('zzz', 90);
-          A.sfx('pat');
-          this.speak(G.t('呼～坐一下，體力恢復了！'), 'happy');
-          this.toast(G.t('體力 +{n}', { n: 15 }), C.mint);
-          G.persist();
-          return;
+          if (this.daily('sofa') >= 1) { this.furnStart(p, 'squish', 30); this.speak(G.t('沙發好舒服……不過今天已經休息夠了。'), 'normal'); return; }
+          return this.goUse(p, () => {
+            this.bumpDaily('sofa');
+            this.gain('stamina', 15);
+            this.emote('zzz', 90);
+            A.sfx('pat');
+            this.furnStart(p, 'squish', 44);
+            this.speak(G.t('呼～坐一下，體力恢復了！'), 'happy');
+            this.toast(G.t('體力 +{n}', { n: 15 }), C.mint);
+            G.persist();
+          });
         case 'music':
-          A.playMusic('lullaby');
-          this.emote('note', 120);
-          if (this.daily('music') >= 1) { this.speak(G.t('再聽一次這張唱片吧♪'), 'happy'); return; }
-          this.bumpDaily('music');
-          this.gain('mood', 5);
-          this.speak(G.t('放一張唱片吧♪'), 'happy');
-          G.persist();
-          return;
+          return this.goUse(p, () => {
+            A.playMusic('lullaby');
+            this.recordOn = true;
+            this.furnStart(p, 'bounce', 20);
+            this.emote('note', 120);
+            A.sfx('tick');
+            if (this.daily('music') >= 1) { this.speak(G.t('再聽一次這張唱片吧♪'), 'happy'); return; }
+            this.bumpDaily('music');
+            this.gain('mood', 5);
+            this.speak(G.t('放一張唱片吧♪'), 'happy');
+            G.persist();
+          });
       }
+      // anything else (the rug): a little flourish of its own
+      this.furnStart(p, 'glow', 36);
       this.speak(F.name, 'normal');
-      void k;
     },
 
     // ---------------------------------------------------------------- dialog / menu / panels
@@ -1957,7 +2120,7 @@
         case 'maid': return h.head ? G.t('摸摸頭') : h.face ? G.t('戳戳臉頰') : G.t('和{name}互動', { name: name() });
         case 'furniture': {
           const F = G.FURNITURE[h.p.id];
-          const verb = { sleep: '休息', train: '特訓', wardrobe: '換班', tea: '喝茶', diary: '日記', piano: '彈琴', water: '澆水', hug: '抱抱', lamp: '看看' }[F.use];
+          const verb = { sleep: '休息', train: '特訓', wardrobe: '換班', tea: '喝茶', diary: '日記', piano: '彈琴', water: '澆水', hug: '抱抱', lamp: B.getRoom().lampOff ? '開燈' : '關燈', fish: '餵魚', dresser: '打扮', sofa: '坐坐', music: '放唱片' }[F.use];
           return F.name + (verb ? '：' + G.t(verb) : '');
         }
         case 'door': return G.t('出門');
@@ -2066,6 +2229,7 @@
       if (this.shakeT > 0) this.shakeT--;
       if (this.hoverCD > 0) this.hoverCD--;
       if (this.flashFx && ++this.flashFx.t >= this.flashFx.life) this.flashFx = null;
+      this.furnitureTick();
       for (let i = this.toasts.length - 1; i >= 0; i--) if (++this.toasts[i].t > 110) this.toasts.splice(i, 1);
       this.updateMaid();
       if (this.pendingLevelUp && this.mode === 'free' && !this.anim) {
@@ -2092,11 +2256,15 @@
       const m = this.maid;
       const ms = this.maidScreen();
       if (an.kind === 'gift') return this.updateGiftAnim(an);
+      if (an.kind === 'wait') { // a moment for a piece of furniture to do its thing before what comes next
+        if (an.t >= an.dur) { this.anim = null; this.mode = 'free'; an.then(); }
+        return;
+      }
       if (an.kind === 'train') {
         const kind = an.tr.anim;
         if (kind === 'jump') { if (an.t % 20 === 0) m.hop = 7; if (an.t % 30 === 0) this.emote('sweat', 25); }
         if (kind === 'run') { m.dir = (an.t >> 5) % 2 ? 'left' : 'right'; m.walkT += 2; }
-        if (kind === 'study') { m.prop = 'book'; if (an.t % 40 === 0) this.emote(E.pick(['dots', 'question', 'exclaim']), 35); }
+        if (kind === 'study') { m.prop = an.atDesk ? null : 'book'; if (an.t % 40 === 0) this.emote(E.pick(['dots', 'question', 'exclaim']), 35); }
         if (kind === 'sweep') { m.prop = 'broom'; if (an.t % 10 === 0) this.sparkle(ms.x + E.randi(-6, 20), ms.y + E.randi(4, 16)); }
         if (an.t % 24 === 0) A.sfx(kind === 'study' ? 'tick' : 'train');
         if (an.t >= an.dur) { this.anim = null; this.finishTraining(an.tr); }
@@ -2133,7 +2301,7 @@
       if (an.kind === 'sleep') {
         if (an.t === 60) {
           const bed = B.getRoom().placed.find((q) => q.id === 'princess') || B.getRoom().placed.find((q) => q.id === 'bed');
-          if (bed) { m.state = 'sleep'; m.bed = bed; } else m.state = 'hold';
+          if (bed) { m.state = 'sleep'; m.bed = bed; this.furnStart(bed, 'sleep', 170); } else m.state = 'hold';
           m.emote = 'zzz';
           m.emoteT = 9999;
           m.speech = null;
@@ -2142,6 +2310,12 @@
         if (an.t >= an.dur) {
           this.anim = null;
           m.state = 'idle';
+          if (m.bed) {
+            // up she gets: the bed bounces and the morning sparkles
+            this.furnStart(m.bed, 'bounce', 24);
+            const bb = this.furnBox(m.bed);
+            this.burst(bb.x + bb.w / 2, bb.y + 10, 'sparkle', 6, 1, {});
+          }
           m.bed = null;
           this.fixMaidPosition();
           this.wakeUp();
@@ -2199,6 +2373,7 @@
       const g = geom();
       const room = B.getRoom();
       const W = g.w * T;
+      this.lights = [];
       // frame + drop shadow
       E.rect(g.x0 - 2, g.wallY + 4, W + 8, WALL_H + g.h * T + 2, 'rgba(42,27,48,0.25)');
       E.rect(g.x0 - 4, g.wallY - 4, W + 8, WALL_H + g.h * T + 8, C.plum);
@@ -2222,7 +2397,7 @@
         const F = G.FURNITURE[p.id];
         if (F.layer !== 'floor') continue;
         if (this.decor && this.decor.from === p) continue;
-        ctx.drawImage(E.spr.room.furniture[p.id], g.x0 + p.c * T, g.floorY + p.r * T);
+        this.drawFurniture(p, E.spr.room.furniture[p.id], g.x0 + p.c * T, g.floorY + p.r * T);
       }
       // objects and the maid, back to front
       const drawables = [];
@@ -2240,20 +2415,153 @@
           const x = g.x0 + d.p.c * T, y = g.floorY + (d.p.r + F.h) * T - img.height;
           ctx.fillStyle = 'rgba(42,27,48,0.2)';
           ctx.fillRect(x + 1, g.floorY + (d.p.r + F.h) * T - 2, F.w * T - 2, 3);
-          ctx.drawImage(img, x, y);
+          this.drawFurniture(d.p, img, x, y);
           if (this.maid.state === 'sleep' && this.maid.bed === d.p) this.drawSleeper(d.p, x, y);
           const hv = this.hover && this.hover.kind === 'furniture' && this.hover.p === d.p && (this.mode === 'free');
           if (hv && (this.t >> 4) % 2 === 0) { ctx.strokeStyle = C.gold; ctx.lineWidth = 1; ctx.strokeRect(x - 0.5, y - 0.5, img.width + 1, img.height + 1); }
         } else if (this.maid.state !== 'sleep') this.drawMaid();
       }
       // the light in the room follows the hour; a lamp keeps the night warm
-      const lamp = B.roomHas('lamp');
+      const lamp = this.lampLit();
       const tint = world.phase === 'night' ? (lamp ? 'rgba(52,44,110,0.16)' : 'rgba(26,30,86,0.30)')
         : world.phase === 'evening' ? 'rgba(255,146,86,0.13)'
           : world.phase === 'morning' ? 'rgba(255,214,150,0.09)' : null;
       if (tint) {
         ctx.fillStyle = tint;
         ctx.fillRect(g.x0, g.wallY, W, WALL_H + g.h * T);
+      }
+      // lit lamps (and the desk lamp while she studies) glow over the evening, so they read as light
+      if (this.lights.length) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(g.x0, g.wallY, W, WALL_H + g.h * T);
+        ctx.clip();
+        for (const L of this.lights) {
+          const grd = ctx.createRadialGradient(L.x, L.y, 1, L.x, L.y, L.r);
+          grd.addColorStop(0, 'rgba(255,228,150,' + L.a + ')');
+          grd.addColorStop(1, 'rgba(255,228,150,0)');
+          ctx.fillStyle = grd;
+          ctx.fillRect(L.x - L.r, L.y - L.r, L.r * 2, L.r * 2);
+        }
+        ctx.restore();
+      }
+    },
+    // one piece of furniture, with whatever it is doing: bounced, squashed, lit, opened, its fish swimming
+    drawFurniture(p, img, x, y) {
+      const ctx = E.ctx;
+      const a = this.furn.get(p);
+      const P = E.spr.room.furnParts;
+      let base = img;
+      let lampOn = false;
+      if (p.id === 'lamp') {
+        // switching it, the lamp flickers a few times before it settles
+        const off = !!B.getRoom().lampOff !== !!(a && a.kind === 'flicker' && a.t < 10 && (a.t >> 1) % 2);
+        if (off) base = P.lampOff; else lampOn = true;
+      }
+      if (p.id === 'fishbowl') base = P.fishbowlEmpty;
+      let sx = 1, sy = 1, oy = 0;
+      if (a) {
+        const k = a.t / a.dur;
+        if (a.kind === 'bounce') oy = -Math.round(Math.abs(Math.sin(k * Math.PI * 2)) * 2 * (1 - k));
+        if (a.kind === 'squish') { const q = Math.sin(a.t * 0.45) * 0.14 * (1 - k); sy = 1 - q; sx = 1 + q * 0.6; }
+        if (a.kind === 'water' && a.t > 6 && a.t < 40) { const q = Math.sin(a.t * 0.6) * 0.05; sy = 1 - q; sx = 1 + q * 0.5; }
+      }
+      if (sx !== 1 || sy !== 1) {
+        const w = Math.round(img.width * sx), h = Math.round(img.height * sy);
+        ctx.drawImage(base, Math.round(x + (img.width - w) / 2), y + img.height - h + oy, w, h);
+      } else ctx.drawImage(base, x, y + oy);
+      y += oy;
+      const phase = (this.world || G.world()).phase;
+      switch (p.id) {
+        case 'fishbowl': {
+          const f = this.fish;
+          if (!f) break;
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(x + 1, y + 6, 14, 8);
+          ctx.clip();
+          ctx.drawImage((f.dir < 0 ? P.fish : P.fishFlip)[f.tail], Math.round(x + f.x), Math.round(y + f.y));
+          ctx.restore();
+          break;
+        }
+        case 'lamp':
+          if (lampOn) {
+            const glow = phase === 'night' ? 0.36 : phase === 'evening' ? 0.26 : 0.1;
+            this.lights.push({ x: x + 8, y: y + 6, r: 30, a: glow }, { x: x + 8, y: y + img.height - 2, r: 16, a: glow * 0.6 });
+          }
+          break;
+        case 'desk':
+          if (a && a.kind === 'study') this.lights.push({ x: x + 12, y: y + 3, r: 13, a: 0.34 + Math.sin(this.t * 0.2) * 0.04 });
+          break;
+        case 'gramophone':
+          // the record turns while it plays: a glint going round it
+          if (this.recordOn) {
+            const ang = this.t * 0.3;
+            for (const o of [0, Math.PI]) E.rect(Math.round(x + 7 + Math.cos(ang + o) * 2.6), Math.round(y + 15.5 + Math.sin(ang + o) * 1.2), 1, 1, '#c8b8d8');
+          }
+          break;
+        case 'piano':
+          // a key goes down with each note
+          if (a && a.kind === 'keys') {
+            const step = a.step || 12;
+            if (a.t % step < step * 0.6) {
+              const KEYS = [3, 6, 9, 11, 14, 17, 20, 22, 25, 28];
+              const kx = KEYS[(Math.floor(a.t / step) * 7 + 3) % KEYS.length];
+              E.rect(x + kx, y + 14, 1, 2, '#ffe14d');
+              E.rect(x + kx - 1, y + 16, 3, 1, '#ffe14d');
+            }
+          }
+          break;
+        case 'wardrobe':
+          if (a && a.kind === 'open') this.drawWardrobeOpen(x, y, Math.min(1, a.t / 8, (a.dur - a.t) / 8));
+          break;
+        case 'bookshelf':
+          // a book slides up out of the middle shelf, glowing
+          if (a && a.kind === 'book' && (a.t < a.dur - 6 || a.t % 2)) {
+            const bx = x + 3, by = Math.round(y + 12 - 20 * E.ease.outCubic(Math.min(1, a.t / 16)));
+            G.pixelRing(bx + 5, by + 4, 7, '#fff3a0');
+            ctx.drawImage(E.spr.room.book, bx, by);
+          }
+          break;
+        case 'dresser':
+          // a glint sweeps across the mirror
+          if (a && a.kind === 'mirror') {
+            const g0 = Math.floor(a.t * 0.5) - 6;
+            for (let yy = 2; yy <= 8; yy++) {
+              for (const off of [0, 2]) {
+                const xx = 4 + g0 + (8 - yy) + off;
+                if (xx >= 5 && xx <= 10) E.rect(x + xx, y + yy, 1, 1, off ? '#dff4ff' : '#ffffff');
+              }
+            }
+          }
+          break;
+        case 'rug':
+          if (a && a.kind === 'glow' && (a.t >> 2) % 2) E.rect(x + 2, y + 2, img.width - 4, img.height - 4, 'rgba(255,200,220,0.22)');
+          break;
+      }
+    },
+    // the wardrobe's doors swing open on the dresses inside (f: 0 shut .. 1 wide open)
+    drawWardrobeOpen(x, y, f) {
+      if (f <= 0) return;
+      E.ctx.drawImage(E.spr.room.furnParts.wardrobeInside, x + 3, y + 4);
+      const wood = '#d8843e', edge = '#a05a26', lite = '#f4ac62';
+      const w = Math.round(5 * (1 - f));
+      if (w > 0) {
+        E.rect(x + 3, y + 4, w, 18, wood);
+        E.rect(x + 2 + w, y + 4, 1, 18, edge);
+        E.rect(x + 13 - w, y + 4, w, 18, wood);
+        E.rect(x + 13 - w, y + 4, 1, 18, lite);
+      }
+      if (f >= 0.6) { // and stand out on either side
+        const sw = f >= 1 ? 3 : 2;
+        E.rect(x + 1 - sw - 1, y + 4, sw + 1, 18, '#000000');
+        E.rect(x + 1 - sw, y + 5, sw, 16, wood);
+        E.rect(x + 1 - sw, y + 5, 1, 16, lite);
+        E.rect(x - 1, y + 12, 1, 1, '#ffe666');
+        E.rect(x + 15, y + 4, sw + 1, 18, '#000000');
+        E.rect(x + 15, y + 5, sw, 16, wood);
+        E.rect(x + 14 + sw, y + 5, 1, 16, edge);
+        E.rect(x + 16, y + 12, 1, 1, '#ffe666');
       }
     },
     drawSleeper(p, x, y) {
@@ -2384,7 +2692,7 @@
       const FX = E.spr.fx;
       const x = Math.round(p.x), y = Math.round(p.y);
       // most things blink out over their last frames
-      if (p.t > p.life - 8 && (p.t & 1) && p.kind !== 'text' && p.kind !== 'ring' && p.kind !== 'steam') return;
+      if (p.t > p.life - 8 && (p.t & 1) && !'text ring steam drop flake fbubble'.includes(p.kind)) return;
       switch (p.kind) {
         case 'heart': ctx.drawImage(FX.heart, x - 2, y - 2); break;
         case 'sparkle': ctx.drawImage(FX.sparkle[(p.t >> 3) % 3], x - 2, y - 2); break;
@@ -2427,6 +2735,11 @@
         }
         case 'slash': ctx.drawImage(FX.slashL[Math.min(2, p.t >> 2)], x, y); break;
         case 'lid': ctx.drawImage(FX.giftbox.lid, x - 7, y - 3); break;
+        case 'drop': E.rect(x, y, 2, 3, '#4c9ae8'); E.rect(x, y, 1, 2, '#bfe6ff'); break; // watering the plant
+        case 'flake': E.rect(x, y, 1, 1, (p.t >> 2) % 2 ? '#ffd23f' : '#e8a41a'); break; // fish food
+        case 'fbubble': E.rect(x, y, 1, 1, '#ffffff'); break; // the goldfish's bubbles
+        case 'z': E.text('z', x, y, { color: '#9fb4ff', outline: '#2a1b30', size: p.big ? 12 : 10 }); break;
+        case 'paper': { const f = (p.t >> 3) % 2; E.rect(x, y, f ? 3 : 2, f ? 2 : 3, '#ffffff'); E.rect(x, y, 1, 1, '#c8c8d8'); break; }
         case 'text': E.text(p.text, x, y, { color: p.col, outline: '#2a1b30', align: 'center' }); break;
       }
     },

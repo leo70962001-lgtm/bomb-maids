@@ -2716,6 +2716,27 @@
       'kkk..........kkk',
     ].map((r) => (r.length < 16 ? r + '.'.repeat(16 - r.length) : r.slice(0, 16))));
 
+    F.wardrobeInside = () => T([
+      'XXXXXXXXXX',
+      'oyyyyyyyyo',
+      'XkXXXkXXkX',
+      'kkkXpppbbb',
+      'kWkXPpqabB',
+      'kWkXppqbbB',
+      'kWkXpqqbbB',
+      'kkkpppqbbB',
+      'kWkpPpqbaB',
+      'kkkqppqBbB',
+      'XXXXXXXXXX',
+      'XXXXXXXXXX',
+      'DDDDDDDDDD',
+      'XrrXXXXyyX',
+      'XeeXXXXooX',
+      'XXXXXXXXXX',
+      'XXXXXXXXXX',
+      'XXXXXXXXXX',
+    ]);
+
     // tea table like the original's café table: a round white cloth with a lace hem hanging over a wood rim, a little
     // vase of pink flowers in the middle, and a turned leg on a round foot
     F.teatable = () => T([
@@ -2831,7 +2852,7 @@
 
     // floor lamp like the original's red dome lamp: a pleated shade with a lit top and gold trim, a glowing bulb, a gold
     // pole with a knot, a round weighted base
-    F.lamp = () => T([
+    const LAMP_ROWS = [
       '.....kkkkkk.....',
       '....kfffrrek....',
       '...kfrrrrreek...',
@@ -2860,11 +2881,14 @@
       '..kMDDDDDDDDXk..',
       '...kkkkkkkkkk...',
       '................',
-    ]);
+    ];
+    F.lamp = () => T(LAMP_ROWS);
+    const UNLIT = { f: 'r', r: 'e', e: 'E', y: 'o', o: 'O', W: 'g' };
+    F.lampOff = () => T(LAMP_ROWS.map((row, y) => (y > 8 ? row : row.replace(/[freyoW]/g, (ch) => UNLIT[ch]))));
 
     // goldfish bowl: a round glass bowl with a lip, clear glass above a lighter water line, a goldfish swimming sideways
     // with a flicking tail, bubbles and glints, on a little wood stand
-    F.fishbowl = () => T([
+    const FISHBOWL_ROWS = [
       '....kkkkkkkk....',
       '...kWaaaaaagk...',
       '..kkkkkkkkkkkk..',
@@ -2885,7 +2909,13 @@
       '..kYLLLLLLLLDk..',
       '..kkDkkkkkkDkk..',
       '...kkk....kkk...',
-    ]);
+    ];
+    F.fishbowl = () => T(FISHBOWL_ROWS);
+    // the same bowl with the water where the goldfish was (rows 9-12, columns 4-12), so the fish can swim on its own
+    F.fishbowlEmpty = () => T(FISHBOWL_ROWS.map((row, y) => (y < 9 || y > 12 ? row : row.split('').map((ch, x) => (x >= 4 && x <= 12 && 'Ooyk'.includes(ch) ? (x === 12 ? 'B' : 'b') : ch)).join(''))));
+    // the goldfish (9x4, facing left): tail straight, then flicked
+    F.fish0 = () => T(['.OOOO..O.', 'OyoooOOoO', 'OkoooooO.', '.OOOO..O.']);
+    F.fish1 = () => T(['.OOOO.OO.', 'OyoooOOo.', 'OkoooooO.', '.OOOO....']);
 
 
     const DARKER = { P: 'p', p: 'q', q: 'Q', Q: 'R', Y: 'L', L: 'M', M: 'D', D: 'X', W: 'w', w: 'g', g: 'G', y: 'o', o: 'O', a: 'b', b: 'B', v: 'V', V: 'h', h: 'H', f: 'r', r: 'e', e: 'E' };
@@ -3221,6 +3251,14 @@
     };
     for (const k of Object.keys(EMOTES)) art.room.emotes[k] = buildEmote(k);
     for (const k of ['bed', 'princess', 'desk', 'wardrobe', 'teatable', 'bookshelf', 'plant', 'plush', 'rug', 'piano', 'lamp', 'fishbowl', 'dresser', 'sofa', 'gramophone']) art.room.furniture[k] = softInk(bevel(buildFurniture(k)));
+    // the moving parts: the bowl without its fish and the fish itself, the lamp switched off, the inside of the wardrobe
+    art.room.furnParts = {
+      fishbowlEmpty: softInk(bevel(buildFurniture('fishbowlEmpty'))),
+      fish: [softInk(buildFurniture('fish0')), softInk(buildFurniture('fish1'))],
+      lampOff: softInk(bevel(buildFurniture('lampOff'))),
+      wardrobeInside: softInk(buildFurniture('wardrobeInside')),
+    };
+    art.room.furnParts.fishFlip = art.room.furnParts.fish.map((f) => f.flipped());
     for (const k of ['bunny', 'stripe', 'strawberry', 'night']) art.room.walls[k] = [buildWall(k, 0), buildWall(k, 1)];
     for (const k of ['wood', 'carpet', 'checker']) art.room.floors[k] = [buildFloor(k, 0), buildFloor(k, 1)];
     for (const k of ['daifuku', 'honeycake', 'icecream', 'matcha', 'drink', 'novel', 'charm', 'bouquet', 'ribbon']) art.room.gifts[k] = softInk(bevel(buildGift(k)));
@@ -3296,6 +3334,8 @@
       for (const k of Object.keys(art.room.gifts)) put(art.room.gifts[k]);
       nl();
       for (const k of Object.keys(art.room.furniture)) put(art.room.furniture[k]);
+      const fp = art.room.furnParts;
+      put(fp.fishbowlEmpty); put(fp.fish[0]); put(fp.fish[1]); put(fp.fishFlip[0]); put(fp.lampOff); put(fp.wardrobeInside);
       nl();
       for (const k of Object.keys(art.room.walls)) { put(art.room.walls[k][0]); put(art.room.walls[k][1]); }
       for (const k of Object.keys(art.room.floors)) { put(art.room.floors[k][0]); put(art.room.floors[k][1]); }

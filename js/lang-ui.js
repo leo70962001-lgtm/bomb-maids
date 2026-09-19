@@ -275,7 +275,6 @@
     '彈琴': ['ピアノ', 'Piano'],
     '澆水': ['水やり', 'Water'],
     '抱抱': ['ぎゅっ', 'Hug'],
-    '看看': ['ながめる', 'Look'],
     '叫她過來': ['ここに呼ぶ', 'Call her here'],
     '窗外天氣真好': ['いいお天気', 'Nice weather out there'],
     '今天天氣很好呢～': ['今日はいいお天気ですね～', 'Lovely weather today~'],
@@ -380,5 +379,12 @@
     '體力 +{n}': ['体力 +{n}', '+{n} STA'],
     '{name} 升到 Lv{n}！': ['{name}がLv{n}に上がった！', '{name} is now Lv{n}!'],
     '御守：下次委託撐住一次致命傷': ['お守り：次の依頼で一度だけ致命傷に耐える', 'Charm: survive one fatal hit next job'],
+    '關燈了。……房間暗下來了呢。': ['電気を消しました。……お部屋が暗くなりましたね。', 'Lights off. ...The room went dark.'],
+    '開燈': ['つける', 'Light on'],
+    '關燈': ['けす', 'Light off'],
+    '餵魚': ['えさやり', 'Feed'],
+    '打扮': ['おめかし', 'Dress up'],
+    '坐坐': ['すわる', 'Sit'],
+    '放唱片': ['レコード', 'Record'],
   });
 })(window);
