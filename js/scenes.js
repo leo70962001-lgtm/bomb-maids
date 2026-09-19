@@ -1773,7 +1773,9 @@
     const open = t < 6 ? t / 6 : t > dur - 6 ? Math.max(0, (dur - t) / 6) : 1;
     const h = Math.round(32 * open);
     if (h < 2) return;
-    const y = 100 - (h >> 1);
+    // the band sits in the half of the field away from her, so it never hides her or what her skill does
+    const who = w.maids[c.slot];
+    const y = (who && who.y + 8 < 104 ? 176 : 48) - (h >> 1);
     const [light, deep] = CUTIN_COL[c.key] || ['#ffc8e0', '#c86a90'];
     ctx.save();
     ctx.beginPath();

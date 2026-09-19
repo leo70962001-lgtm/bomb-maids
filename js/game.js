@@ -44,6 +44,7 @@
       this.items = new Array(COLS * ROWS).fill(null);
       this.bombAt = new Array(COLS * ROWS).fill(null);
       this.flames = new Array(COLS * ROWS).fill(null);
+      this.scorch = new Array(COLS * ROWS).fill(0);
       this.bombs = [];
       this.burning = [];
       this.decor = [];
@@ -387,7 +388,8 @@
           let remain = b.impact ? G.SKILL.kickSpeed : 3;
           // an impact bomb streaks and bursts as soon as it meets something (the boss has no tile, so check it here)
           if (b.impact) {
-            if (b.anim % 2 === 0) this.particles.push({ kind: 'streak', x: b.x + 8 - dx * 6, y: b.y + 8 - dy * 6, dx, dy, t: 0, life: 10 });
+            // speed lines trail a kicked bomb: three, the middle one longest (as in the chibi action sheets' dashes)
+            if (b.anim % 2 === 0) for (const off of [-4, 0, 4]) this.particles.push({ kind: 'streak', x: b.x + 8 - dx * 6 + dy * off, y: b.y + 8 - dy * 6 + dx * off, dx, dy, t: off ? 3 : 0, life: 10, col: off ? '#ffffff' : null });
             if (this.boss && this.boss.alive && Math.hypot(this.boss.x - b.x - 8, this.boss.y - b.y - 8) < 18) { b.slide = null; b.timer = Math.min(b.timer, 1); }
           }
           while (remain > 0.001 && b.slide) {
@@ -460,6 +462,21 @@
         blasted.push(...tiles);
       }
       this.addFlame(b.c, b.r, centerMask, owner, b.impact);
+      const cx = b.c * T + 8, cy = b.r * T + 8;
+      this.particles.push({ kind: 'blast', x: cx, y: cy, t: 0, life: 11 });
+      this.particles.push({ kind: 'ring', x: cx, y: cy, r0: 4, r1: 18 + range * 3, col: '#fff3c0', t: 0, life: 12 });
+      for (let n = 0; n < 10; n++) {
+        const a = (n / 10) * Math.PI * 2 + E.rand(-0.25, 0.25), v = E.rand(1.2, 2.6);
+        this.particles.push({ kind: 'ember', x: cx, y: cy, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 0.8, t: 0, life: E.randi(18, 32) });
+      }
+      for (const d of DIRS) {
+        const [dx, dy] = DV[d];
+        let n = 0;
+        while (n < range && this.flames[idx(b.c + dx * (n + 1), b.r + dy * (n + 1))] && inb(b.c + dx * (n + 1), b.r + dy * (n + 1))) n++;
+        if (!n) continue;
+        const ex = (b.c + dx * n) * T + 8, ey = (b.r + dy * n) * T + 8;
+        for (let j = 0; j < 2; j++) this.particles.push({ kind: 'ember', x: ex, y: ey, vx: dx * E.rand(1, 2) + E.rand(-0.4, 0.4), vy: dy * E.rand(1, 2) - E.rand(0.4, 1), t: 0, life: E.randi(14, 24) });
+      }
       if (owner && owner.frost) this.frostAround(blasted, owner);
       if (b.boost) this.particles.push({ kind: 'ring', x: b.c * T + 8, y: b.r * T + 8, r0: 6, r1: 22, col: '#9ff3ff', t: 0, life: 14 });
       this.shake = Math.max(this.shake, 6);
@@ -529,10 +546,16 @@
 
     updateFlames() {
       for (let k = 0; k < this.flames.length; k++) {
+        if (this.scorch[k] > 0) this.scorch[k]--;
         const f = this.flames[k];
         if (!f) continue;
         f.t++;
-        if (f.t >= FLAME_DUR) this.flames[k] = null;
+        if (f.t < FLAME_DUR) continue;
+        // the fire dies down: a wisp of smoke, and a scorch mark on bare floor that fades
+        this.flames[k] = null;
+        const c = k % COLS, r = (k / COLS) | 0;
+        if (Math.random() < 0.7) this.particles.push({ kind: 'smoke', x: c * T + 8 + E.rand(-2, 2), y: r * T + 7, vx: E.rand(-0.15, 0.15), vy: -0.32, t: 0, life: 34 });
+        if (this.grid[k] === FLOOR) this.scorch[k] = 150;
       }
     }
     hotAt(c, r) {
@@ -597,6 +620,10 @@
     collect(m, type, c, r) {
       const x = c * T + 8, y = r * T;
       const pop = (text, col) => this.floaters.push({ x, y, text, col: col || '#ffffff', t: 0 });
+      if (type !== 'coin' && type !== 'dust') {
+        this.particles.push({ kind: 'ring', x, y: y + 8, r0: 2, r1: 13, col: '#fff3a0', t: 0, life: 11 });
+        for (let n = 0; n < 4; n++) this.particles.push({ kind: 'spark', x: x + E.rand(-6, 6), y: y + 8 + E.rand(-4, 4), vx: E.rand(-0.4, 0.4), vy: E.rand(-1.2, -0.5), t: 0, life: 22 });
+      }
       switch (type) {
         case 'bomb': m.bombs = Math.min(8, m.bombs + 1); pop(G.t('炸彈+1'), '#ff9fb4'); sfx('item'); break;
         case 'fire': m.fire = Math.min(8, m.fire + 1); pop(G.t('火力+1'), '#ffb45c'); sfx('item'); break;
@@ -636,6 +663,7 @@
       }
       m.hearts--;
       m.inv = 150 + (m.perks.invBonus || 0);
+      for (const side of [-1, 1]) this.particles.push({ kind: 'tear', x: m.x + 8 + side * 3, y: m.y + 2, vx: side * 0.9, vy: -1.3, t: 0, life: 22 });
       m.burnT = 48;
       if (m.hearts <= 0 && m.guard && !force) {
         m.hearts = 1;
@@ -861,6 +889,11 @@
       if (!this.items[k] && this.grid[k] === FLOOR && Math.random() < 0.25) this.items[k] = { type: 'coin', age: -20 };
       sfx('kill');
       this.puff(e.x + 8, e.y + 8);
+      this.particles.push({ kind: 'ring', x: e.x + 8, y: e.y + 8, r0: 3, r1: 14, col: '#ffffff', t: 0, life: 10 });
+      for (let n = 0; n < 6; n++) {
+        const a = (n / 6) * Math.PI * 2 + 0.3;
+        this.particles.push({ kind: 'star', x: e.x + 8, y: e.y + 6, vx: Math.cos(a) * 1.5, vy: Math.sin(a) * 1.5 - 0.5, t: 0, life: 22 });
+      }
     }
 
     // ---------------------------------------------------------------- boss
@@ -1370,6 +1403,9 @@
         p.t++;
         if (p.vx != null) { p.x += p.vx; p.y += p.vy; }
         if (p.kind === 'debris') p.vy += 0.18;
+        if (p.kind === 'ember') { p.vy += 0.07; p.vx *= 0.97; }
+        if (p.kind === 'smoke') { p.vx *= 0.97; p.vy *= 0.985; }
+        if (p.kind === 'tear') p.vy += 0.12;
         if (p.kind === 'heart' || p.kind === 'star') { p.vx *= 0.94; p.vy *= 0.94; }
         if (p.t >= p.life) this.particles.splice(i, 1);
       }
@@ -1460,6 +1496,14 @@
             ctx.drawImage(TH.floor[(c + r) % 2], x, y);
           }
         }
+      // scorch marks where fire burned, fading
+      for (let k = 0; k < this.scorch.length; k++) {
+        const sc = this.scorch[k];
+        if (!sc) continue;
+        const x = ox + (k % COLS) * T, y = oy + ((k / COLS) | 0) * T;
+        ctx.fillStyle = 'rgba(42,20,24,' + (0.3 * Math.min(1, sc / 60)).toFixed(3) + ')';
+        ctx.fillRect(x + 4, y + 5, 8, 7); ctx.fillRect(x + 3, y + 6, 10, 5); ctx.fillRect(x + 2, y + 7, 12, 3);
+      }
       // shadows under solid blocks
       ctx.fillStyle = 'rgba(42,27,48,0.22)';
       for (let r = 1; r < ROWS - 1; r++)
@@ -1492,7 +1536,7 @@
           if (it && this.grid[k] === FLOOR) this.drawItem(it, x, y);
           const f = this.flames[k];
           if (f) {
-            const st = f.t < 3 ? 0 : f.t < 7 ? 1 : f.t < 22 ? 2 : f.t < 28 ? 3 : 4;
+            const st = f.t < 3 ? 0 : f.t < 7 ? 1 : f.t < 22 ? ((f.t >> 2) % 2 ? 5 : 2) : f.t < 28 ? 3 : 4;
             ctx.drawImage(S.flame[f.mask][st], x, y);
           }
         }
@@ -1550,6 +1594,16 @@
         const x = ox + p.x, y = oy + p.y;
         switch (p.kind) {
           case 'puff': ctx.drawImage(S.fx.puff[Math.min(3, (p.t / 5) | 0)], Math.round(x), Math.round(y)); break;
+          case 'blast': { const img = S.fx.blast[p.t < 3 ? 0 : p.t < 7 ? 1 : 2]; ctx.drawImage(img, Math.round(x - img.width / 2), Math.round(y - img.height / 2)); break; }
+          case 'ember': {
+            const k = p.t / p.life;
+            if (k > 0.8 && p.t % 2) break;
+            E.rect(x, y, 1, 1, k < 0.45 ? '#fff3a0' : k < 0.75 ? '#ff9a2a' : '#c0402a');
+            if (k < 0.45) E.rect(x - p.vx, y - p.vy, 1, 1, '#ff9a2a');
+            break;
+          }
+          case 'smoke': ctx.drawImage(S.fx.smoke[Math.min(3, ((p.t / p.life) * 4) | 0)], Math.round(x - 6), Math.round(y - 6)); break;
+          case 'tear': E.rect(x, y, 1, 2, '#6ab8ff'); E.rect(x, y, 1, 1, '#d8f0ff'); break;
           case 'debris': E.rect(x, y, 2, 2, p.col); break;
           case 'mote': E.rect(x, y, 1, 1, '#ffffff'); break;
           case 'spark': ctx.drawImage(S.fx.sparkle[(p.t >> 3) % 3], Math.round(x - 2), Math.round(y - 2)); break;

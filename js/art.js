@@ -1353,39 +1353,87 @@
     return p;
   }
 
-  // fireball radius by stage (grow, peak, fade) and the flame's colours
-  const FLAME_BALL_R = [3.4, 5.6, 7.3, 6.6, 4.6];
+  // Fireball radius by stage (grow, peak, fade; 5 is the peak flickered) and the tongues that join a tile's fire to its
+  // burning neighbours (to the shared tile edge), so the arms of a blast read as one cross of fire. Colour runs from a
+  // white-hot heart through yellow and orange to a dark red rim, the bands broken up a little so it reads as flame.
+  const FLAME_BALL_R = [3.4, 5.6, 7.3, 6.6, 4.6, 7.0];
+  const FLAME_TUBE_R = [0, 2.5, 3.7, 3.2, 1.8, 3.4];
   const FLAME_FIRE = { deep: '#5a0818', rim: '#a81028', red: '#e0182c', lit: '#ff4a3a', orange: '#ff8a1a', yellow: '#ffd23f', pale: '#fff4b0', white: '#ffffff' };
   function buildFlame(mask, stage) {
     const p = new Pix(16, 16);
     const c = 7.5;
     const ends = [1, 2, 4, 8].includes(mask);
-    const R = FLAME_BALL_R[stage] - (ends && stage > 2 ? 0.6 : 0);
-    for (let y = 0; y < 16; y++)
+    const R = FLAME_BALL_R[stage] - (ends && (stage === 3 || stage === 4) ? 0.6 : 0);
+    const TR = FLAME_TUBE_R[stage];
+    const tongues = [[1, 0, -1], [2, 1, 0], [4, 0, 1], [8, -1, 0]].filter(([bit]) => mask & bit);
+    for (let y = 0; y < 16; y++) {
       for (let x = 0; x < 16; x++) {
-        const u = (x - c) / R, v = (y - c) / R;
-        const d = Math.hypot(u, v * 0.96);
-        if (d > 1) continue;
-        let col = d > 0.86 ? (u + v > 0.2 ? FLAME_FIRE.deep : FLAME_FIRE.rim) : u + v < -0.5 ? FLAME_FIRE.lit : FLAME_FIRE.red;
-        // teardrop flame inside: a round base low in the ball rising to a leaning point, with an orange tongue curling up
-        // its left side and a white-hot base
-        const vb = 0.25;
-        const half = v < vb ? 0.64 * Math.pow(Math.max(0, (v + 0.74) / (vb + 0.74)), 0.8) : 0.64 * Math.sqrt(Math.max(0, 1 - ((v - vb) / 0.5) ** 2));
-        const lean = v < vb ? (vb - v) * 0.3 : 0;
-        const t = half > 0 ? Math.abs(u - lean) / half : 9;
-        if (t < 1 && d < 0.9) {
-          col = t > 0.7 ? FLAME_FIRE.orange : t > 0.3 ? FLAME_FIRE.yellow : FLAME_FIRE.pale;
-          if (u - lean < -0.2 && v < 0.1 && t > 0.45 && t < 0.75) col = FLAME_FIRE.orange;
-          if (v > 0.3 && v < 0.62 && Math.abs(u) < 0.26) col = stage === 2 ? FLAME_FIRE.white : FLAME_FIRE.pale;
+        const u = x - c, v = y - c;
+        let n = Math.hypot(u, v * 1.04) / R;
+        for (const [, dx, dy] of tongues) {
+          const along = u * dx + v * dy;
+          if (along < 0 || TR <= 0) continue;
+          const across = Math.abs(u * dy - v * dx);
+          const waver = 0.45 * Math.sin(along * 1.2 + stage * 1.9 + dx * 2 + dy * 3);
+          n = Math.min(n, across / (TR + waver));
         }
+        n += (hash(x, y, stage * 7 + mask) - 0.5) * 0.14;
+        if (n > 1) continue;
+        const litSide = u + v < -3;
+        let col;
+        if (n > 0.84) col = litSide ? FLAME_FIRE.rim : FLAME_FIRE.deep;
+        else if (n > 0.62) col = litSide ? FLAME_FIRE.lit : FLAME_FIRE.red;
+        else if (n > 0.44) col = FLAME_FIRE.orange;
+        else if (n > 0.26) col = FLAME_FIRE.yellow;
+        else col = (stage === 2 || stage === 5) && n < 0.14 ? FLAME_FIRE.white : FLAME_FIRE.pale;
         p.set(x, y, col);
       }
+    }
     // licks of flame breaking out round the top edge, changing every stage
-    if (stage >= 1 && stage <= 3) {
+    if (stage >= 1 && stage !== 4) {
       for (let i = 0; i < 5; i++) {
         const a = -Math.PI * (0.15 + 0.7 * hash(i, stage, mask + 3));
         const lx = Math.round(c + Math.cos(a) * (R + 0.6)), ly = Math.round(c + Math.sin(a) * (R + 0.6));
-        p.set(lx, ly, FLAME_FIRE.red); p.set(lx, ly - 1, i % 2 ? FLAME_FIRE.lit : FLAME_FIRE.rim);
+        if (p.get(lx, ly + 1)) { p.set(lx, ly, FLAME_FIRE.red); p.set(lx, ly - 1, i % 2 ? FLAME_FIRE.lit : FLAME_FIRE.rim); }
+      }
+    }
+    return p;
+  }
+
+  // the moment a bomb goes off: a white-hot flash with rays (0), the burst at its widest (1), rays breaking up (2)
+  function buildBlast(f) {
+    const S = 32, c = 15.5;
+    const p = new Pix(S, S);
+    const rayLen = [9, 15, 14][f], core = [5.5, 7.5, 4][f], rays = 8;
+    for (let y = 0; y < S; y++) {
+      for (let x = 0; x < S; x++) {
+        const u = x - c, v = y - c;
+        const d = Math.hypot(u, v);
+        const a = Math.atan2(v, u);
+        const k = Math.abs(Math.cos((a * rays) / 2));
+        const reach = core + (rayLen - core) * Math.pow(k, 6) * (0.85 + 0.3 * hash(Math.round(a * 3), f, 5));
+        if (d > reach) continue;
+        if (f === 2 && d < core * 0.6) continue; // hollowing out
+        const t = d / reach;
+        const col = t < 0.35 ? '#ffffff' : t < 0.6 ? (f === 0 ? '#ffffff' : '#fff4b0') : t < 0.82 ? '#ffd23f' : '#ff8a1a';
+        p.set(x, y, col);
+      }
+    }
+    return p;
+  }
+  // smoke left where the fire was: a soft grey-lavender cloud that thins out (4 frames, 12x12)
+  function buildSmoke(f) {
+    const p = new Pix(12, 12);
+    const sets = [[[6, 7, 3.2]], [[5, 7, 3.4], [8, 6, 3]], [[4, 7, 3.2], [8, 7, 3.4], [6, 4, 3]], [[3, 7, 2.6], [8, 7, 2.8], [6, 3, 2.6]]][f];
+    for (const [x0, y0, r] of sets) {
+      for (let y = 0; y < 12; y++) {
+        for (let x = 0; x < 12; x++) {
+          const d = Math.hypot(x - x0, y - y0) / r;
+          if (d > 1) continue;
+          // thinning: later frames drop pixels in a checker so the cloud fades out instead of vanishing
+          if (f >= 2 && (x + y + f) % (f === 3 ? 2 : 3) === 0) continue;
+          p.set(x, y, d < 0.45 && y < y0 ? '#f4f0fa' : d < 0.8 ? '#cfc8dc' : '#a098b4');
+        }
       }
     }
     return p;
@@ -1892,6 +1940,22 @@
       // light subjects need a deeper ink to stay readable on a light floor
       const luma = (avg[0] * 0.3 + avg[1] * 0.6 + avg[2] * 0.1) / 255;
       return mix(avg, '#140f1c', Math.min(0.88, k + 0.25 * luma));
+    });
+  }
+  // Light from above over the whole figure, as in the chibi reference sheets: the top third warms a little toward the
+  // light and the bottom third sinks toward a cool violet shadow (hue shifted), so every figure reads round and grounded.
+  // Inks (near-black) are left alone and shapes never change.
+  function volume(pix, amt) {
+    const k = amt == null ? 1 : amt;
+    let top = pix.h, bot = -1;
+    for (let y = 0; y < pix.h; y++) for (let x = 0; x < pix.w; x++) if (pix.solid(x, y)) { if (y < top) top = y; if (y > bot) bot = y; }
+    if (bot <= top) return pix;
+    return pix.map((c, x, y) => {
+      if (c[0] + c[1] + c[2] < 140) return c;
+      const t = (y - top) / (bot - top);
+      if (t < 0.35) return mix(c, '#fff4e0', (0.35 - t) * 0.3 * k);
+      if (t > 0.6) return mix(c, '#3a2c5a', (t - 0.6) * 0.42 * k);
+      return c;
     });
   }
   function bevel(pix) {
@@ -3238,21 +3302,21 @@
       art.maids[m] = art.outfits[m].maid;
     }
     for (const k of Object.keys(MONSTERS)) {
-      const frames = [softInk(bevel(MONSTERS[k](0))), softInk(bevel(MONSTERS[k](1)))];
+      const frames = [volume(softInk(bevel(MONSTERS[k](0)))), volume(softInk(bevel(MONSTERS[k](1))))];
       art.monsters[k] = { frames, flipped: frames.map((f) => f.flipped()), white: frames.map((f) => tinted(f, '#ffffff', 0.8)) };
     }
-    art.boss = { frames: [buildBoss(0, false), buildBoss(1, false)], hurt: buildBoss(0, true) };
+    art.boss = { frames: [volume(buildBoss(0, false)), volume(buildBoss(1, false))], hurt: buildBoss(0, true) };
     art.bosses = {
-      drill: { frames: [buildDrill(0, false), buildDrill(1, false)], hurt: buildDrill(0, true) },
-      spider: { frames: [buildSpider(0, false), buildSpider(1, false)], hurt: buildSpider(0, true) },
+      drill: { frames: [volume(buildDrill(0, false)), volume(buildDrill(1, false))], hurt: buildDrill(0, true) },
+      spider: { frames: [volume(buildSpider(0, false)), volume(buildSpider(1, false))], hurt: buildSpider(0, true) },
       bear: art.boss,
     };
     for (const t of Object.keys(THEMES)) art.themes[t] = buildTheme(t);
     art.bomb = [0, 1, 2, 3].map(buildBomb);
     art.flame = {};
-    for (let mask = 0; mask < 16; mask++) art.flame[mask] = [0, 1, 2, 3, 4].map((s) => buildFlame(mask, s));
+    for (let mask = 0; mask < 16; mask++) art.flame[mask] = [0, 1, 2, 3, 4, 5].map((s) => buildFlame(mask, s));
     art.decor = {};
-    for (const k of ['treehouse', 'igloo', 'castle', 'podium', 'cane', 'stage', 'egg']) art.decor[k] = softInk(bevel(buildDecor(k)));
+    for (const k of ['treehouse', 'igloo', 'castle', 'podium', 'cane', 'stage', 'egg']) art.decor[k] = volume(softInk(bevel(buildDecor(k))), 0.8);
     art.bgTile = buildBgTile();
     for (const k of Object.keys(ICONS)) art.items[k] = softInk(bevel(buildItem(k)));
     art.items.coin = [0, 1, 2, 3].map(buildCoin);
@@ -3267,6 +3331,8 @@
     art.fx.heart = buildHeartFx();
     art.fx.sparkle = [0, 1, 2].map(buildSparkle);
     art.fx.puff = [0, 1, 2, 3].map(buildPuff);
+    art.fx.blast = [0, 1, 2].map(buildBlast);
+    art.fx.smoke = [0, 1, 2, 3].map(buildSmoke);
     art.fx.slash = [0, 1, 2].map(buildSlash);
     art.fx.slashL = art.fx.slash.map((f) => f.flipped());
     art.fx.flame = fxRows('flame');
@@ -3350,13 +3416,15 @@
       for (const c of art.items.coin) put(c);
       for (const d of art.items.dust) put(d);
       nl();
-      for (const m of [15, 10, 5, 2, 8, 1, 4]) for (let s = 0; s < 5; s++) put(art.flame[m][s]);
+      for (const m of [15, 10, 5, 2, 8, 1, 4]) for (let s = 0; s < 6; s++) put(art.flame[m][s]);
       nl();
       for (const k of Object.keys(art.ui)) if (art.ui[k] instanceof Pix) put(art.ui[k]);
       for (const s of art.fx.star) put(s);
       put(art.fx.heart);
       for (const s of art.fx.sparkle) put(s);
       for (const s of art.fx.puff) put(s);
+      for (const s of art.fx.blast) put(s);
+      for (const s of art.fx.smoke) put(s);
       for (const s of art.fx.slash) put(s);
       nl();
       for (const k of ['flame', 'bubble', 'snow', 'glint']) for (const f of art.fx[k]) put(f);
