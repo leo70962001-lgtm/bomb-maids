@@ -322,7 +322,6 @@
   // Pictures are placed by her eyes — [centre x, centre y, distance between them] in source pixels — so her face keeps
   // its size and height from one picture to the next; right is the right-most column of her figure (not counting the
   // sparkles and notes around her).
-  const EMOTIONS = ['joy', 'anger', 'sorrow', 'fun'];
   const STAND = {
     berry: {
       normal: { w: 369, h: 560, eye: [186, 154, 58.5], right: 368 },
@@ -353,6 +352,86 @@
       fun: { w: 424, h: 547, eye: [208, 154.8, 74], right: 423 },
     },
   };
+  // Her expression sheet (the user's, twelve pictures a maid, img/ex-<maid>-<key>.webp): wider shots down to the skirt,
+  // cut out of the sheets and doubled in size; placed by the eyes like the others.
+  const EXPR = {
+    yoru: {
+      calm: { w: 478, h: 634, eye: [256.4, 162.6, 63.4], right: 470 },
+      tender: { w: 466, h: 634, eye: [242.4, 162.6, 63.4], right: 458 },
+      sweat: { w: 466, h: 634, eye: [242.4, 162.6, 63.4], right: 458 },
+      content: { w: 450, h: 634, eye: [242.4, 162.6, 63.4], right: 448 },
+      pout: { w: 484, h: 630, eye: [254.4, 162.6, 63.4], right: 476 },
+      rage: { w: 466, h: 630, eye: [234.4, 162.6, 63.4], right: 458 },
+      disgust: { w: 458, h: 630, eye: [228.4, 162.6, 63.4], right: 450 },
+      cry: { w: 452, h: 630, eye: [232.4, 162.6, 63.4], right: 450 },
+      surprise: { w: 492, h: 618, eye: [256.4, 172.6, 63.4], right: 484 },
+      shy: { w: 460, h: 618, eye: [226.4, 174.6, 63.4], right: 452 },
+      serve: { w: 460, h: 618, eye: [226.4, 174.6, 63.4], right: 452 },
+      wonder: { w: 448, h: 618, eye: [224.4, 172.6, 63.4], right: 446 },
+    },
+    yukino: {
+      confident: { w: 442, h: 656, eye: [231.8, 164, 60], right: 440 },
+      tender: { w: 440, h: 656, eye: [227.8, 166, 60], right: 438 },
+      seduce: { w: 440, h: 654, eye: [225.8, 166, 60], right: 438 },
+      arrogant: { w: 442, h: 656, eye: [217.8, 166, 60], right: 440 },
+      serious: { w: 442, h: 700, eye: [231.8, 180, 60], right: 440 },
+      shy: { w: 440, h: 700, eye: [221.8, 180, 60], right: 438 },
+      sad: { w: 440, h: 700, eye: [223.8, 180, 60], right: 438 },
+      angry: { w: 442, h: 700, eye: [215.8, 178, 60], right: 440 },
+      excited: { w: 442, h: 670, eye: [225.8, 164, 60], right: 440 },
+      tired: { w: 440, h: 672, eye: [217.8, 166, 60], right: 438 },
+      tease: { w: 440, h: 672, eye: [221.8, 166, 60], right: 438 },
+      surprise: { w: 442, h: 672, eye: [215.8, 164, 60], right: 440 },
+    },
+    berry: {
+      rage: { w: 504, h: 700, eye: [264, 211.6, 68], right: 486 },
+      smug: { w: 494, h: 704, eye: [258, 211.6, 68], right: 486 },
+      cheer: { w: 472, h: 692, eye: [244, 201.6, 68], right: 464 },
+      cry: { w: 448, h: 690, eye: [240, 201.6, 68], right: 442 },
+      overjoy: { w: 496, h: 738, eye: [268, 207.6, 68], right: 488 },
+      peace: { w: 476, h: 736, eye: [240, 205.6, 68], right: 468 },
+      wonder: { w: 452, h: 734, eye: [236, 201.6, 68], right: 444 },
+      tender: { w: 468, h: 736, eye: [248, 209.6, 68], right: 466 },
+      giggle: { w: 468, h: 714, eye: [254, 209.6, 68], right: 460 },
+      panic: { w: 492, h: 714, eye: [258, 213.6, 68], right: 484 },
+      proud: { w: 448, h: 718, eye: [232, 207.6, 68], right: 440 },
+      excited: { w: 474, h: 714, eye: [256, 209.6, 68], right: 472 },
+    },
+    honey: {
+      cheer: { w: 510, h: 670, eye: [262.4, 180, 66.6], right: 502 },
+      worry: { w: 494, h: 696, eye: [262.4, 214, 66.6], right: 486 },
+      pout: { w: 464, h: 682, eye: [264.4, 198, 66.6], right: 456 },
+      panic: { w: 476, h: 668, eye: [266.4, 186, 66.6], right: 468 },
+      confused: { w: 526, h: 684, eye: [268.4, 226, 66.6], right: 518 },
+      dreamy: { w: 450, h: 680, eye: [264.4, 218, 66.6], right: 442 },
+      nervous: { w: 490, h: 712, eye: [266.4, 258, 66.6], right: 446 },
+      shy: { w: 462, h: 648, eye: [268.4, 196, 66.6], right: 454 },
+      gift: { w: 494, h: 662, eye: [262.4, 212, 66.6], right: 486 },
+      content: { w: 482, h: 630, eye: [262.4, 180, 66.6], right: 474 },
+      fluster: { w: 508, h: 628, eye: [250.4, 178, 66.6], right: 426 },
+      wonder: { w: 466, h: 628, eye: [268.4, 186, 66.6], right: 458 },
+    },
+  };
+  for (const k in EXPR) for (const e in EXPR[k]) STAND[k][e] = Object.assign({ src: 'img/ex-' + k + '-' + e + '.webp' }, EXPR[k][e]);
+  // What a feeling looks like on each maid: the game asks for a feeling and her own picture answers it. A feeling can
+  // also be a picture's own key (joy, cheer, pout...). What a maid has no picture for falls back on FEEL_FALLBACK.
+  const FEEL = {
+    berry: { happy: 'cheer', love: 'tender', shy: 'giggle', surprise: 'wonder', angry: 'rage', sad: 'cry', excited: 'excited', proud: 'proud', tired: 'panic', panic: 'panic', confused: 'panic', tease: 'smug', calm: 'smug', skill: 'rage', win: 'overjoy', photo: 'peace', photoHigh: 'peace', gift: 'excited', meh: 'panic', ask: 'excited', miss: 'panic', locked: 'giggle', hug: 'tender', whisper: 'tender', tea: 'tender' },
+    yoru: { happy: 'tender', love: 'tender', shy: 'shy', surprise: 'surprise', angry: 'disgust', sad: 'cry', excited: 'wonder', proud: 'calm', tired: 'sweat', panic: 'surprise', confused: 'sweat', tease: 'content', calm: 'calm', skill: 'rage', win: 'content', photo: 'disgust', photoHigh: 'tender', gift: 'wonder', meh: 'pout', ask: 'calm', miss: 'pout', locked: 'disgust', hug: 'shy', whisper: 'shy', tea: 'serve' },
+    honey: { happy: 'cheer', love: 'content', shy: 'shy', surprise: 'wonder', angry: 'pout', sad: 'nervous', excited: 'gift', proud: 'cheer', tired: 'worry', panic: 'panic', confused: 'confused', tease: 'dreamy', calm: 'dreamy', skill: 'cheer', win: 'cheer', photo: 'wonder', photoHigh: 'content', gift: 'gift', meh: 'worry', ask: 'dreamy', miss: 'pout', locked: 'shy', hug: 'content', whisper: 'shy', tea: 'content' },
+    yukino: { happy: 'tender', love: 'tender', shy: 'shy', surprise: 'surprise', angry: 'angry', sad: 'sad', excited: 'excited', proud: 'arrogant', tired: 'tired', panic: 'surprise', confused: 'surprise', tease: 'tease', calm: 'serious', skill: 'confident', win: 'confident', photo: 'confident', photoHigh: 'seduce', gift: 'excited', meh: 'tired', ask: 'tender', miss: 'tease', locked: 'tease', hug: 'tender', whisper: 'shy', tea: 'tender' },
+  };
+  const FEEL_FALLBACK = { happy: 'joy', love: 'joy', shy: 'joy', surprise: 'fun', angry: 'anger', sad: 'sorrow', excited: 'fun', proud: 'fun', tired: 'sorrow', panic: 'fun', confused: 'fun', tease: 'joy', skill: 'anger', win: 'fun', gift: 'fun', meh: 'sorrow' };
+  function feelPic(k, feel) {
+    const set = STAND[k] || STAND.berry;
+    if (!feel) return 'normal';
+    if (set[feel]) return feel;
+    const pick = FEEL[k] && FEEL[k][feel];
+    if (pick && set[pick]) return pick;
+    return set[FEEL_FALLBACK[feel]] ? FEEL_FALLBACK[feel] : 'normal';
+  }
+  // the room sprite's faces as feelings
+  const FACE_FEEL = { happy: 'happy', blush: 'love', surprise: 'surprise', angry: 'angry', tired: 'tired' };
   const STAND_SCALE = 0.36; // the standing picture's scale
   const STAND_TOP = 48; // where the top of the standing picture sits: under the tallest top bar (the room's status bar)
   const STAND_LEAN = 6; // how far she may reach into the game area; past it she fades out
@@ -360,9 +439,10 @@
     const base = STAND[k].normal;
     Object.assign(base, { src: 'img/stand-' + k + '.webp', s: STAND_SCALE, drop: 0 });
     const eyeD = base.eye[2] * STAND_SCALE, eyeY = STAND_TOP + base.eye[1] * STAND_SCALE;
-    for (const e of EMOTIONS) {
+    for (const e in STAND[k]) {
+      if (e === 'normal') continue;
       const S = STAND[k][e];
-      S.src = 'img/emo-' + k + '-' + e + '.webp';
+      if (!S.src) S.src = 'img/emo-' + k + '-' + e + '.webp';
       // the expression pictures are closer shots: her face keeps its size, then leans in a little (up to 1.25x and 16px
       // lower) so the picture reaches the bottom of the screen; its faded lower edge covers any gap that is left
       const head = eyeD / S.eye[2];
@@ -386,24 +466,25 @@
     const side = S.eye[2] * (zoom || 3.1);
     return { src: S.src, crop: [S.eye[0] - side / 2, S.eye[1] - side * 0.42, side, side, S.w, S.h] };
   }
-  // the room's expressions as feelings
-  const FACE_EMOTION = { happy: 'joy', blush: 'joy', surprise: 'fun', angry: 'anger', tired: 'sorrow' };
-  G.UI.FACE_EMOTION = FACE_EMOTION;
+  // feelings to pictures, for the room's dialogue and the rest
+  G.UI.FACE_FEEL = FACE_FEEL;
+  G.UI.feelPic = feelPic;
   // a maid's whole picture for a feeling: { src, w, h, eye, right } (the opening shows it)
   G.UI.portraitPicture = (k, emo) => { const set = STAND[k] || STAND.berry; return set[emo] || set.normal; };
-  const RANK_EMOTION = { S: 'fun', A: 'fun', B: 'joy', C: 'normal' };
+  const RANK_FEEL = { S: 'win', A: 'excited', B: 'happy', C: 'calm' };
   function moodEmotion(k) {
     const b = SAVE && SAVE.bond && SAVE.bond[k];
     if (!b) return 'normal';
-    if (b.stamina < 20 || b.mood < 30) return 'sorrow';
-    return b.mood >= 80 ? 'joy' : 'normal';
+    if (b.stamina < 20) return feelPic(k, 'tired');
+    if (b.mood < 30) return feelPic(k, 'sad');
+    return b.mood >= 80 ? feelPic(k, 'happy') : 'normal';
   }
   // short reactions while she works: glad when coins come in, fired up when she uses her skill
   const react = { world: null, coins: 0, sp: 0, emo: null, until: 0 };
   function reaction(w, m) {
     if (react.world !== w) Object.assign(react, { world: w, coins: w.stats.coins, sp: m.sp, until: 0 });
-    if (m.sp < react.sp - 10) Object.assign(react, { emo: 'anger', until: E.frame + 80 });
-    else if (w.stats.coins >= react.coins + 10 && !(react.emo === 'anger' && E.frame < react.until)) Object.assign(react, { emo: 'joy', until: E.frame + 90 });
+    if (m.sp < react.sp - 10) Object.assign(react, { emo: feelPic(m.maidKey, 'skill'), skill: true, until: E.frame + 80 });
+    else if (w.stats.coins >= react.coins + 10 && !(react.skill && E.frame < react.until)) Object.assign(react, { emo: feelPic(m.maidKey, 'happy'), skill: false, until: E.frame + 90 });
     react.coins = w.stats.coins;
     react.sp = m.sp;
     return E.frame < react.until ? react.emo : 'normal';
@@ -411,27 +492,30 @@
   function portraitFor(sc) {
     const hired = G.MAID_ORDER.filter((k) => SAVE && SAVE.hired[k]);
     const home = (SAVE && SAVE.maid) || hired[0] || 'berry';
-    if (sc === SC.select && sc.sel != null) { const k = G.MAID_ORDER[sc.sel]; return isLocked(k) ? { key: k, locked: true, emo: 'normal' } : { key: k, emo: 'joy' }; }
+    if (sc === SC.select && sc.sel != null) { const k = G.MAID_ORDER[sc.sel]; return isLocked(k) ? { key: k, locked: true, emo: 'normal' } : { key: k, emo: feelPic(k, 'happy') }; }
     if ((sc === SC.play || sc === SC.battle) && sc.world && sc.world.maids[0]) {
       const w = sc.world, m = w.maids[0];
       const key = m.maidKey;
-      if (w.state === 'clear') return { key, emo: 'fun' };
-      if (w.state === 'end') return { key, emo: w.winner === m ? 'fun' : 'sorrow' };
-      if (w.state === 'fail' || !m.alive) return { key, emo: 'sorrow', ko: true };
-      if (m.burnT > 0) return { key, emo: 'sorrow' };
+      if (w.state === 'clear') return { key, emo: feelPic(key, 'win') };
+      if (w.state === 'end') return { key, emo: feelPic(key, w.winner === m ? 'win' : 'sad') };
+      if (w.state === 'fail' || !m.alive) return { key, emo: feelPic(key, 'sad'), ko: true };
+      if (m.burnT > 0) return { key, emo: feelPic(key, 'panic') };
       return { key, emo: reaction(w, m) };
     }
-    if (sc === SC.result && sc.rank) return { key: home, emo: sc.t > 100 ? RANK_EMOTION[sc.rank] : 'normal' };
-    if (sc === SC.gameover) return { key: home, emo: 'sorrow' };
-    if (sc === SC.ending) return { key: home, emo: 'fun' };
+    if (sc === SC.result && sc.rank) return { key: home, emo: sc.t > 100 ? feelPic(home, RANK_FEEL[sc.rank]) : 'normal' };
+    if (sc === SC.gameover) return { key: home, emo: feelPic(home, 'sad') };
+    if (sc === SC.ending) return { key: home, emo: feelPic(home, 'win') };
     if (sc === SC.room) {
+      // what she is saying decides her picture: the line's own feeling, else her face
       const cur = sc.dialog && sc.dialog.queue[sc.dialog.i];
-      if (cur && cur.who) return { key: cur.who, emo: FACE_EMOTION[cur.face] || 'normal' };
-      const face = sc.maid && sc.maid.face;
-      return { key: home, emo: (face && FACE_EMOTION[face]) || moodEmotion(home) };
+      if (cur && cur.who) return { key: cur.who, emo: feelPic(cur.who, cur.feel || FACE_FEEL[cur.face]) };
+      const m = sc.maid;
+      const f = (m && m.feelT > 0 && m.feel) || (m && m.face && FACE_FEEL[m.face]);
+      return { key: home, emo: f ? feelPic(home, f) : moodEmotion(home) };
     }
     if (sc === SC.battleSetup && sc.cfg) return { key: sc.cfg.p1 || home, emo: 'normal' };
-    if (sc === SC.title && hired.length) return { key: hired[Math.floor(E.frame / 360) % hired.length], emo: ['normal', 'joy', 'fun'][Math.floor(E.frame / 120) % 3] };
+    // the title shows each maid in turn, going through her faces
+    if (sc === SC.title && hired.length) { const k = hired[Math.floor(E.frame / 480) % hired.length]; return { key: k, emo: feelPic(k, ['calm', 'happy', 'love', 'excited', 'tease', 'surprise'][Math.floor(E.frame / 80) % 6]) }; }
     return { key: home, emo: moodEmotion(home) };
   }
   const MOTION = {
@@ -493,7 +577,10 @@
       const ex = Math.max(PW / 2 - 8, Math.min(PW / 2, edge - (S.right - S.eye[0]) * sc)) + mx;
       const x = ex - S.eye[0] * sc;
       const y = eyeY + S.drop + my + rise * rise * 48 - S.eye[1] * sc;
-      E.art(id, S.src, x, y, w, h, [0, 0, S.w, S.h, S.w, S.h], filter, { screen: true, opacity, fadeRight: [(edge - 12 - x) / w, (edge + 2 - x) / w] });
+      // nothing of her goes above the scene's full-width top band (the room's status bar): the expression-sheet
+      // pictures carry sparkles and question marks up there
+      const cut = Math.max(0, (band - y) / sc);
+      E.art(id, S.src, x, y + cut * sc, w, h - cut * sc, [0, cut, S.w, S.h - cut, S.w, S.h], filter, { screen: true, opacity, fadeRight: [(edge - 12 - x) / w, (edge + 2 - x) / w] });
     };
     if (shown.prev) figure('side-portrait-' + shown.prev.slot, shown.prev.emo, 1 - blend, 1);
     figure('side-portrait-' + shown.slot, emo, blend, 1 + 0.05 * (1 - blend));
@@ -1799,7 +1886,9 @@
     E.rect(0, y + h - 1, fieldW, 1, '#ffffff');
     if (h >= 24) {
       const fx = Math.round(Math.min(10, -70 + t * 16) + Math.max(0, t - 6) * 0.3);
-      E.art('cutin-face', CG_ART, fx, y + 1, 68, h - 2, CG_CROP.face[c.key]);
+      // her face as she lets it loose (her skill picture: Berry blazing, Yoru grim, Honey beaming, Yukino sure of herself)
+      const f = portraitFace(c.key, feelPic(c.key, 'skill'), 3.4);
+      E.art('cutin-face', f.src, fx, y + 1, 68, h - 2, f.crop);
       const tx = Math.round(Math.max(fieldW - 10, fieldW + 140 - t * 34));
       E.text(G.MAID_DATA[c.key].skill, tx, y + (h >> 1) - 8, { color: '#ffffff', outline: '#2a1b30', align: 'right', size: 14 });
     }
@@ -1959,7 +2048,7 @@
       const m = SAVE.maid;
       const hop = this.t > 100 ? Math.round(Math.abs(Math.sin(this.t * 0.15)) * 4) : 0;
       E.panel(231, 132 - hop, 70, 74, '#ffe0ea', G.MAID_DATA[m].color, {});
-      const rf = portraitFace(m, this.t > 100 ? RANK_EMOTION[this.rank] : 'normal', 4.4);
+      const rf = portraitFace(m, this.t > 100 ? feelPic(m, RANK_FEEL[this.rank]) : 'normal', 4.4);
       E.art('result-portrait', rf.src, 233, 134 - hop, 66, 70, rf.crop);
       if (this.newMaid && this.t > 130) {
         const k = this.newMaid;
@@ -2009,7 +2098,7 @@
       E.text(G.t('委託失敗……'), 160, 36, { color: C.white, align: 'center', scale: 2, size: 14 });
       E.text(G.t(this.reason === 'time' ? '時間到了，灰塵還沒掃完。' : '被炸得黑漆漆的……'), 160, 76, { color: C.gray, align: 'center' });
       // her crying picture, sooty when the blast got her, with dizzy stars circling just above her head
-      const face = portraitFace(SAVE.maid, 'sorrow', 4.6);
+      const face = portraitFace(SAVE.maid, feelPic(SAVE.maid, 'sad'), 4.6);
       const sob = Math.round(Math.sin(this.t * 0.09) * 1.5);
       for (let i = 0; i < 3; i++) {
         const a = this.t * 0.1 + (i * Math.PI * 2) / 3;
@@ -2300,7 +2389,7 @@
       glow.addColorStop(1, 'rgba(255,244,210,0)');
       ctx.fillStyle = glow;
       ctx.fillRect(30, 80, 180, 160);
-      const pic = G.UI.portraitPicture(p.maid, 'joy');
+      const pic = G.UI.portraitPicture(p.maid, feelPic(p.maid, 'win'));
       const ph = 128, pw = Math.round((ph * pic.w) / pic.h);
       const rise = Math.max(0, 24 - t);
       const bob = Math.round(Math.sin(t * 0.08) * 2);

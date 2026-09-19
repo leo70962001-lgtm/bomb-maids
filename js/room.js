@@ -679,13 +679,13 @@
         G.persist();
         if (job.result === 'clear') {
           const q = [{ who: k, face: 'happy', text: L.jobBack }];
-          if (job.levelUp) q.push({ who: k, face: 'blush', text: L.levelUp, levelUp: true });
+          if (job.levelUp) q.push({ who: k, face: 'blush', text: L.levelUp, levelUp: true, feel: 'love' });
           if (job.newMaid && G.MAID_DATA[job.newMaid]) {
             q.push({ who: job.newMaid, face: 'happy', text: lines(job.newMaid).intro });
             q.push({ who: null, text: G.t('{name}成為新的夥伴了！打開衣櫃就能換她值班。', { name: name(job.newMaid) }) });
           }
           this.say(q);
-        } else this.say([{ who: k, face: 'tired', text: L.jobFail }]);
+        } else this.say([{ who: k, face: 'tired', text: L.jobFail, feel: 'sad' }]);
       } else {
         // she greets by the hour, and sometimes by the weekday or the sky outside
         const ctx = G.contextLines(k, this.world);
@@ -760,15 +760,19 @@
     },
     setFace(face, frames) { this.maid.face = face; this.maid.faceT = frames || 90; },
     emote(kind, frames) { this.maid.emote = kind; this.maid.emoteT = frames || 90; },
-    speak(text, face) {
+    // feel: what she feels as she says it (G.UI.feelPic turns it into her picture beside the game)
+    speak(text, face, feel) {
       this.maid.speech = text;
       this.maid.speechChars = 0;
       this.maid.speechT = Math.max(170, Math.round(text.length / trait().talk) + 110);
       if (face) this.setFace(face, 150);
+      this.maid.feel = feel || null;
+      this.maid.feelT = feel ? this.maid.speechT : 0;
     },
     updateMaid() {
       const m = this.maid;
       if (m.faceT > 0 && --m.faceT === 0) m.face = null;
+      if (m.feelT > 0 && --m.feelT === 0) m.feel = null;
       if (m.emoteT > 0 && --m.emoteT === 0) m.emote = null;
       if (m.speechT > 0 && --m.speechT === 0) m.speech = null;
       if (m.speech && m.speechChars < m.speech.length) m.speechChars += talkStep(m.speech, m.speechChars, trait().talk);
@@ -912,7 +916,7 @@
           case 'nap': // Yoru dozes off on her feet, jolts awake, and insists she did not
             if (t > 44 && t % 28 === 0) this.fx({ kind: 'z', x: ms.x + 11, y: ms.y - 12, vx: 0.25, vy: -0.4, big: t % 56 === 0, life: 50 });
             if (t === 40) { m.hop = 4; this.emote('exclaim', 40); this.setFace('surprise', 24); A.sfx('pop'); }
-            if (t === 24) this.speak(lines().napWake, 'blush');
+            if (t === 24) this.speak(lines().napWake, 'blush', 'shy');
             break;
         }
         if (--m.poseT <= 0) { m.state = 'idle'; m.prop = null; m.idle = E.randi(90, 200); }
@@ -1011,7 +1015,7 @@
         m.dir = 'down';
         m.hop = 3;
         this.emote('heart', 90);
-        this.speak(E.pick(lines().seek), 'happy');
+        this.speak(E.pick(lines().seek), 'happy', 'excited');
         this.seekT = 420;
       };
       for (const [c, r] of cands.slice(0, 8)) {
@@ -1144,13 +1148,13 @@
       const tr = trait();
       const ms = this.maidScreen();
       const x = ms.x + 8, y = ms.y - 6;
-      if (tier === 'low') return { face: tr.shy.face, emote: tr.shy.emote, hop: Math.min(2, base.hop || 0), hearts: 1 };
+      if (tier === 'low') return { face: tr.shy.face, emote: tr.shy.emote, hop: Math.min(2, base.hop || 0), hearts: 1, feel: 'shy' };
       if (tier === 'high') {
         this.fx({ kind: 'bigheart', tier: 'like', x, y: y - 16, vy: -0.35, life: 46 });
         this.aura(x, y, 6);
-        return { face: 'blush', emote: 'heart', hop: (base.hop || 0) + 2, hearts: 7, love: true };
+        return { face: 'blush', emote: 'heart', hop: (base.hop || 0) + 2, hearts: 7, love: true, feel: 'love' };
       }
-      return { face: base.face, emote: base.emote, hop: base.hop || 0, hearts: 4 };
+      return { face: base.face, emote: base.emote, hop: base.hop || 0, hearts: 4, feel: base.feel || 'happy' };
     },
     pat() {
       const m = this.maid;
@@ -1170,7 +1174,7 @@
         this.seekT = 0;
         m.hop = re.hop;
         this.emote(re.emote, 80);
-        this.speak(asked || this.tierLine(L, 'pat'), re.face);
+        this.speak(asked || this.tierLine(L, 'pat'), re.face, asked ? 'love' : re.feel);
         const ms = this.maidScreen();
         this.hearts(ms.x + 8, ms.y - 10, re.hearts + (asked ? 4 : 0));
         if (asked) this.gain('aff', 1);
@@ -1181,13 +1185,13 @@
         this.gain('aff', 1);
         this.gain('mood', 1);
         this.emote(tr.mood, 70);
-        this.speak(this.tierLine(L, 'pat'), this.bondTier() === 'low' ? tr.shy.face : tr.pat.face);
+        this.speak(this.tierLine(L, 'pat'), this.bondTier() === 'low' ? tr.shy.face : tr.pat.face, this.bondTier() === 'low' ? 'shy' : 'happy');
         this.aura(this.maidScreen().x + 8, this.maidScreen().y - 6, 2);
         A.sfx('pat');
       } else {
         this.gain('mood', -3);
         this.emote(tr.cross.emote, 90);
-        this.speak(E.pick(L.patMany), tr.cross.face);
+        this.speak(E.pick(L.patMany), tr.cross.face, 'angry');
         this.crossFx();
         A.sfx('angry');
       }
@@ -1207,7 +1211,7 @@
         this.gain('mood', 2);
         const re = this.tierReact({ face: tr.poke.face, emote: tr.poke.emote, hop: 0 });
         this.emote(re.emote, 60);
-        this.speak(this.tierLine(L, 'poke'), re.face);
+        this.speak(this.tierLine(L, 'poke'), re.face, re.love ? 'tease' : 'surprise');
         if (re.love) A.sfx('love');
         const ms = this.maidScreen();
         this.ring(ms.x + 11, ms.y + 3, 1, 6, '#ffffff', 8);
@@ -1216,12 +1220,12 @@
       } else if (n < 5) {
         this.gain('mood', 1);
         this.emote(tr.mood, 60);
-        this.speak(this.tierLine(L, 'poke'), tr.pat.face);
+        this.speak(this.tierLine(L, 'poke'), tr.pat.face, 'tease');
         A.sfx('pat');
       } else {
         this.gain('mood', -2);
         this.emote(tr.cross.emote, 80);
-        this.speak(L.pokeMany, tr.cross.face);
+        this.speak(L.pokeMany, tr.cross.face, 'angry');
         this.crossFx();
         A.sfx('angry');
       }
@@ -1412,7 +1416,7 @@
           this.shake(3);
           if (a.n < 3) { this.gain('aff', 2); this.gain('mood', 4); }
           this.emote(re.emote, 80);
-          this.speak(this.tierLine(L, 'five', 'highFive'), re.face);
+          this.speak(this.tierLine(L, 'five', 'highFive'), re.face, re.feel === 'shy' ? 'shy' : 'excited');
         }
       } else if (a.kind === 'tickle') {
         if (a.t % 14 === 0) m.hop = 2;
@@ -1422,10 +1426,10 @@
           if (a.n < 3) {
             const re = this.tierReact(trait().tickle);
             this.emote(re.emote, 90);
-            this.speak(this.tierLine(L, 'tickle'), re.face);
+            this.speak(this.tierLine(L, 'tickle'), re.face, re.feel === 'shy' ? 'panic' : 'happy');
           } else {
             this.emote('sweat', 90);
-            this.speak(L.tickleMany, 'tired');
+            this.speak(L.tickleMany, 'tired', 'tired');
           }
           A.sfx('pat');
         }
@@ -1456,7 +1460,7 @@
           const pose = high ? P.high : P.mid;
           A.sfx('shutter');
           this.flash('#ffffff', 10);
-          a.emo = pose[0];
+          a.emo = UI.feelPic(maidKey(), high ? 'photoHigh' : 'photo');
           this.setFace(pose[1], a.dur - 50);
           if (pose[2]) m.dir = pose[2];
           m.hop = pose[3];
@@ -1464,7 +1468,7 @@
         }
         if (a.t === a.dur - 30) {
           m.dir = 'down';
-          this.speak(this.tierLine(L, 'photo'), high ? 'blush' : P.mid[1]);
+          this.speak(this.tierLine(L, 'photo'), high ? 'blush' : P.mid[1], high ? 'photoHigh' : 'photo');
           this.emote(high ? 'heart' : trait().mood, 70);
           if (a.n < 2) { this.gain('aff', 3); this.gain('mood', 2); }
           G.persist();
@@ -1483,7 +1487,7 @@
         }
         if (a.t === 30) {
           this.emote('heart', 90);
-          this.speak(E.pick(L.hug), 'blush');
+          this.speak(E.pick(L.hug), 'blush', 'hug');
           if (a.n < 2) { this.gain('aff', 4); this.gain('mood', 4); }
           G.persist();
         }
@@ -1586,7 +1590,8 @@
           : taste === 'secret' ? L.giftSecret[0]
           : L.giftNormal;
         const face = { love: 'blush', like: 'happy', normal: 'happy', meh: 'tired', secret: 'normal' }[taste];
-        this.say([{ who: k, face, text }], () => this.applyGift(g, taste));
+        const feel = { love: 'gift', like: 'happy', normal: 'happy', meh: 'meh', secret: 'calm' }[taste];
+        this.say([{ who: k, face, text, feel }], () => this.applyGift(g, taste));
       }
     },
     giftReaction(taste) {
@@ -1663,7 +1668,7 @@
       }
       pops.forEach(([text, col], i) => this.floatText(x, y - i * 2, text, col, i * 14));
       if (taste === 'secret') {
-        this.speak(L.giftSecret[1], 'blush');
+        this.speak(L.giftSecret[1], 'blush', 'shy');
         this.emote('heart', 90);
         this.fx({ kind: 'bigheart', tier: 'like', x, y: y - 16, vy: -0.3, life: 44 });
       } else {
@@ -1906,7 +1911,7 @@
     // at, and choosing it she tells you it is too soon.
     lockItem(need, label, action) {
       if (affInfo().lv >= need) return { label, action };
-      return { label, note: 'Lv' + (need + 1), disabled: true, deny: () => this.say([{ who: maidKey(), face: maidKey() === 'yoru' ? 'normal' : 'blush', text: lines().locked }]) };
+      return { label, note: 'Lv' + (need + 1), disabled: true, deny: () => this.say([{ who: maidKey(), face: maidKey() === 'yoru' ? 'normal' : 'blush', text: lines().locked, feel: 'locked' }]) };
     },
     touchMenu() {
       this.openMenu(G.t('和{name}互動', { name: name() }), [
@@ -1945,7 +1950,7 @@
       if (m.path.length > 1) m.path = m.path.slice(0, 1); // she finishes the step she is on
       const re = this.tierReact(trait().pat);
       this.emote(re.emote, 80);
-      this.speak(this.tierLine(lines(), 'hand'), re.face);
+      this.speak(this.tierLine(lines(), 'hand'), re.face, re.feel);
       const ms = this.maidScreen();
       this.hearts(ms.x + 8, ms.y - 10, re.hearts);
       if (a.n < 2) { this.gain('aff', 3); this.gain('mood', 3); }
@@ -1974,7 +1979,7 @@
       this.bumpDaily('whisper');
       const secret = L.whisper[(b.whispers || 0) % L.whisper.length];
       b.whispers = (b.whispers || 0) + 1;
-      this.say([{ who: k, face: 'blush', text: L.whisperIn }, { who: k, face: 'blush', text: secret }], () => {
+      this.say([{ who: k, face: 'blush', text: L.whisperIn, feel: 'whisper' }, { who: k, face: 'blush', text: secret, feel: 'love' }], () => {
         const ms = this.maidScreen();
         this.hearts(ms.x + 8, ms.y - 10, 6);
         this.aura(ms.x + 8, ms.y - 4, 6);
@@ -1989,10 +1994,10 @@
       const b = bond();
       b.asked = (b.asked || 0) + 1;
       const Q = L.ask[b.asked % L.ask.length];
-      this.say([{ who: k, face: 'normal', text: Q.q }], () => {
+      this.say([{ who: k, face: 'normal', text: Q.q, feel: 'ask' }], () => {
         this.openMenu(G.t('怎麼回答？'), Q.a.map(([label, reply, good]) => ({
           label,
-          action: () => this.say([{ who: k, face: good ? 'happy' : 'surprise', text: reply }], () => {
+          action: () => this.say([{ who: k, face: good ? 'happy' : 'surprise', text: reply, feel: good ? 'happy' : 'miss' }], () => {
             const ms = this.maidScreen();
             if (good) { this.hearts(ms.x + 8, ms.y - 10, 4); this.aura(ms.x + 8, ms.y - 4, 4); A.sfx('pat'); }
             else this.emote(trait().mood, 70);
@@ -2531,7 +2536,7 @@
       this.updateMaid();
       if (this.pendingLevelUp && this.mode === 'free' && !this.anim) {
         this.pendingLevelUp = false;
-        this.say([{ who: maidKey(), face: 'blush', text: lines().levelUp, levelUp: true }]);
+        this.say([{ who: maidKey(), face: 'blush', text: lines().levelUp, levelUp: true, feel: 'love' }]);
         return;
       }
       switch (this.mode) {
@@ -2575,7 +2580,7 @@
           this.maid.state = 'idle';
           this.maid.prop = null;
           const k = maidKey();
-          this.say([{ who: k, face: 'happy', text: lines(k).tea }], () => { this.gain('mood', 20); this.gain('stamina', 10); this.gain('aff', 5); this.toast(G.t('心情 +20　體力 +10'), C.mint); G.persist(); });
+          this.say([{ who: k, face: 'happy', text: lines(k).tea, feel: 'tea' }], () => { this.gain('mood', 20); this.gain('stamina', 10); this.gain('aff', 5); this.toast(G.t('心情 +20　體力 +10'), C.mint); G.persist(); });
         }
         return;
       }
@@ -3291,7 +3296,7 @@
       if (cur.who) {
         // her portrait in the line's feeling (joy / anger / sorrow / fun), and a little bubble beside the name plate
         E.panel(10, 176, 54, 54, '#ffe0ea', G.MAID_DATA[cur.who].color, {});
-        const face = UI.portraitFace(cur.who, UI.FACE_EMOTION[cur.face] || 'normal');
+        const face = UI.portraitFace(cur.who, UI.feelPic(cur.who, cur.feel || UI.FACE_FEEL[cur.face]));
         E.art('dialog-portrait', face.src, 12, 178, 50, 50, face.crop);
         const nameW = E.textWidth(G.MAID_DATA[cur.who].name);
         E.rect(66, 174, nameW + 10, 15, G.MAID_DATA[cur.who].color);
