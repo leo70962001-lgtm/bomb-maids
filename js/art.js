@@ -29,13 +29,13 @@
   const MAID_BASE = { k: '#000000', w: '#fbf8f4', c: '#dcdde8', s: '#fde5d8', t: '#f0bdab', p: '#f6adb0', m: '#c46a6e', d: '#403a54', D: '#6e6886', r: '#2a2137', R: '#5b5070', b: '#fbf8f4', B: '#dcdde8', x: '#fbf8f4', X: '#dcdde8', g: '#aeb0c6', Y: '#c9920e', bodyInk: '#241f33', skinInk: '#b07868', whiteInk: '#6c6c8a' };
   const MAIDS = {
     // salmon-pink bob, blue eyes, red bow
-    berry: { H: '#a8466e', h: '#f38aa2', l: '#ffb8c4', L: '#fff0ec', E: '#2c5a8c', e: '#6aa2d2', r: '#e0435c', R: '#9e2238', v: '#9cd0f6', hairInk: '#5e2044', lash: '#4a2434' },
+    berry: { H: '#b0485e', h: '#f38aa2', l: '#ffb2b4', L: '#ffdcc8', Q: '#7a2a48', E: '#2c5a8c', e: '#6aa2d2', r: '#e0435c', R: '#9e2238', v: '#9cd0f6', hairInk: '#541a30', lash: '#4a2434' },
     // black hair, grey-blue eyes, black bow with an amber brooch, black rose and dark red ribbon
-    yoru: { H: '#1a182a', h: '#2a2840', l: '#3e3c5a', L: '#62608a', E: '#445a6e', e: '#8aa2b6', r: '#2e2840', R: '#e0a040', x: '#b02a3e', X: '#6a1426', O: '#2a2030', v: '#c8dae6', hairInk: '#100e1a', lash: '#241c2a' },
+    yoru: { H: '#1c1830', h: '#2a2840', l: '#403c62', L: '#6c6698', Q: '#110e1e', shade: 0.55, E: '#445a6e', e: '#8aa2b6', r: '#2e2840', R: '#e0a040', x: '#b02a3e', X: '#6a1426', O: '#2a2030', v: '#c8dae6', hairInk: '#100e1a', lash: '#241c2a' },
     // golden twin tails, green eyes, orange bow, white thigh-highs
-    honey: { H: '#b07a3e', h: '#e8b964', l: '#f7dc94', L: '#fff6d8', E: '#3a6a4c', e: '#7ab08a', r: '#f39a3c', R: '#b8641c', v: '#b4e6a8', hairInk: '#5e3a26', lash: '#5a2e2a' },
+    honey: { H: '#b47236', h: '#e8b964', l: '#fad890', L: '#fff0bc', Q: '#84502a', E: '#3a6a4c', e: '#7ab08a', r: '#f39a3c', R: '#b8641c', v: '#b4e6a8', hairInk: '#5e3a26', lash: '#5a2e2a' },
     // steel-blue long hair, blue eyes behind red glasses, blue bow
-    yukino: { H: '#3a5a90', h: '#74a2d8', l: '#a8d0f4', L: '#e6f4ff', E: '#2a4e86', e: '#6a96d0', r: '#3a90d8', R: '#1f5a9a', G: '#a8404a', v: '#a4cff6', hairInk: '#1e2e56', lash: '#1e2a42' },
+    yukino: { H: '#38548e', h: '#74a2d8', l: '#a4d4f6', L: '#dcf6ff', Q: '#243a70', E: '#2a4e86', e: '#6a96d0', r: '#3a90d8', R: '#1f5a9a', G: '#a8404a', v: '#a4cff6', hairInk: '#1e2e56', lash: '#1e2a42' },
   };
 
   function pal(maid) {
@@ -411,6 +411,29 @@
       return INK.body;
     });
   }
+  // Hair lit from above: going down from the eyes the hair sinks towards its deep tone Q, so the crown reads light and the
+  // locks by the cheeks and over the shoulders dark, while each lock keeps its own highlight. The hair outline goes lighter
+  // along the upper head (selective outline) and stays dark below. Rows count from the top of the head (bob), so a walking
+  // frame never changes colour. Only hair and hair-ink pixels change.
+  function shadeHair(pix, P, bob) {
+    if (!P.Q) return pix;
+    const hex = (c) => '#' + [c[0], c[1], c[2]].map((v) => v.toString(16).padStart(2, '0')).join('');
+    const hair = new Set(['H', 'h', 'l', 'L'].map((k) => P[k].toLowerCase()));
+    const ink = (P.hairInk || '').toLowerCase();
+    return pix.map((c, x, y) => {
+      const col = hex(c);
+      const r = y - bob;
+      if (hair.has(col)) {
+        const k = (r >= 16 ? 0.55 : r >= 13 ? 0.45 : r >= 11 ? 0.32 : r >= 9 ? 0.18 : 0) * (P.shade || 1);
+        return k ? mix(col, P.Q, k) : col;
+      }
+      if (col === ink) {
+        if (r <= 7) return mix(ink, P.H, 0.42);
+        if (r <= 9) return mix(ink, P.H, 0.2);
+      }
+      return c;
+    });
+  }
   function buildMaid(name, outfit) {
     outfit = outfit || 'maid';
     const P = Object.assign(pal(name), OUTFIT_STYLE[outfit].pal(name));
@@ -432,7 +455,7 @@
       pix.blit(fromRows(pad(14, rows16(BODY[dir][f], 'body ' + dir + f)), P), 0, 0);
       pix.blit(fromRows(pad(0, rows16(headRows, name + ' head ' + dir)), P), 0, bob);
       if (over) pix.blit(over, 0, bob);
-      return inkHair(pix, P);
+      return shadeHair(inkHair(pix, P), P, bob);
     };
     for (const dir of ['down', 'up', 'side']) {
       const head = withHeadwear(parts[dir].head, outfit, dir);
