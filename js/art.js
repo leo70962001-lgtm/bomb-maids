@@ -434,6 +434,17 @@
       return c;
     });
   }
+  // hair below the shoulders (layer rows from `from` down) moved a pixel sideways: the follow-through of a step
+  function swayRows(pix, from, dx) {
+    const out = new Pix(pix.w, pix.h);
+    for (let y = 0; y < pix.h; y++) {
+      for (let x = 0; x < pix.w; x++) {
+        const c = pix.get(x, y);
+        if (c) out.set(y >= from ? x + dx : x, y, c);
+      }
+    }
+    return out;
+  }
   function buildMaid(name, outfit) {
     outfit = outfit || 'maid';
     const P = Object.assign(pal(name), OUTFIT_STYLE[outfit].pal(name));
@@ -446,29 +457,36 @@
     const parts = MAID_PARTS[name];
     const layer = (rows, label) => (rows ? fromRows(rows16(rows, label), P) : null);
     const out = { down: [], up: [], left: [], right: [] };
-    const compose = (dir, headRows, f, bob) => {
+    // sway: long hair and twin tails swing a pixel one way on the left step and back on the right step (walk frames 1, 2)
+    const compose = (dir, headRows, f, bob, sway) => {
       const part = parts[dir];
       const pix = new Pix(16, 24);
+      const swing = (p) => (p && sway ? swayRows(p, 16, sway) : p);
       const under = layer(part.under, name + ' under ' + dir);
       const over = layer(part.over, name + ' over ' + dir);
-      if (under) pix.blit(under, 0, bob);
+      if (under) pix.blit(swing(under), 0, bob);
       pix.blit(fromRows(pad(14, rows16(BODY[dir][f], 'body ' + dir + f)), P), 0, 0);
       pix.blit(fromRows(pad(0, rows16(headRows, name + ' head ' + dir)), P), 0, bob);
-      if (over) pix.blit(over, 0, bob);
+      if (over) pix.blit(swing(over), 0, bob);
       return shadeHair(inkHair(pix, P), P, bob);
     };
+    const heads = {};
     for (const dir of ['down', 'up', 'side']) {
-      const head = withHeadwear(parts[dir].head, outfit, dir);
+      const head = (heads[dir] = withHeadwear(parts[dir].head, outfit, dir));
       for (let f = 0; f < 3; f++) {
-        const pix = compose(dir, head, f, f === 0 ? 0 : 1);
+        const pix = compose(dir, head, f, f === 0 ? 0 : 1, f === 1 ? 1 : f === 2 ? -1 : 0);
         if (dir === 'side') {
           out.left.push(pix);
           out.right.push(pix.flipped());
         } else out[dir].push(pix);
       }
     }
+    // breathing in: the standing pose with head and hair a pixel lower, shown now and then while she stands still
+    out.breath = { down: compose('down', heads.down, 0, 1), up: compose('up', heads.up, 0, 1), left: compose('side', heads.side, 0, 1) };
+    out.breath.right = out.breath.left.flipped();
     // facial expressions (front view, standing) for the room, the title screen and dialogue
     out.faces = { normal: out.down[0] };
+    out.facesBreath = { normal: out.breath.down };
     for (const key of Object.keys(FACES)) {
       const head = withHeadwear(parts.down.head, outfit, 'down').map((r) => r.replace(/\|/g, ''));
       FACES[key].forEach((r, i) => {
@@ -477,6 +495,7 @@
         head[9 + i] = row.slice(0, 4) + r.split('').map((ch, j) => (ch === '?' ? row[4 + j] : ch)).join('') + row.slice(12);
       });
       out.faces[key] = compose('down', head, 0, 0);
+      out.facesBreath[key] = compose('down', head, 0, 1);
     }
     return out;
   }

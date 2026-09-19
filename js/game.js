@@ -1315,6 +1315,55 @@
     dust(x, y, n) {
       for (let i = 0; i < n; i++) this.particles.push({ kind: 'mote', x: x + E.rand(-4, 4), y, vx: E.rand(-0.6, 0.6), vy: E.rand(-0.6, -0.1), t: 0, life: 18 });
     }
+    // A job cleared, the maid celebrates in her own way (as FFBE gives every unit its own victory motion): Berry jumps
+    // for joy twice, Honey hops, wobbles and nearly trips, Yukino twirls and curtsies, Yoru turns her back, then cuts the
+    // air once. victoryTick sends out what goes with each beat; victoryPose says how she looks at that moment.
+    victoryTick(m) {
+      const t = this.stateT;
+      const cx = m.x + 8, cy = m.y - 2;
+      const burst = (kind, n, sp, col) => { for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2; this.particles.push({ kind, x: cx, y: cy, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 0.4, t: 0, life: 30, col }); } };
+      switch (m.maidKey) {
+        case 'berry':
+          if (t === 22 || t === 46) { burst('star', 7, 1.6); this.particles.push({ kind: 'ring', x: cx, y: cy, r0: 3, r1: 16, col: '#ffe14d', t: 0, life: 12 }); sfx('kick'); }
+          if (t === 60) sfx('item');
+          break;
+        case 'honey':
+          if (t === 18) { burst('heart', 5, 1.1); sfx('pat'); }
+          if (t === 36) { this.particles.push({ kind: 'debris', x: cx, y: m.y + 12, vx: -0.8, vy: -1, t: 0, life: 16, col: '#e8dccc' }, { kind: 'debris', x: cx, y: m.y + 12, vx: 0.8, vy: -1, t: 0, life: 16, col: '#e8dccc' }); sfx('drop'); }
+          if (t === 52) { burst('heart', 7, 1.3); sfx('heal'); }
+          break;
+        case 'yukino':
+          if (t === 30) { burst('spark', 8, 1.2); this.particles.push({ kind: 'ring', x: cx, y: cy, r0: 2, r1: 14, col: '#bfe8ff', t: 0, life: 14 }); sfx('freeze'); }
+          break;
+        case 'yoru':
+          if (t === 26) { m.dir = 'left'; m.slashT = 14; sfx('slash'); }
+          if (t === 34) burst('spark', 6, 1.4, '#c8b0ff');
+          break;
+      }
+    }
+    victoryPose(m, S) {
+      const t = this.stateT;
+      const arc = (a, b, h) => (t >= a && t < b ? -Math.round(Math.sin(((t - a) / (b - a)) * Math.PI) * h) : 0);
+      const F = S.faces;
+      switch (m.maidKey) {
+        case 'berry':
+          return { img: F.happy, dy: arc(12, 32, 8) + arc(36, 56, 6) + (t >= 60 ? -((t >> 3) % 2) : 0) };
+        case 'honey':
+          if (t < 26) return { img: F.happy, dy: arc(10, 26, 6) };
+          if (t < 44) return { img: F.surprise, dy: t >= 34 ? 1 : 0, dx: t < 34 ? ((t >> 1) % 2 ? 1 : -1) : 0 };
+          return { img: F.blush, dy: -((t >> 3) % 2) };
+        case 'yukino':
+          if (t < 8) return { img: S.down[0] };
+          if (t < 28) return { img: S[['left', 'up', 'right', 'down'][((t - 8) / 5) | 0]][0] };
+          if (t < 44) return { img: F.blush, dy: t >= 30 && t < 40 ? 1 : 0 };
+          return { img: F.happy };
+        case 'yoru':
+          if (t < 20) return { img: S.up[0] };
+          if (t < 44) return { img: S.left[0] };
+          return { img: t < 90 ? S.down[0] : F.blush };
+      }
+      return null;
+    }
     updateParticles() {
       for (let i = this.particles.length - 1; i >= 0; i--) {
         const p = this.particles[i];
@@ -1338,6 +1387,7 @@
     update() {
       this.frame++;
       this.stateT++;
+      if (this.state === 'clear' && this.mode === 'story' && this.maids[0].alive) this.victoryTick(this.maids[0]);
       if (this.shake > 0) this.shake--;
       if (this.state === 'ready') {
         if (this.stateT > 100) { this.state = 'play'; this.stateT = 0; }
@@ -1575,7 +1625,7 @@
       else for (let r = 0; r < h; r++) for (let c = 0; c < w; c++) E.ctx.drawImage(E.spr.themes[this.themeKey].hard, x + c * T, y + r * T - 4);
     }
 
-    drawMaid(m, ox, oy) {
+    drawMaid(m, ox, oy, front) {
       const S = m.outfit ? E.spr.outfits[m.maidKey][m.outfit] : E.spr.maids[m.maidKey];
       const ctx = E.ctx;
       const x = Math.round(ox + m.x), y = Math.round(oy + m.y);
@@ -1583,18 +1633,27 @@
         if (m.deadT > 70) return;
         ctx.save();
         ctx.globalAlpha = Math.max(0, 1 - m.deadT / 70);
-        ctx.drawImage(S.burnt, x, y - 8 - Math.min(20, m.deadT * 0.3));
+        const up = Math.min(20, m.deadT * 0.3);
+        ctx.drawImage(S.burnt, x, y - 8 - up);
+        for (let i = 0; i < 3; i++) {
+          const a = m.deadT * 0.2 + (i * Math.PI * 2) / 3;
+          ctx.drawImage(E.spr.fx.star[(m.deadT >> 3) % 2], Math.round(x + 6 + Math.cos(a) * 7), Math.round(y - 11 - up + Math.sin(a) * 2));
+        }
         ctx.restore();
         return;
       }
-      E.groundShadow(x + 2, y + 13, 12, 3, 0.3);
-      if (m.inv > 0 && m.burnT <= 0 && (m.inv >> 2) % 2 === 0) return;
+      const win = this.state === 'clear' && this.mode === 'story' && m === this.maids[0] && m.burnT <= 0 ? this.victoryPose(m, S) : null;
+      if (!front) E.groundShadow(x + 2, y + 13, 12, 3, 0.3);
+      // hurt, she blinks; celebrating, she does not
+      if (!win && m.inv > 0 && m.burnT <= 0 && (m.inv >> 2) % 2 === 0) return;
       let img;
+      let vx = 0, vy = 0;
       if (m.burnT > 0) img = S.burnt;
+      else if (win) { img = win.img; vx = win.dx || 0; vy = win.dy || 0; }
       else {
         const frames = S[m.dir];
         const f = m.moving ? [1, 0, 2, 0][(m.walkT >> 3) % 4] : 0;
-        img = frames[f];
+        img = !m.moving && (this.frame + m.slot * 29) % 88 >= 72 ? S.breath[m.dir] : frames[f];
       }
       if (m.star > 0 && (m.star >> 1) % 2) {
         ctx.save();
@@ -1602,7 +1661,7 @@
         ctx.drawImage(img, x, y - 9);
         ctx.restore();
         ctx.drawImage(E.spr.fx.sparkle[(m.star >> 3) % 3], x + ((m.star * 7) % 14), y - 10 + ((m.star * 3) % 16));
-      } else ctx.drawImage(img, x, y - 8);
+      } else ctx.drawImage(img, x + vx, y - 8 + vy);
       if (m.burnT > 0 || m.stun > 0) {
         const t = this.frame * 0.15;
         for (let i = 0; i < 3; i++) {

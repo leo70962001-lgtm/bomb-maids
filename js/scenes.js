@@ -1742,6 +1742,8 @@
         E.text(G.t('委託完成！'), 120, 86, { color: C.gold, outline: C.plum, align: 'center', scale: s, size: 14 });
         if (t > 30) E.text('STAGE CLEAR', 120, 124, { color: C.white, outline: C.red, align: 'center', scale: 2 });
       }
+      // her victory motion stays in front of the banner, wherever she stands
+      if (w.state === 'clear' && w.maids[0].alive) w.drawMaid(w.maids[0], 0, 16, true);
       if (w.state === 'fail' && w.stateT > 30) {
         E.text(G.t(w.failReason === 'time' ? '時間到了……' : '被炸飛了……'), 120, 96, { color: C.white, outline: C.plum, align: 'center', scale: 2, size: 12 });
       }

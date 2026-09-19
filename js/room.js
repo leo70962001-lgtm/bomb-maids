@@ -2586,10 +2586,12 @@
       const look = this.lookDir();
       const face = m.face || (!look && m.dir === 'down' && m.state !== 'walk' ? faceFor() : null);
       const busy = m.state === 'pose' && (m.pose === 'punch' || m.pose === 'tidy');
+      // standing still she breathes: every so often her head and hair sink a pixel for a moment
+      const breath = m.state !== 'walk' && !busy && !this.glove.act && (this.t + 23) % 96 >= 78;
       if (m.state === 'walk' || busy || (this.anim && this.anim.kind === 'train' && this.anim.tr.anim === 'run')) {
         img = S[m.dir][[1, 0, 2, 0][(m.walkT >> 3) % 4]];
-      } else if (face && face !== 'normal' && (m.dir === 'down')) img = S.faces[face];
-      else img = S[look || m.dir][0];
+      } else if (face && face !== 'normal' && (m.dir === 'down')) img = (breath ? S.facesBreath : S.faces)[face];
+      else img = breath ? S.breath[look || m.dir] : S[look || m.dir][0];
       // Berry cleans with her vacuum cleaner instead of a broom; Honey's pet bunny hops around after her
       const broom = maidKey() === 'berry' ? E.spr.room.vacuum : E.spr.room.broom;
       const by = maidKey() === 'berry' ? ms.y - 6 - hop : ms.y - 2 - hop + ((this.t >> 3) % 2);
@@ -2611,7 +2613,7 @@
       if (m.prop === 'broom' && m.dir === 'right') ctx.drawImage(broom, ms.x - 6, by);
       if (m.prop === 'book') ctx.drawImage(E.spr.room.book, ms.x + 3, ms.y + 2 - hop);
       if (m.prop === 'cup') ctx.drawImage(E.spr.room.cup, ms.x + 9, ms.y + 3 - hop);
-      if (face === 'blush' || m.face === 'blush') { E.rect(ms.x + 3, ms.y + 4 - hop, 2, 1, '#ff6f91'); E.rect(ms.x + 11, ms.y + 4 - hop, 2, 1, '#ff6f91'); }
+      if (face === 'blush' || m.face === 'blush') { const by2 = ms.y + 4 - hop + (breath ? 1 : 0); E.rect(ms.x + 3, by2, 2, 1, '#ff6f91'); E.rect(ms.x + 11, by2, 2, 1, '#ff6f91'); }
       const hv = this.hover && this.hover.kind === 'maid' && this.mode === 'free';
       if (hv && this.hover.head && this.glove.pat <= 0) {
         ctx.drawImage(E.spr.fx.sparkle[(this.t >> 4) % 3], ms.x - 3, ms.y - 12 - hop);
