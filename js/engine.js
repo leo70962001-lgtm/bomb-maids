@@ -622,6 +622,7 @@
     blipSoft: () => tone({ f: 640 + Math.random() * 90, d: 0.03, v: 0.05, type: 'triangle' }),
     blipLo: () => tone({ f: 400 + Math.random() * 60, d: 0.035, v: 0.055, type: 'triangle' }),
     punch: () => { tone({ f: 160, f2: 60, d: 0.14, v: 0.32, type: 'triangle' }); noise({ f: 1400, f2: 300, d: 0.12, v: 0.25 }); },
+    shutter: () => { noise({ f: 5200, f2: 2200, d: 0.04, v: 0.2, filter: 'highpass' }); noise({ f: 3600, f2: 1400, d: 0.06, v: 0.16, delay: 0.08, filter: 'highpass' }); tone({ f: 1900, d: 0.03, v: 0.06, delay: 0.08 }); },
     pop: () => { noise({ f: 2400, f2: 600, d: 0.08, v: 0.18, filter: 'bandpass' }); tone({ f: 520, f2: 1040, d: 0.1, v: 0.12, type: 'triangle' }); },
     love: () => { [1046, 1318, 1568, 2093, 1568, 2093, 2637].forEach((f, i) => tone({ f, d: 0.12, v: 0.08, delay: i * 0.055, type: 'triangle' })); },
     meh: () => { tone({ f: 392, f2: 330, d: 0.18, v: 0.1, type: 'triangle' }); tone({ f: 330, f2: 262, d: 0.22, v: 0.1, type: 'triangle', delay: 0.16 }); },

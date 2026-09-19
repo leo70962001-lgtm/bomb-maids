@@ -29,6 +29,153 @@
     }
   }
 
+  // a pixel ellipse (the circle of light on the ground seen at an angle); dotted draws every other point
+  function pixelEllipse(cx, cy, rx, ry, col, dotted) {
+    const n = Math.max(12, Math.ceil((rx + ry) * 4));
+    const X = Math.round(cx), Y = Math.round(cy);
+    let lx = null, ly = null, i = 0;
+    for (let s = 0; s < n; s++) {
+      const a = (s / n) * Math.PI * 2;
+      const px = X + Math.round(Math.cos(a) * rx), py = Y + Math.round(Math.sin(a) * ry);
+      if (px === lx && py === ly) continue;
+      lx = px; ly = py;
+      if (!dotted || i++ % 2 === 0) E.rect(px, py, 1, 1, col);
+    }
+  }
+  // a sprite as a flat white shape (the flash when she casts), made once per frame image
+  const WHITE = new WeakMap();
+  function whiteOf(img) {
+    let w = WHITE.get(img);
+    if (!w) {
+      w = document.createElement('canvas');
+      w.width = img.width; w.height = img.height;
+      const g = w.getContext('2d');
+      g.drawImage(img, 0, 0);
+      g.globalCompositeOperation = 'source-in';
+      g.fillStyle = '#ffffff';
+      g.fillRect(0, 0, w.width, w.height);
+      WHITE.set(img, w);
+    }
+    return w;
+  }
+  // each maid's skill light: Berry's fire gold, Yoru's moon violet, Honey's pink, Yukino's ice blue
+  const SKILL_COL = { berry: '#ffb13d', yoru: '#b89cff', honey: '#ff9fbb', yukino: '#9ff3ff' };
+  // The skill effects, drawn from a particle {kind, t, life, ...} at screen x, y. The field uses them as particles; the
+  // diary's little skill demo draws the same ones from its own clock.
+  function drawFx(p, x, y) {
+    const S = E.spr, ctx = E.ctx;
+    const k = p.t / p.life;
+    switch (p.kind) {
+      // the circle that opens at her feet as she casts, four glints running round it
+      case 'sigil': {
+        if (k > 0.7 && p.t % 2) break;
+        const rx = 5 + 8 * E.ease.outCubic(Math.min(1, k * 1.8)), ry = rx * 0.4;
+        pixelEllipse(x, y, rx, ry, p.col);
+        pixelEllipse(x, y, rx - 3, Math.max(1, ry - 1.2), '#ffffff', true);
+        for (let i = 0; i < 4; i++) {
+          const a = p.t * 0.14 + (i * Math.PI) / 2, gx = Math.round(x + Math.cos(a) * rx), gy = Math.round(y + Math.sin(a) * ry);
+          E.rect(gx - 1, gy, 3, 1, '#ffffff'); E.rect(gx, gy - 1, 1, 3, '#ffffff');
+        }
+        break;
+      }
+      // a thread of light rising round her
+      case 'rise': {
+        if (k > 0.6 && p.t % 2) break;
+        E.rect(Math.round(x), Math.round(y), 1, p.len, p.col);
+        E.rect(Math.round(x), Math.round(y), 1, 1, '#ffffff');
+        break;
+      }
+      // impact lines: eight rays thrown out of the hit, the diagonals shorter, a white glint at the heart
+      case 'impact': {
+        const r0 = 2 + k * (p.big ? 14 : 9), r1 = r0 + (p.big ? 9 : 6) * (1 - k);
+        for (let i = 0; i < 8; i++) {
+          const a = (i * Math.PI) / 4, end = r0 + (r1 - r0) * (i % 2 ? 0.55 : 1);
+          for (let s = r0; s < end; s++) E.rect(Math.round(x + Math.cos(a) * s), Math.round(y + Math.sin(a) * s), 1, 1, s - r0 < 2 ? '#ffffff' : p.col);
+        }
+        if (p.t < 5) ctx.drawImage(S.fx.glint[p.t < 3 ? 0 : 1], Math.round(x - 3), Math.round(y - 3));
+        break;
+      }
+      // a flicker of fire thrown off Berry's burning bomb
+      case 'flick': {
+        if (k > 0.7 && p.t % 2) break;
+        ctx.drawImage(S.fx.flame[Math.min(2, (k * 3) | 0)], Math.round(x - 2), Math.round(y - 5));
+        break;
+      }
+      // Yoru's cut shows a beat after the stroke: a band of light that thins to a hairline and blinks out
+      case 'cut': {
+        if (p.t > p.life - 4 && p.t % 2) break;
+        const L = Math.max(1, Math.round(p.len * Math.min(1, (p.t + 1) / 3)));
+        const wide = p.t < 3;
+        const x0 = Math.round(p.dx < 0 ? x - L : x), y0 = Math.round(p.dy < 0 ? y - L : y);
+        if (p.dx) {
+          if (wide) E.rect(x0, Math.round(y) - 1, L, 3, '#d8ccff');
+          E.rect(x0, Math.round(y), L, 1, '#ffffff');
+        } else {
+          if (wide) E.rect(Math.round(x) - 1, y0, 3, L, '#d8ccff');
+          E.rect(Math.round(x), y0, 1, L, '#ffffff');
+        }
+        break;
+      }
+      case 'petal': {
+        if (p.t > p.life - 8 && p.t % 2) break;
+        ctx.drawImage(S.fx.petal[p.pal || 'night'][((p.f || 0) + (p.t >> 3)) % 3], Math.round(x + Math.sin(p.t * 0.15 + (p.ph || 0)) * 2 - 1), Math.round(y - 1));
+        break;
+      }
+      case 'glint': ctx.drawImage(S.fx.glint[k < 0.5 ? 0 : 1], Math.round(x - 3), Math.round(y - 3)); break;
+      // Honey's light: a soft pink glow with a white heart to it, swelling and fading
+      case 'glow': {
+        const rad = p.r0 + (p.r1 - p.r0) * E.ease.outCubic(k);
+        ctx.save();
+        ctx.globalAlpha = 0.3 * (1 - k);
+        ctx.fillStyle = 'rgb(' + p.rgb + ')';
+        ctx.beginPath(); ctx.arc(Math.round(x), Math.round(y), rad, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 0.35 * (1 - k);
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.arc(Math.round(x), Math.round(y), rad * 0.45, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        break;
+      }
+      // a bubble wobbling up, popping into four specks at the end
+      case 'bubble': {
+        const bx = Math.round(x + Math.sin(p.t * 0.18 + (p.ph || 0)) * 2), by = Math.round(y);
+        if (p.t > p.life - 5) { for (const [qx, qy] of [[-2, -2], [2, -2], [-2, 2], [2, 2]]) E.rect(bx + qx, by + qy, 1, 1, '#ffffff'); break; }
+        const img = S.fx.bubble[p.big ? 1 : 0];
+        ctx.drawImage(img, bx - (img.width >> 1), by - (img.height >> 1));
+        break;
+      }
+      // Yukino's signal: a dotted line shoots out to the bomb, then runs along toward it and blinks out
+      case 'beam': {
+        if (p.t > p.life - 5 && p.t % 2) break;
+        const vx = p.tx - p.x, vy = p.ty - p.y, len = Math.hypot(vx, vy) || 1;
+        const reach = Math.min(1, (p.t + 1) / 4) * len;
+        for (let s = 0; s < reach; s += 2) {
+          const m3 = ((((s >> 1) - p.t) % 3) + 3) % 3;
+          if (!m3) continue;
+          E.rect(Math.round(x + (vx * s) / len), Math.round(y + (vy * s) / len), 1, 1, m3 === 1 ? '#ffffff' : '#9ff3ff');
+        }
+        if (p.t < 4) E.rect(Math.round(x + (vx * reach) / len) - 1, Math.round(y + (vy * reach) / len) - 1, 3, 3, '#ffffff');
+        break;
+      }
+      // lock-on: four corner brackets close in on the bomb, then blink white
+      case 'lock': {
+        if (p.t > 6 && (p.t >> 1) % 2) break;
+        const h = Math.round(12 - 4 * Math.min(1, p.t / 6));
+        const col = p.t > 6 ? '#ffffff' : '#9ff3ff';
+        for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+          const cx = Math.round(x + sx * h), cy = Math.round(y + sy * h);
+          E.rect(sx < 0 ? cx : cx - 2, cy, 3, 1, col);
+          E.rect(cx, sy < 0 ? cy : cy - 2, 1, 3, col);
+        }
+        break;
+      }
+      case 'snow': {
+        if (p.t > p.life - 8 && p.t % 2) break;
+        ctx.drawImage(S.fx.snow[(p.t >> 4) % 2], Math.round(x + Math.sin(p.t * 0.12 + (p.ph || 0)) * 2 - 2), Math.round(y - 2));
+        break;
+      }
+    }
+  }
+
   const CUTIN_FRAMES = 36;
   G.CUTIN_FRAMES = CUTIN_FRAMES;
 
@@ -390,7 +537,10 @@
           if (b.impact) {
             // speed lines trail a kicked bomb: three, the middle one longest (as in the chibi action sheets' dashes)
             if (b.anim % 2 === 0) for (const off of [-4, 0, 4]) this.particles.push({ kind: 'streak', x: b.x + 8 - dx * 6 + dy * off, y: b.y + 8 - dy * 6 + dx * off, dx, dy, t: off ? 3 : 0, life: 10, col: off ? '#ffffff' : null });
-            if (this.boss && this.boss.alive && Math.hypot(this.boss.x - b.x - 8, this.boss.y - b.y - 8) < 18) { b.slide = null; b.timer = Math.min(b.timer, 1); }
+            // and it burns as it flies: flickers of fire and sparks thrown off behind it
+            if (b.anim % 2) this.particles.push({ kind: 'flick', x: b.x + 8 - dx * 8 + E.rand(-2, 2), y: b.y + 10 - dy * 8 + E.rand(-2, 2), vx: -dx * 0.25, vy: -dy * 0.25 - 0.2, t: 0, life: 12 });
+            this.particles.push({ kind: 'ember', x: b.x + 8 - dx * 6 + E.rand(-3, 3), y: b.y + 8 - dy * 6 + E.rand(-3, 3), vx: -dx * E.rand(0.3, 1) + E.rand(-0.4, 0.4), vy: -dy * E.rand(0.3, 1) - E.rand(0.3, 0.8), t: 0, life: E.randi(12, 20) });
+            if (this.boss && this.boss.alive && Math.hypot(this.boss.x - b.x - 8, this.boss.y - b.y - 8) < 18) { b.slide = null; b.timer = Math.min(b.timer, 1); this.particles.push({ kind: 'impact', x: b.x + 8 + dx * 6, y: b.y + 8 + dy * 6, col: '#ffe14d', t: 0, life: 8 }); }
           }
           while (remain > 0.001 && b.slide) {
             const aligned = Math.abs(b.x - b.c * T) < 0.01 && Math.abs(b.y - b.r * T) < 0.01;
@@ -399,7 +549,7 @@
               b.x = b.c * T; b.y = b.r * T;
               if (!this.canSlideInto(b, b.c + dx, b.r + dy)) {
                 b.slide = null;
-                if (b.impact) { b.timer = Math.min(b.timer, 1); this.particles.push({ kind: 'ring', x: b.x + 8, y: b.y + 8, r0: 3, r1: 11, col: '#ffffff', t: 0, life: 8 }); }
+                if (b.impact) { b.timer = Math.min(b.timer, 1); this.particles.push({ kind: 'ring', x: b.x + 8, y: b.y + 8, r0: 3, r1: 11, col: '#ffffff', t: 0, life: 8 }, { kind: 'impact', x: b.x + 8 + dx * 6, y: b.y + 8 + dy * 6, col: '#ffe14d', t: 0, life: 8 }); }
                 break;
               }
               goalX = (b.c + dx) * T; goalY = (b.r + dy) * T;
@@ -479,7 +629,8 @@
       }
       if (owner && owner.frost) this.frostAround(blasted, owner);
       if (b.boost) this.particles.push({ kind: 'ring', x: b.c * T + 8, y: b.r * T + 8, r0: 6, r1: 22, col: '#9ff3ff', t: 0, life: 14 });
-      this.shake = Math.max(this.shake, 6);
+      if (b.impact) this.particles.push({ kind: 'impact', x: cx, y: cy, col: '#ff9a2a', t: 0, life: 12, big: true });
+      this.shake = Math.max(this.shake, b.impact ? 9 : 6);
       sfx('boom');
     }
 
@@ -576,6 +727,7 @@
       if (m.magicT > 0) m.magicT--;
       if (m.kickT > 0) m.kickT--;
       if (m.remoteT > 0) m.remoteT--;
+      if (m.castT > 0) m.castT--;
       if (m.chill > 0) m.chill--;
       // Honey's sugar shield grows back a while after it breaks
       if (m.maidKey === 'honey' && !m.shield && m.shieldCD > 0 && --m.shieldCD === 0) {
@@ -683,6 +835,15 @@
       }
     }
 
+    // Every skill starts on the same beat (as a limit burst does in FFBE): she flashes white, a circle of her colour
+    // opens at her feet and threads of light rise round her; then her own effect takes over.
+    castFx(m) {
+      const col = SKILL_COL[m.maidKey] || '#ffffff';
+      m.castT = 10;
+      this.particles.push({ kind: 'sigil', x: m.x + 8, y: m.y + 13, col, t: 0, life: 24 });
+      for (let n = 0; n < 7; n++) this.particles.push({ kind: 'rise', x: m.x + 8 + E.rand(-8, 8), y: m.y + 8 + E.rand(-2, 3), vx: 0, vy: -E.rand(0.9, 1.7), len: E.randi(3, 6), col, t: 0, life: E.randi(14, 22), wait: E.randi(0, 6) });
+    }
+
     useSkill(m) {
       if (m.cool > 0) return;
       const [c, r] = cellOf(m);
@@ -691,6 +852,7 @@
       const pay = () => {
         if (m.sp < m.skillCost) { sfx('denied'); m.cool = 10; return false; }
         m.sp -= m.skillCost;
+        this.castFx(m);
         // the player's own skills get the cut-in; CPU rivals using theirs would keep covering the field
         if (m.human) this.cutins = [{ key: m.maidKey, slot: this.maids.indexOf(m), t: 0 }];
         return true;
@@ -711,6 +873,7 @@
             for (let n = 0; n < 6; n++) this.particles.push({ kind: 'star', x: b.x + 8, y: b.y + 8, vx: -dx * E.rand(0.5, 1.6) + E.rand(-0.8, 0.8), vy: -dy * E.rand(0.5, 1.6) + E.rand(-0.8, 0.8), t: 0, life: 20 });
             this.particles.push({ kind: 'ring', x: b.x + 8, y: b.y + 8, r0: 4, r1: 13, col: '#ffe14d', t: 0, life: 10 });
             this.floaters.push({ x: m.x + 8, y: m.y - 8, text: G.t('爆裂飛踢！'), col: '#ff9fb4', t: 0 });
+            this.particles.push({ kind: 'impact', x: b.x + 8 - dx * 5, y: b.y + 8 - dy * 5, col: '#ffb13d', t: 0, life: 10 });
           }
           break;
         }
@@ -720,11 +883,13 @@
           m.cool = 22;
           m.slashT = 14;
           sfx('slash');
+          let reach = 0;
           for (let n = 1; n <= S.slashReach; n++) {
             const tc = c + dx * n, tr = r + dy * n;
             if (!inb(tc, tr)) break;
             const k = idx(tc, tr), cell = this.grid[k];
             if (cell === HARD || cell === WALL || cell === DECOR) break;
+            reach = n;
             for (let s = 0; s < 3; s++) this.particles.push({ kind: 'spark', x: tc * T + 8 + E.rand(-5, 5), y: tr * T + 8 + E.rand(-5, 5), vx: dx * 0.6, vy: dy * 0.6, t: 0, life: 16 });
             const b = this.bombAt[k];
             if (b && !b.dead) {
@@ -740,6 +905,15 @@
             for (const o of this.maids) if (o !== m && o.alive && o.star <= 0 && Math.abs(o.x - tc * T) < 12 && Math.abs(o.y - tr * T) < 12) o.stun = Math.max(o.stun, 45);
             if (this.boss && this.boss.alive && Math.hypot(this.boss.x - (tc * T + 8), this.boss.y - (tr * T + 8)) < 22) this.hitBoss();
             if (cell === SOFT) { this.burnSoft(tc, tr, m); break; }
+          }
+          {
+            const len = reach ? reach * 16 + 2 : 10, sx = m.x + 8 + dx * 6, sy = m.y + 6 + dy * 6;
+            this.particles.push({ kind: 'cut', x: sx, y: sy, dx, dy, len, t: 0, life: 12, wait: 7 });
+            this.particles.push({ kind: 'glint', x: m.x + 8 - dx * 4 + (dy ? 5 : 0), y: m.y + 8, t: 0, life: 8, wait: 5 });
+            for (let n = 0; n < 6 + reach * 5; n++) {
+              const s = E.rand(2, len), side = n % 2 ? 1 : -1;
+              this.particles.push({ kind: 'petal', pal: n % 2 ? 'night' : 'rose', f: n % 3, ph: E.rand(0, 6), x: sx + dx * s, y: sy + dy * s, vx: dy * side * E.rand(0.3, 1.1) + dx * E.rand(-0.2, 0.5), vy: dx * side * E.rand(0.3, 1.1) + dy * E.rand(-0.2, 0.5) - 0.2, t: 0, life: E.randi(30, 48), wait: 8 + ((s / 8) | 0) });
+            }
           }
           break;
         }
@@ -757,6 +931,8 @@
           }
           this.particles.push({ kind: 'ring', x: m.x + 8, y: m.y + 6, r0: 6, r1: S.charmRadius * T, col: '#ff9fbb', t: 0, life: 22 });
           this.particles.push({ kind: 'ring', x: m.x + 8, y: m.y + 6, r0: 2, r1: S.stunRadius * T, col: '#ffe0ec', t: 0, life: 18 });
+          this.particles.push({ kind: 'glow', x: m.x + 8, y: m.y + 4, r0: 6, r1: 30, rgb: '255,159,187', t: 0, life: 32 });
+          for (let n = 0; n < 10; n++) this.particles.push({ kind: 'bubble', x: m.x + 8 + E.rand(-12, 12), y: m.y + 10 + E.rand(-6, 4), vx: 0, vy: -E.rand(0.35, 0.7), ph: E.rand(0, 6), big: n % 3 === 0, t: 0, life: E.randi(30, 46), wait: E.randi(0, 16) });
           for (const e of this.enemies) if (e.alive && Math.hypot(e.x - m.x, e.y - m.y) < S.charmRadius * T) { e.charm = S.charmFrames; }
           for (const o of this.maids) if (o !== m && o.alive && o.star <= 0 && Math.hypot(o.x - m.x, o.y - m.y) < S.stunRadius * T) { o.stun = Math.max(o.stun, S.stunFrames); }
           if (this.boss && this.boss.alive && Math.hypot(this.boss.x - m.x - 8, this.boss.y - m.y - 8) < S.charmRadius * T) this.boss.charm = S.bossCharm;
@@ -775,8 +951,11 @@
           mine.forEach((b, i) => {
             b.timer = Math.min(b.timer, (this.mode === 'battle' ? S.remoteDelayBattle : S.remoteDelay) + i * 3);
             b.boost = S.remoteBoost;
-            this.particles.push({ kind: 'ring', x: b.x + 8, y: b.y + 8, r0: 12, r1: 3, col: '#9ff3ff', t: 0, life: 10 });
+            this.particles.push({ kind: 'beam', x: m.x + 8, y: m.y - 12, tx: b.x + 8, ty: b.y + 8, t: 0, life: 14, wait: i * 3 });
+            this.particles.push({ kind: 'lock', x: b.x + 8, y: b.y + 8, t: 0, life: 16, wait: i * 3 + 3 });
+            for (let s = 0; s < 3; s++) this.particles.push({ kind: 'snow', x: b.x + 8 + E.rand(-8, 8), y: b.y + E.rand(-4, 6), vx: E.rand(-0.2, 0.2), vy: E.rand(0.1, 0.35), ph: E.rand(0, 6), t: 0, life: E.randi(26, 40), wait: i * 3 + 4 });
           });
+          for (let s = 0; s < 6; s++) this.particles.push({ kind: 'snow', x: m.x + 8 + E.rand(-12, 12), y: m.y - 8 + E.rand(-6, 6), vx: E.rand(-0.2, 0.2), vy: E.rand(0.15, 0.4), ph: E.rand(0, 6), t: 0, life: E.randi(30, 44) });
           break;
         }
       }
@@ -1400,6 +1579,7 @@
     updateParticles() {
       for (let i = this.particles.length - 1; i >= 0; i--) {
         const p = this.particles[i];
+        if (p.wait > 0) { p.wait--; continue; }
         p.t++;
         if (p.vx != null) { p.x += p.vx; p.y += p.vy; }
         if (p.kind === 'debris') p.vy += 0.18;
@@ -1407,6 +1587,7 @@
         if (p.kind === 'smoke') { p.vx *= 0.97; p.vy *= 0.985; }
         if (p.kind === 'tear') p.vy += 0.12;
         if (p.kind === 'heart' || p.kind === 'star') { p.vx *= 0.94; p.vy *= 0.94; }
+        if (p.kind === 'petal') { p.vx *= 0.95; p.vy = p.vy * 0.95 + 0.02; }
         if (p.t >= p.life) this.particles.splice(i, 1);
       }
       for (let i = this.floaters.length - 1; i >= 0; i--) {
@@ -1494,8 +1675,27 @@
             ctx.drawImage(r === 0 ? TH.wallTop[c % 2] : TH.wall, x, y);
           } else {
             ctx.drawImage(TH.floor[(c + r) % 2], x, y);
+            // a little something lying on about a quarter of the floor, the same every time for the same tile
+            const h = (((c * 73856093) ^ (r * 19349663) ^ (this.decalSeed || 0)) >>> 0) % 997;
+            if (TH.decals && TH.decals.length && h < 250) {
+              const d = TH.decals[h % TH.decals.length];
+              ctx.drawImage(d, x + 2 + (h % (13 - d.width)), y + 3 + ((h >> 3) % (12 - d.height)));
+            }
           }
         }
+      // a soft vignette over the ground: the middle stays bright, the edges sink a little, so what moves stands out
+      if (!this.vignette) {
+        const v = document.createElement('canvas');
+        v.width = COLS * T; v.height = ROWS * T;
+        const g = v.getContext('2d');
+        const grd = g.createRadialGradient(v.width / 2, v.height / 2, 50, v.width / 2, v.height / 2, 150);
+        grd.addColorStop(0, 'rgba(30,16,40,0)');
+        grd.addColorStop(1, 'rgba(30,16,40,0.24)');
+        g.fillStyle = grd;
+        g.fillRect(0, 0, v.width, v.height);
+        this.vignette = v;
+      }
+      ctx.drawImage(this.vignette, ox, oy);
       // scorch marks where fire burned, fading
       for (let k = 0; k < this.scorch.length; k++) {
         const sc = this.scorch[k];
@@ -1545,7 +1745,8 @@
           const fr = b.timer < 40 ? ((b.anim >> 2) % 3) : ((b.anim >> 4) % 3);
           E.groundShadow(ox + b.x + 3, oy + b.y + 12, 10, 3, 0.3);
           // just before it goes off the bomb flashes orange, like the original's
-          const img = b.timer < 40 && (b.anim >> 2) % 2 ? S.bomb[3] : S.bomb[fr];
+          const BS = (b.owner && S.bombs[b.owner.maidKey]) || S.bomb;
+          const img = b.timer < 40 && (b.anim >> 2) % 2 ? BS[3] : BS[fr];
           ctx.drawImage(img, Math.round(ox + b.x), Math.round(oy + b.y - 1));
         }
         for (let c = 0; c < COLS; c++) {
@@ -1591,6 +1792,7 @@
 
       // particles
       for (const p of this.particles) {
+        if (p.wait > 0) continue;
         const x = ox + p.x, y = oy + p.y;
         switch (p.kind) {
           case 'puff': ctx.drawImage(S.fx.puff[Math.min(3, (p.t / 5) | 0)], Math.round(x), Math.round(y)); break;
@@ -1633,6 +1835,8 @@
             ctx.drawImage(S.items.coin[(p.t >> 2) % 4], Math.round(ox + E.lerp(p.x, p.tx, t)), Math.round(oy + E.lerp(p.y, p.ty, t) - Math.sin(t * Math.PI) * 20));
             break;
           }
+          // the skill effects (a beam's target is in field space too, so only its offset from p.x matters)
+          default: drawFx(p, x, y);
         }
       }
       for (const f of this.floaters) {
@@ -1709,13 +1913,32 @@
         const f = m.moving ? [1, 0, 2, 0][(m.walkT >> 3) % 4] : 0;
         img = !m.moving && (this.frame + m.slot * 29) % 88 >= 72 ? S.breath[m.dir] : frames[f];
       }
+      // Honey's magic: three little hearts circle her while it lasts (the far side behind her, the near side in front)
+      const orbit = (front) => {
+        if (!(m.magicT > 0 && (m.magicT > 10 || m.magicT % 2))) return;
+        for (let i = 0; i < 3; i++) {
+          const a = this.frame * 0.16 + (i * Math.PI * 2) / 3;
+          if ((Math.sin(a) >= 0) === front) ctx.drawImage(E.spr.fx.heart, Math.round(x + 6 + Math.cos(a) * 11), Math.round(y + 3 + Math.sin(a) * 4));
+        }
+      };
+      orbit(false);
       if (m.star > 0 && (m.star >> 1) % 2) {
         ctx.save();
         ctx.globalAlpha = 0.55;
         ctx.drawImage(img, x, y - 9);
         ctx.restore();
         ctx.drawImage(E.spr.fx.sparkle[(m.star >> 3) % 3], x + ((m.star * 7) % 14), y - 10 + ((m.star * 3) % 16));
-      } else ctx.drawImage(img, x + vx, y - 8 + vy);
+      } else {
+        ctx.drawImage(img, x + vx, y - 8 + vy);
+        // the moment she casts she flashes white, and the light drains off her
+        if (m.castT > 0) {
+          ctx.save();
+          ctx.globalAlpha = Math.min(0.85, m.castT / 8);
+          ctx.drawImage(whiteOf(img), x + vx, y - 8 + vy);
+          ctx.restore();
+        }
+      }
+      orbit(true);
       if (m.burnT > 0 || m.stun > 0) {
         const t = this.frame * 0.15;
         for (let i = 0; i < 3; i++) {
@@ -2142,5 +2365,6 @@
 
   G.World = World;
   G.pixelRing = pixelRing;
+  G.drawFx = drawFx;
   G.GAME = { T, COLS, ROWS, FX, FY, speedPx };
 })(window);

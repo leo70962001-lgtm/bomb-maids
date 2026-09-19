@@ -606,6 +606,24 @@
     E.text(label, E.W - 4, E.H - 17, { color: '#1a1020', align: 'right', fit: 54 });
   }
 
+  // Berry's skipping rope, one turn every 20 frames of her pose clock (which counts down): over her head at the start,
+  // down in front of her, under her feet (angle 0) as she jumps, up behind her
+  const ropeAngle = (poseT) => (((200 - poseT) % 20) / 20) * Math.PI * 2;
+  // how she poses for a photo, by how close you are: [the picture's feeling, her face in the room, where she looks, hop]
+  const PHOTO_POSE = {
+    berry: { mid: ['fun', 'happy', null, 4], high: ['joy', 'happy', null, 6] },
+    honey: { mid: ['fun', 'surprise', null, 1], high: ['joy', 'blush', null, 2] },
+    yukino: { mid: ['normal', 'happy', null, 0], high: ['joy', 'blush', null, 1] },
+    yoru: { mid: ['anger', 'angry', 'left', 0], high: ['joy', 'blush', null, 0] },
+  };
+  // how each comes into a hug: Berry leaps in, Honey stumbles in, Yukino opens her arms, Yoru freezes first
+  const HUG = {
+    berry: { hop: 8, first: 'heart', face: 'happy' },
+    honey: { hop: 4, first: 'sweat', face: 'surprise' },
+    yukino: { hop: 2, first: 'heart', face: 'happy' },
+    yoru: { hop: 0, first: 'exclaim', face: 'surprise' },
+  };
+
   SC.room = {
     wideTop: 38, // the status bar runs across the whole screen
     enter(arg) {
@@ -627,6 +645,8 @@
       this.shakeT = 0;
       this.flashFx = null;
       this.hoverCD = 0;
+      this.seekCD = 900; // until she may come over by herself (seek)
+      this.seekT = 0; // while she waits for the pat she asked for
       this.wasOnMaid = false;
       this.furn = new Map(); // what each placed piece is doing: { kind, t, dur }
       this.lights = [];
@@ -671,7 +691,8 @@
         const ctx = G.contextLines(k, this.world);
         const r = Math.random();
         const line = (r < 0.45 ? ctx.time : r < 0.7 ? ctx.week : r < 0.9 ? ctx.sky : null) || E.pick(L.greet);
-        this.speak(line, this.world.phase === 'night' ? 'normal' : 'happy');
+        if (this.bondTier() === 'high' && L.greetHigh && Math.random() < 0.5) this.speak(E.pick(L.greetHigh), 'blush');
+        else this.speak(line, this.world.phase === 'night' ? 'normal' : 'happy');
       }
     },
 
@@ -869,11 +890,36 @@
             }
             if (t > 40 && t % 10 === 0) this.fx({ kind: 'petal', pal: 'night', x: ms.x + E.randi(-12, 20), y: ms.y - 14, vx: 0, vy: 0.3, sway: 0.3, ph: t, life: 50 });
             break;
+          // (the four below join her moves once she knows you: G.TRAITS idleMore)
+          case 'rope': { // Berry skips rope and counts her jumps; drawRope() swings it round her
+            const a = ropeAngle(t);
+            m.hop = Math.max(0, Math.cos(a)) * 5;
+            if (t % 20 === 0 && t >= 20) { m.ropeN = (m.ropeN || 0) + 1; this.fx({ kind: 'text', x: ms.x + 8, y: ms.y - 22, text: String(m.ropeN), col: '#ffd23f', vy: -0.6, drag: 0.94, life: 24 }); }
+            if (t % 20 === 15) this.fx({ kind: 'dust', x: ms.x + 8 + E.rand(-5, 5), y: ms.y + 14, vx: E.rand(-0.4, 0.4), vy: -0.2, life: 14 });
+            if (t === 8) { this.emote('note', 60); this.setFace('happy', 50); m.ropeN = 0; }
+            break;
+          }
+          case 'hum': // Honey hums a little tune, swaying from side to side
+            if (t % 24 === 0 && t > 20) m.dir = m.dir === 'left' ? 'right' : 'left';
+            if (t % 16 === 8) this.fx({ kind: 'note', x: ms.x + 8 + E.rand(-6, 6), y: ms.y - 10, vx: E.rand(-0.3, 0.3), vy: -0.5, col: '#ff8ab4', life: 40 });
+            if (t === 20) { m.dir = 'down'; this.emote('heart', 60); this.setFace('happy', 60); }
+            break;
+          case 'tea': // Yukino takes a quiet cup of tea
+            if (t % 10 === 0) this.fx({ kind: 'steam', x: ms.x + 11 + E.rand(-1, 1), y: ms.y + 1, vy: -0.35, life: 30 });
+            if (t === 90) this.emote('note', 50);
+            if (t === 40) { this.emote('heart', 60); this.setFace('blush', 50); }
+            break;
+          case 'nap': // Yoru dozes off on her feet, jolts awake, and insists she did not
+            if (t > 44 && t % 28 === 0) this.fx({ kind: 'z', x: ms.x + 11, y: ms.y - 12, vx: 0.25, vy: -0.4, big: t % 56 === 0, life: 50 });
+            if (t === 40) { m.hop = 4; this.emote('exclaim', 40); this.setFace('surprise', 24); A.sfx('pop'); }
+            if (t === 24) this.speak(lines().napWake, 'blush');
+            break;
         }
         if (--m.poseT <= 0) { m.state = 'idle'; m.prop = null; m.idle = E.randi(90, 200); }
         return;
       }
       if (m.state === 'sleep' || m.state === 'hold') return;
+      if (this.glove.act) return; // busy with you
       // idle: look at the glove when it hovers nearby, otherwise live a little
       if (this.hover && this.hover.kind === 'maid') { m.dir = 'down'; return; }
       if (--m.idle > 0) return;
@@ -884,11 +930,15 @@
       const m = this.maid;
       m.state = 'pose';
       m.pose = kind;
-      m.poseT = kind === 'blade' ? 70 : 120;
-      m.prop = kind === 'read' ? 'book' : null;
-      if (kind === 'stare' || kind === 'punch') m.dir = 'down';
+      m.poseT = { blade: 70, rope: 150, hum: 140, tea: 150, nap: 170 }[kind] || 120;
+      m.prop = kind === 'read' ? 'book' : kind === 'tea' ? 'cup' : null;
+      if (['stare', 'punch', 'rope', 'tea', 'nap'].includes(kind)) m.dir = 'down';
+      if (kind === 'hum') { m.dir = 'left'; this.setFace('happy', 130); }
       if (kind === 'blade') { m.dir = 'left'; this.setFace('angry', 60); }
       if (kind === 'dream') this.setFace('tired', 90);
+      if (kind === 'nap') this.setFace('tired', 128);
+      if (kind === 'tea') this.setFace('happy', 80);
+      if (kind === 'rope') m.ropeN = 0;
     },
     idleBehavior() {
       const m = this.maid;
@@ -902,8 +952,10 @@
         const say = G.contextLines(maidKey(), w);
         if (say.sky) { this.speak(say.sky, w.weather === 'storm' ? 'surprise' : 'normal'); m.idle = E.randi(120, 220); return; }
       }
+      // once she loves you, now and then she comes over by herself and asks for a little attention
+      if (this.bondTier() === 'high' && this.seekCD <= 0 && Math.random() < 0.2 && this.seek()) return;
       if (Math.random() < 0.34) {
-        const kind = E.pick(tr.idle);
+        const kind = E.pick(this.bondTier() === 'low' ? tr.idle : tr.idle.concat(tr.idleMore || []));
         if (kind === 'clean') { m.state = 'use'; m.prop = 'broom'; m.useT = 160; m.dir = 'down'; return; }
         this.startPose(kind);
         return;
@@ -943,6 +995,45 @@
       if (b.stamina < 30 && Math.random() < 0.5) this.emote('sweat', 90);
       else if (b.mood >= 80 && Math.random() < 0.4) this.emote('note', 90);
       m.idle = E.randi(90, 200);
+    },
+    // she walks to the free spot nearest the glove, looks up at you and asks (G.LINES seek); a pat soon after gets her
+    // own answer (seekPat)
+    seek() {
+      const m = this.maid;
+      const g = geom();
+      const { grid } = occupancy();
+      this.seekCD = 2400;
+      const gc = clamp(Math.floor((this.glove.x - g.x0) / T), 0, g.w - 1), gr = clamp(Math.floor((this.glove.y + 8 - g.floorY) / T), 0, g.h - 1);
+      const cands = [];
+      for (let r = 0; r < g.h; r++) for (let c = 0; c < g.w; c++) if (!grid[r * g.w + c]) cands.push([c, r, Math.abs(c - gc) + Math.abs(r - gr)]);
+      cands.sort((p, q) => p[2] - q[2]);
+      const arrive = () => {
+        m.dir = 'down';
+        m.hop = 3;
+        this.emote('heart', 90);
+        this.speak(E.pick(lines().seek), 'happy');
+        this.seekT = 420;
+      };
+      for (const [c, r] of cands.slice(0, 8)) {
+        if (c === m.c && r === m.r) { arrive(); return true; }
+        if (this.walkTo(c, r, arrive)) return true;
+      }
+      return false;
+    },
+    // Berry's skipping rope, a curve through her hands: behind her going up, over her head, down in front, under her
+    // feet at the top of her jump
+    drawRope(ms, hop, a) {
+      const x0 = ms.x + 1, x1 = ms.x + 14, hy = ms.y + 5 - hop;
+      const c = Math.cos(a);
+      const mid = c > 0 ? hy + (ms.y + 16 - hy) * c : hy + (hy - (ms.y - 13 - hop)) * c;
+      let ly = null;
+      for (let i = 0; i <= 26; i++) {
+        const u = i / 26;
+        const px = Math.round(x0 + (x1 - x0) * u), py = Math.round(hy + (mid - hy) * 4 * u * (1 - u));
+        if (ly == null) E.rect(px, py, 1, 1, '#ff6f91');
+        else E.rect(px, Math.min(py, ly + (py > ly ? 1 : -1)), 1, Math.max(1, Math.abs(py - ly)), '#ff6f91');
+        ly = py;
+      }
     },
     maidScreen() {
       const g = geom();
@@ -1036,6 +1127,31 @@
       G.persist();
     },
 
+    // how close she is to you: 'low' while she barely knows you (Lv1-2), 'mid' once she trusts you (Lv3), 'high' when
+    // she loves you (Lv4-5); touches answer in that key (lines in G.LINES *Low / *High, looks in G.TRAITS shy)
+    bondTier() {
+      const lv = B.affLevel(bond().aff);
+      return lv <= 1 ? 'low' : lv >= 3 ? 'high' : 'mid';
+    },
+    tierLine(L, key, midKey) {
+      const tier = this.bondTier();
+      const pool = (tier === 'low' && L[key + 'Low']) || (tier === 'high' && L[key + 'High']) || L[midKey || key];
+      return E.pick(pool);
+    },
+    // the look and the flourish that go with a touch: shy and small at first, glowing once she loves you
+    tierReact(base) {
+      const tier = this.bondTier();
+      const tr = trait();
+      const ms = this.maidScreen();
+      const x = ms.x + 8, y = ms.y - 6;
+      if (tier === 'low') return { face: tr.shy.face, emote: tr.shy.emote, hop: Math.min(2, base.hop || 0), hearts: 1 };
+      if (tier === 'high') {
+        this.fx({ kind: 'bigheart', tier: 'like', x, y: y - 16, vy: -0.35, life: 46 });
+        this.aura(x, y, 6);
+        return { face: 'blush', emote: 'heart', hop: (base.hop || 0) + 2, hearts: 7, love: true };
+      }
+      return { face: base.face, emote: base.emote, hop: base.hop || 0, hearts: 4 };
+    },
     pat() {
       const m = this.maid;
       const L = lines();
@@ -1049,19 +1165,23 @@
       if (n < 3) {
         this.gain('aff', 3 + (B.roomHas('plush') ? 1 : 0));
         this.gain('mood', 3);
-        m.hop = tr.pat.hop;
-        this.emote(tr.pat.emote, 80);
-        this.speak(E.pick(L.pat), n === 0 ? 'blush' : tr.pat.face);
+        const re = this.tierReact(tr.pat);
+        const asked = this.seekT > 0 && L.seekPat; // she came over asking for this
+        this.seekT = 0;
+        m.hop = re.hop;
+        this.emote(re.emote, 80);
+        this.speak(asked || this.tierLine(L, 'pat'), re.face);
         const ms = this.maidScreen();
-        this.hearts(ms.x + 8, ms.y - 10, 4);
-        this.aura(ms.x + 8, ms.y - 6, 5);
+        this.hearts(ms.x + 8, ms.y - 10, re.hearts + (asked ? 4 : 0));
+        if (asked) this.gain('aff', 1);
+        if (re.hearts > 1) this.aura(ms.x + 8, ms.y - 6, 5);
         this.ring(ms.x + 8, ms.y - 8, 2, 11, this.auraColor(), 12);
-        A.sfx('pat');
+        A.sfx(re.love ? 'love' : 'pat');
       } else if (n < 6) {
         this.gain('aff', 1);
         this.gain('mood', 1);
         this.emote(tr.mood, 70);
-        this.speak(E.pick(L.pat), tr.pat.face);
+        this.speak(this.tierLine(L, 'pat'), this.bondTier() === 'low' ? tr.shy.face : tr.pat.face);
         this.aura(this.maidScreen().x + 8, this.maidScreen().y - 6, 2);
         A.sfx('pat');
       } else {
@@ -1085,8 +1205,10 @@
       if (n < 2) {
         this.gain('aff', 2);
         this.gain('mood', 2);
-        this.emote(tr.poke.emote, 60);
-        this.speak(E.pick(L.poke), tr.poke.face);
+        const re = this.tierReact({ face: tr.poke.face, emote: tr.poke.emote, hop: 0 });
+        this.emote(re.emote, 60);
+        this.speak(this.tierLine(L, 'poke'), re.face);
+        if (re.love) A.sfx('love');
         const ms = this.maidScreen();
         this.ring(ms.x + 11, ms.y + 3, 1, 6, '#ffffff', 8);
         this.fx({ kind: 'star', x: ms.x + 13, y: ms.y + 2, vx: 0.6, vy: -0.8, g: 0.05, life: 16 });
@@ -1094,7 +1216,7 @@
       } else if (n < 5) {
         this.gain('mood', 1);
         this.emote(tr.mood, 60);
-        this.speak(E.pick(L.poke), tr.pat.face);
+        this.speak(this.tierLine(L, 'poke'), tr.pat.face);
         A.sfx('pat');
       } else {
         this.gain('mood', -2);
@@ -1277,8 +1399,9 @@
       const ms = this.maidScreen();
       if (a.kind === 'highfive') {
         if (a.t === 16) {
-          m.hop = trait().five.hop;
-          A.sfx('kick');
+          const re = this.tierReact(trait().five);
+          m.hop = re.hop;
+          A.sfx(re.love ? 'love' : 'kick');
           for (let i = 0; i < 8; i++) {
             const ang = (i / 8) * Math.PI * 2;
             this.particles.push({ kind: 'sparkle', x: ms.x + 15, y: ms.y - 13, vx: Math.cos(ang) * 1.3, vy: Math.sin(ang) * 1.3 - 0.4, t: 0, life: 26 });
@@ -1288,8 +1411,8 @@
           this.aura(ms.x + 8, ms.y - 4, 6);
           this.shake(3);
           if (a.n < 3) { this.gain('aff', 2); this.gain('mood', 4); }
-          this.emote(trait().five.emote, 80);
-          this.speak(E.pick(L.highFive), trait().five.face);
+          this.emote(re.emote, 80);
+          this.speak(this.tierLine(L, 'five', 'highFive'), re.face);
         }
       } else if (a.kind === 'tickle') {
         if (a.t % 14 === 0) m.hop = 2;
@@ -1297,8 +1420,9 @@
         if (a.t % 18 === 9) this.aura(ms.x + 8, ms.y - 2, 1);
         if (a.t === 10) {
           if (a.n < 3) {
-            this.emote(trait().tickle.emote, 90);
-            this.speak(E.pick(L.tickle), trait().tickle.face);
+            const re = this.tierReact(trait().tickle);
+            this.emote(re.emote, 90);
+            this.speak(this.tierLine(L, 'tickle'), re.face);
           } else {
             this.emote('sweat', 90);
             this.speak(L.tickleMany, 'tired');
@@ -1306,6 +1430,64 @@
           A.sfx('pat');
         }
         if (a.t === a.dur - 1 && a.n < 3) { this.gain('aff', 2); this.gain('mood', 5); }
+      } else if (a.kind === 'hand') {
+        if (!a.ending) {
+          // she follows the glove from tile to tile
+          const g = geom();
+          const gl = this.glove;
+          if (a.t % 6 === 0) {
+            // she walks to the spot just left of the glove, so it holds her right hand instead of covering her
+            const c = clamp(Math.floor((gl.x - 23 - g.x0) / T), 0, g.w - 1), r = Math.floor((gl.y + 13 - g.floorY) / T);
+            const key = c + ',' + r;
+            if (c >= 0 && r >= 0 && c < g.w && r < g.h && key !== a.goal) {
+              a.goal = key;
+              if (c === m.c && r === m.r) { if (m.state === 'walk') m.path = [[c, r]]; }
+              else if (!this.walkTo(c, r)) a.goal = null;
+            }
+          }
+          if (a.t % 40 === 20) this.hearts(ms.x + 8, ms.y - 10, 1);
+          if (a.t % 56 === 0) this.fx({ kind: 'note', x: ms.x + E.rand(0, 12), y: ms.y - 12, vy: -0.5, col: this.auraColor(), life: 34 });
+          if (a.t >= a.dur - 1) this.letGo(a);
+        } else if (m.state !== 'walk') m.dir = 'down';
+      } else if (a.kind === 'photo') {
+        const P = PHOTO_POSE[maidKey()] || PHOTO_POSE.berry;
+        const high = this.bondTier() === 'high';
+        if (a.t === 24) {
+          const pose = high ? P.high : P.mid;
+          A.sfx('shutter');
+          this.flash('#ffffff', 10);
+          a.emo = pose[0];
+          this.setFace(pose[1], a.dur - 50);
+          if (pose[2]) m.dir = pose[2];
+          m.hop = pose[3];
+          if (high) this.hearts(ms.x + 8, ms.y - 10, 3);
+        }
+        if (a.t === a.dur - 30) {
+          m.dir = 'down';
+          this.speak(this.tierLine(L, 'photo'), high ? 'blush' : P.mid[1]);
+          this.emote(high ? 'heart' : trait().mood, 70);
+          if (a.n < 2) { this.gain('aff', 3); this.gain('mood', 2); }
+          G.persist();
+        }
+      } else if (a.kind === 'hug') {
+        const H = HUG[maidKey()] || HUG.berry;
+        if (a.t === 4) { m.hop = H.hop; this.emote(H.first, 40); this.setFace(H.face, 30); }
+        if (a.t === 14) {
+          A.sfx('love');
+          this.flash('#ffc8e0', 14);
+          this.fx({ kind: 'bigheart', tier: 'love', x: ms.x + 8, y: ms.y - 26, vy: -0.3, life: 60 });
+          this.hearts(ms.x + 8, ms.y - 6, 8);
+          this.ring(ms.x + 8, ms.y + 2, 3, 22, '#ff9fbb', 18);
+          this.aura(ms.x + 8, ms.y - 4, 6);
+          this.shake(2);
+        }
+        if (a.t === 30) {
+          this.emote('heart', 90);
+          this.speak(E.pick(L.hug), 'blush');
+          if (a.n < 2) { this.gain('aff', 4); this.gain('mood', 4); }
+          G.persist();
+        }
+        if (a.t > 30 && a.t < 100 && a.t % 22 === 0) this.hearts(ms.x + 8, ms.y - 12, 1);
       }
       if (a.t >= a.dur) this.glove.act = null;
     },
@@ -1314,6 +1496,8 @@
       const L = lines(k);
       if (this.daily('talk') >= 3) { this.say([{ who: k, face: 'normal', text: L.talkMany }]); return; }
       this.bumpDaily('talk');
+      // now and then she asks you something and waits for your answer
+      if (L.ask && L.ask.length && Math.random() < 0.4) return this.ask(k, L);
       const lv = B.affLevel(bond().aff);
       const pool = Math.random() < 0.65 ? L.talk[lv] : L.talk[E.randi(0, lv)];
       const face = lv >= 3 ? 'blush' : E.pick(['normal', 'happy']);
@@ -1708,8 +1892,8 @@
     maidMenu() {
       const items = [
         { label: G.t('聊天'), action: () => this.talk() },
-        { label: G.t('擊掌'), action: () => this.highFive() },
-        { label: G.t('搔癢'), action: () => this.tickle() },
+        this.lockItem(4, G.t('悄悄話'), () => this.whisper()),
+        { label: G.t('互動'), note: '▶', action: () => this.touchMenu() },
         { label: G.t('送禮物'), action: () => this.giftMenu() },
         { label: G.t('特訓'), action: () => this.trainMenu() },
       ];
@@ -1717,6 +1901,108 @@
       items.push({ label: G.t('查看成長日記'), action: () => this.openDiary() });
       items.push({ label: G.t('取消'), action: () => {} });
       this.openMenu(G.t('{name}　好感 Lv{lv}', { name: name(), lv: affInfo().lv + 1 }), items);
+    },
+    // What she lets you do grows with her affection (G.AFF_LEVELS unlock): until then the item shows the level it opens
+    // at, and choosing it she tells you it is too soon.
+    lockItem(need, label, action) {
+      if (affInfo().lv >= need) return { label, action };
+      return { label, note: 'Lv' + (need + 1), disabled: true, deny: () => this.say([{ who: maidKey(), face: maidKey() === 'yoru' ? 'normal' : 'blush', text: lines().locked }]) };
+    },
+    touchMenu() {
+      this.openMenu(G.t('和{name}互動', { name: name() }), [
+        { label: G.t('擊掌'), action: () => this.highFive() },
+        { label: G.t('搔癢'), action: () => this.tickle() },
+        this.lockItem(1, G.t('牽手散步'), () => this.holdHands()),
+        this.lockItem(2, G.t('拍照'), () => this.photo()),
+        this.lockItem(3, G.t('抱抱'), () => this.hug()),
+        { label: G.t('取消'), action: () => {} },
+      ]);
+    },
+    // she stops whatever she was doing (sweeping, a little move, a walk) and gives you her attention
+    stopMaid() {
+      const m = this.maid;
+      if (m.state === 'sleep') return;
+      m.state = 'idle';
+      m.prop = null;
+      m.pose = null;
+      m.path = [];
+      m.dir = 'down';
+    },
+    // hand in hand (Lv2): she takes the glove's hand and follows wherever you lead it, until you let go
+    holdHands() {
+      this.stopMaid();
+      this.touchStart('hand', 900);
+      const re = this.tierReact(trait().pat);
+      this.emote(re.emote, 70);
+      this.maid.hop = 2;
+      A.sfx(re.love ? 'love' : 'pat');
+      G.persist();
+    },
+    letGo(a) {
+      const m = this.maid;
+      a.ending = true;
+      a.dur = a.t + 60;
+      if (m.path.length > 1) m.path = m.path.slice(0, 1); // she finishes the step she is on
+      const re = this.tierReact(trait().pat);
+      this.emote(re.emote, 80);
+      this.speak(this.tierLine(lines(), 'hand'), re.face);
+      const ms = this.maidScreen();
+      this.hearts(ms.x + 8, ms.y - 10, re.hearts);
+      if (a.n < 2) { this.gain('aff', 3); this.gain('mood', 3); }
+      G.persist();
+    },
+    // a photo (Lv3): the viewfinder closes on her, the shutter flashes, and the print develops in front of you; how she
+    // poses depends on how close you are (PHOTO_POSE)
+    photo() {
+      this.stopMaid();
+      this.touchStart('photo', 250);
+      A.sfx('select');
+    },
+    // a hug (Lv4): she comes into the glove's arms and it holds her close; each takes it her own way (HUG)
+    hug() {
+      this.stopMaid();
+      this.touchStart('hug', 130);
+    },
+    // a whisper (Lv5): she leans in and tells you something she tells no one else, a different secret each time
+    whisper() {
+      const k = maidKey();
+      const L = lines(k);
+      const b = bond();
+      this.stopMaid();
+      this.maid.hop = 3;
+      const first = this.daily('whisper') < 1;
+      this.bumpDaily('whisper');
+      const secret = L.whisper[(b.whispers || 0) % L.whisper.length];
+      b.whispers = (b.whispers || 0) + 1;
+      this.say([{ who: k, face: 'blush', text: L.whisperIn }, { who: k, face: 'blush', text: secret }], () => {
+        const ms = this.maidScreen();
+        this.hearts(ms.x + 8, ms.y - 10, 6);
+        this.aura(ms.x + 8, ms.y - 4, 6);
+        this.emote('heart', 90);
+        A.sfx('love');
+        if (first) { this.gain('aff', 4); this.gain('mood', 3); }
+        G.persist();
+      });
+    },
+    // one of her questions (in turn, so she does not repeat herself); your answer gets her reply
+    ask(k, L) {
+      const b = bond();
+      b.asked = (b.asked || 0) + 1;
+      const Q = L.ask[b.asked % L.ask.length];
+      this.say([{ who: k, face: 'normal', text: Q.q }], () => {
+        this.openMenu(G.t('怎麼回答？'), Q.a.map(([label, reply, good]) => ({
+          label,
+          action: () => this.say([{ who: k, face: good ? 'happy' : 'surprise', text: reply }], () => {
+            const ms = this.maidScreen();
+            if (good) { this.hearts(ms.x + 8, ms.y - 10, 4); this.aura(ms.x + 8, ms.y - 4, 4); A.sfx('pat'); }
+            else this.emote(trait().mood, 70);
+            this.gain('aff', good ? 3 : 1);
+            this.gain('mood', 2);
+            this.guideDone('talk');
+            G.persist();
+          }),
+        })), { x: 176, y: 110 });
+      });
     },
     // A click on furniture: the piece answers at once (a bounce, a squash, the lamp's switch), and for the things she
     // does with it she walks over first; done for the day, the piece still answers.
@@ -1871,7 +2157,7 @@
       if (E.menuPressed('b') || E.menuPressed('start')) { this.menu = null; this.mode = this.decor ? 'decor' : 'free'; A.sfx('cancel'); return; }
       if (E.menuPressed('a') || clicked) {
         const it = mn.items[mn.sel];
-        if (it.disabled) { A.sfx('denied'); this.menu = null; this.say([{ who: maidKey(), face: 'tired', text: lines().tired }]); return; }
+        if (it.disabled) { A.sfx('denied'); this.menu = null; if (it.deny) it.deny(); else this.say([{ who: maidKey(), face: 'tired', text: lines().tired }]); return; }
         A.sfx('confirm');
         this.menu = null;
         this.mode = this.decor ? 'decor' : 'free';
@@ -2176,11 +2462,20 @@
       const onMaid = !!(this.hover && this.hover.kind === 'maid');
       if (onMaid && !this.wasOnMaid && this.hoverCD <= 0 && !this.glove.act && this.maid.state !== 'sleep' && !this.maid.emote) {
         const hv = trait().hover;
-        this.emote(hv.emote, 50);
-        if (hv.hop) this.maid.hop = hv.hop;
+        const tier = this.bondTier();
+        this.emote(tier === 'high' ? 'heart' : tier === 'low' ? trait().shy.emote : hv.emote, 50);
+        if (hv.hop || tier === 'high') this.maid.hop = (hv.hop || 0) + (tier === 'high' ? 2 : 0);
         this.hoverCD = 300;
       }
       this.wasOnMaid = onMaid;
+      const act = this.glove.act;
+      if (act && !act.ending && (act.kind === 'hand' || act.kind === 'photo')) {
+        if (E.menuPressed('a') || E.menuPressed('b') || P.pressed) {
+          if (act.kind === 'hand' && act.t > 20) this.letGo(act);
+          if (act.kind === 'photo' && act.t > 44 && act.t < act.dur - 31) act.t = act.dur - 31;
+        }
+        return;
+      }
       if (this.mode === 'tabs') {
         const d = E.menuDir();
         if (d === 'left') { this.tab = (this.tab + TABS.length - 1) % TABS.length; A.sfx('select'); }
@@ -2228,6 +2523,8 @@
       }
       if (this.shakeT > 0) this.shakeT--;
       if (this.hoverCD > 0) this.hoverCD--;
+      if (this.seekCD > 0) this.seekCD--;
+      if (this.seekT > 0) this.seekT--;
       if (this.flashFx && ++this.flashFx.t >= this.flashFx.life) this.flashFx = null;
       this.furnitureTick();
       for (let i = this.toasts.length - 1; i >= 0; i--) if (++this.toasts[i].t > 110) this.toasts.splice(i, 1);
@@ -2361,6 +2658,7 @@
         E.panel(Math.round(160 - tw / 2), y, tw, 15, C.plum, C.panel2, {});
         E.text(tt.text, 160, y + 2, { color: tt.col, align: 'center' });
       }
+      if (this.glove.act && this.glove.act.kind === 'photo') this.drawPhoto(this.glove.act);
       if (this.decor) this.drawDecor();
       if (this.menu) this.drawMenu();
       if (this.dialog) this.drawDialog();
@@ -2580,7 +2878,9 @@
       const ms = this.maidScreen();
       const S = E.spr.maids[maidKey()];
       const hop = Math.round(m.hop);
-      E.groundShadow(ms.x + 2, ms.y + 13, 12, 3, 0.25);
+      const close = this.hugClose();
+      if (close) E.groundShadow(ms.x - 4, ms.y + 14, 24, 4, 0.3);
+      else E.groundShadow(ms.x + 2, ms.y + 13, 12, 3, 0.25);
       let img;
       // idle, she turns to look at the glove when it comes close (her mood face waits until it goes)
       const look = this.lookDir();
@@ -2604,7 +2904,24 @@
       if (m.prop === 'broom' && m.dir !== 'right') ctx.drawImage(broom, ms.x + 12, by);
       const act = this.glove.act;
       const sx = act && act.kind === 'poke' && act.t >= 8 && act.t < 22 ? -1 : act && act.kind === 'tickle' ? ((act.t >> 2) % 2 ? 1 : -1) : 0;
-      ctx.drawImage(img, ms.x + sx, ms.y - 8 - hop);
+      // hugging: she has come right up to you, so she is drawn close up (twice her size) in a warm glow
+      if (close) {
+        const cx = ms.x + 8, cy = ms.y - 6;
+        const grd = ctx.createRadialGradient(cx, cy, 4, cx, cy, 42);
+        grd.addColorStop(0, 'rgba(255,200,224,0.6)');
+        grd.addColorStop(1, 'rgba(255,200,224,0)');
+        ctx.fillStyle = grd;
+        ctx.fillRect(cx - 42, cy - 42, 84, 84);
+      }
+      const rope = m.state === 'pose' && m.pose === 'rope' ? ropeAngle(m.poseT) : null;
+      if (rope != null && Math.sin(rope) > 0) this.drawRope(ms, hop, rope); // behind her
+      if (close) ctx.drawImage(img, ms.x - 8, ms.y - 30 - hop + close.dy, 32, 48);
+      else ctx.drawImage(img, ms.x + sx, ms.y - 8 - hop);
+      if (rope != null) {
+        if (Math.sin(rope) <= 0) this.drawRope(ms, hop, rope); // in front of her
+        E.rect(ms.x, ms.y + 4 - hop, 2, 3, '#ffd23f');
+        E.rect(ms.x + 14, ms.y + 4 - hop, 2, 3, '#ffd23f');
+      }
       if (act && act.kind === 'highfive' && act.t >= 10 && act.t < 40) {
         // her hand up to meet the glove
         E.rect(ms.x + 12 + sx, ms.y - 4 - hop, 3, 5, '#000000');
@@ -2613,29 +2930,76 @@
       if (m.prop === 'broom' && m.dir === 'right') ctx.drawImage(broom, ms.x - 6, by);
       if (m.prop === 'book') ctx.drawImage(E.spr.room.book, ms.x + 3, ms.y + 2 - hop);
       if (m.prop === 'cup') ctx.drawImage(E.spr.room.cup, ms.x + 9, ms.y + 3 - hop);
-      if (face === 'blush' || m.face === 'blush') { const by2 = ms.y + 4 - hop + (breath ? 1 : 0); E.rect(ms.x + 3, by2, 2, 1, '#ff6f91'); E.rect(ms.x + 11, by2, 2, 1, '#ff6f91'); }
+      if ((face === 'blush' || m.face === 'blush') && close) { const by2 = ms.y - 6 - hop + close.dy + (breath ? 2 : 0); E.rect(ms.x - 2, by2, 4, 2, '#ff6f91'); E.rect(ms.x + 14, by2, 4, 2, '#ff6f91'); }
+      else if (face === 'blush' || m.face === 'blush') { const by2 = ms.y + 4 - hop + (breath ? 1 : 0); E.rect(ms.x + 3, by2, 2, 1, '#ff6f91'); E.rect(ms.x + 11, by2, 2, 1, '#ff6f91'); }
       const hv = this.hover && this.hover.kind === 'maid' && this.mode === 'free';
       if (hv && this.hover.head && this.glove.pat <= 0) {
         ctx.drawImage(E.spr.fx.sparkle[(this.t >> 4) % 3], ms.x - 3, ms.y - 12 - hop);
       }
     },
+    // during a hug she is drawn close up (drawMaid), bobbing a little as she snuggles in
+    hugClose() {
+      const a = this.glove.act;
+      if (!a || a.kind !== 'hug' || a.t < 12 || a.t >= 100) return null;
+      return { dy: Math.round(Math.sin(a.t * 0.12)) };
+    },
     // idle and awake, she turns towards the glove when it comes close (not while it is on her)
+    // How she looks depends on the bond: while she barely knows you she steals a glance and looks away again; once she
+    // loves you she follows the glove from across the room.
     lookDir() {
       const m = this.maid;
       if (m.state !== 'idle' || m.face || this.glove.act || this.glove.pat > 0 || this.mode !== 'free') return null;
-      if (this.hover && this.hover.kind === 'maid') return 'down';
+      const tier = this.bondTier();
       const ms = this.maidScreen();
       const dx = this.glove.x - (ms.x + 8), dy = this.glove.y - ms.y;
-      if (dx * dx + dy * dy > 56 * 56) return null;
+      const shyNow = tier === 'low' && (this.t >> 6) % 2 === 1;
+      const away = dx < 0 ? 'right' : 'left';
+      if (this.hover && this.hover.kind === 'maid') return shyNow ? away : 'down';
+      const reach = tier === 'high' ? 120 : 56;
+      if (dx * dx + dy * dy > reach * reach) return null;
+      if (shyNow) return away;
       if (Math.abs(dx) < 10) return 'down';
       return dx < 0 ? 'left' : 'right';
+    },
+    // the photo: the viewfinder closing on her, then the print rising in and developing from dark to full colour, her
+    // name and today's date under it, a heart sticker on the corner once she loves you
+    drawPhoto(a) {
+      const t = a.t;
+      const ms = this.maidScreen();
+      if (t < 24) {
+        const h = Math.round(20 - 7 * Math.min(1, t / 16));
+        const cx = ms.x + 8, cy = ms.y + 2;
+        if (!(t > 16 && t % 4 < 2)) for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+          const x = cx + sx * h, y = cy + sy * (h + 3);
+          E.rect(sx < 0 ? x : x - 4, y, 5, 1, '#ffffff');
+          E.rect(x, sy < 0 ? y : y - 4, 1, 5, '#ffffff');
+        }
+        if ((t >> 3) % 2 === 0) E.rect(cx + h - 5, cy - h - 1, 2, 2, '#ff3b5c');
+        return;
+      }
+      const inT = t - 30, outT = a.dur - 30 - t;
+      if (!a.emo || inT < 0 || outT < 0) return;
+      const W = 96, H = 116;
+      const k = Math.min(E.ease.outCubic(Math.min(1, inT / 14)), E.ease.outCubic(Math.min(1, outT / 12)));
+      const x = Math.round(160 - W / 2), y = Math.round(E.H + 4 - (E.H + 4 - 50) * k);
+      E.rect(x + 3, y + 3, W, H, 'rgba(40,20,50,0.35)');
+      E.rect(x, y, W, H, '#d8ccb8');
+      E.rect(x + 1, y + 1, W - 2, H - 2, '#fffdf6');
+      E.rect(x + 6, y + 6, W - 12, W - 12, '#3a3048');
+      const pic = UI.portraitFace(maidKey(), a.emo, 5.2);
+      E.art('photo', pic.src, x + 6, y + 6, W - 12, W - 12, pic.crop, null, { opacity: Math.min(1, inT / 40) });
+      E.text(name(), x + 8, y + W, { color: C.ink, fit: 54 });
+      const d = new Date();
+      E.text((d.getMonth() + 1) + '/' + d.getDate(), x + W - 8, y + W, { color: C.dim, align: 'right' });
+      if (this.bondTier() === 'high') E.ctx.drawImage(E.spr.fx.bigHeart.love, x - 4, y - 4);
     },
     drawMaidOverlay() {
       const ctx = E.ctx;
       const m = this.maid;
       const ms = this.maidScreen();
       const hop = Math.round(m.hop);
-      let headY = ms.y - 8 - hop;
+      const close = this.hugClose();
+      let headY = close ? ms.y - 30 - hop + close.dy : ms.y - 8 - hop;
       if (m.state === 'sleep' && m.bed) {
         const g = geom();
         const F = G.FURNITURE[m.bed.id];
@@ -2644,7 +3008,7 @@
       }
       if (m.emote) {
         const bob = Math.round(Math.sin(this.t * 0.2));
-        ctx.drawImage(E.spr.room.emotes[m.emote], ms.x + 9, headY - 11 + bob);
+        ctx.drawImage(E.spr.room.emotes[m.emote], ms.x + (close ? 20 : 9), headY - 11 + bob);
       }
       if (m.speech && !this.dialog) {
         // her own bubble (G.TRAITS bubble): Berry's warm and loud, Honey's buttery, Yukino's cool blue, Yoru's dark
@@ -2819,7 +3183,11 @@
       E.rect(0, E.H - 16, hintW, 1, '#f8b000');
       UI.edgeBar({ y: E.H - 16, h: 16, rule: E.H - 16 });
       const hx = E.sideW > 0 ? 14 : 0; // beside the portrait panel her skirt covers the strip's left end
-      if (step) {
+      const act = this.glove.act;
+      if (act && act.kind === 'hand' && !act.ending) {
+        const touch = E.input.lastDevice === 'touch';
+        UI.marquee(G.t(touch ? '拖曳手套帶她散步　點一下放開手' : '移動手套帶她散步　Z 放開手'), 4 + hx, E.H - 13, hintW - 8 - hx, C.gold);
+      } else if (step) {
         const pulse = (this.t >> 5) % 2 === 0;
         E.text('★', 6 + hx, E.H - 13, { color: pulse ? C.gold : C.pink });
         UI.marquee(step.text, 18 + hx, E.H - 13, hintW - 22 - hx, C.gold);
@@ -2843,6 +3211,23 @@
         return;
       }
       const act = gl.act;
+      if (act && act.kind === 'hug') {
+        // stroking her hair while she is close, and one last pat once she steps back
+        const up = act.t % 18 < 8;
+        if (act.t >= 30 && act.t < 100) ctx.drawImage(G2.pat[up ? 1 : 0], ms.x - 6, ms.y - 41 - hop - (up ? 2 : 0));
+        if (act.t >= 104) ctx.drawImage(G2.pat[up ? 1 : 0], ms.x - 5, ms.y - 22 - hop - (up ? 2 : 0));
+        return;
+      }
+      if (act && act.kind === 'photo') return; // the glove is the camera
+      if (act && act.kind === 'hand' && !act.ending) {
+        const gx = Math.round(gl.x), gy = Math.round(gl.y);
+        const hx = ms.x + 14, hy = ms.y + 5 - hop;
+        const vx = gx - hx, vy = gy + 8 - hy, len = Math.hypot(vx, vy);
+        for (let s = 2; s < len - 8; s += 2) E.rect(Math.round(hx + (vx * s) / len), Math.round(hy + (vy * s) / len), 1, 1, s % 4 ? '#ff6f91' : '#ffb0c4');
+        if (len > 24) ctx.drawImage(E.spr.fx.heart, Math.round(hx + vx / 2) - 2, Math.round(hy + vy / 2) - 2 + Math.round(Math.sin(this.t * 0.15)));
+        ctx.drawImage(G2.open, gx - 11, gy - 4);
+        return;
+      }
       if (act && act.kind === 'poke') {
         // reach in, press her cheek, draw back
         const reach = act.t < 8 ? 8 - act.t : act.t < 22 ? 0 : Math.min(10, act.t - 22);
@@ -2989,7 +3374,13 @@
         if (i === 0) return;
         const y = 164 + (i - 1) * 14;
         const on = ai.lv >= i;
-        E.text((on ? '♥ ' : '◇ ') + 'Lv' + (i + 1) + ' ' + L.perk, 16, y, { color: on ? C.red : C.gray });
+        const text = (on ? '♥ ' : '◇ ') + 'Lv' + (i + 1) + ' ' + L.perk;
+        if (!L.unlock) { E.text(text, 16, y, { color: on ? C.red : C.gray, fit: 290 }); return; }
+        // what the level opens up in the room, on the right; a long row gives up a little of each
+        const u = G.t('解鎖：{what}', { what: L.unlock });
+        const uw = Math.min(E.textWidth(u), Math.max(64, 282 - E.textWidth(text)));
+        E.text(text, 16, y, { color: on ? C.red : C.gray, fit: 282 - uw });
+        E.text(u, 306, y, { color: on ? C.plum : C.gray, align: 'right', fit: uw });
       });
       const st = B.maidStats(k);
       const pk = B.perks(k);
@@ -3059,6 +3450,7 @@
       ctx.clip();
       for (let c = 0; c < 11; c++) E.rect(x0 + 1 + c * 16, y0 + 34, 16, 5, c % 2 ? '#e0cbb0' : '#ead8c0');
       const S = E.spr;
+      const BM = (S.bombs && S.bombs[k]) || S.bomb; // her own bomb
       const ground = y0 + 34;
       const maidX = x0 + 6;
       const crate = S.themes.cafe.soft[0];
@@ -3069,16 +3461,20 @@
         // she kicks a bomb; it streaks along and bursts against a crate
         const kickAt = 30, crateX = x0 + 150;
         drawMaid('right', cyc > kickAt && cyc < kickAt + 10 ? 1 : 0);
+        const fx = G.drawFx;
         if (cyc < 96) ctx.drawImage(crate, crateX, ground - 20);
-        if (cyc < kickAt) ctx.drawImage(S.bomb[(t >> 4) % 3], maidX + 17, ground - 16);
+        if (cyc < kickAt) ctx.drawImage(BM[(t >> 4) % 3], maidX + 17, ground - 16);
         else if (cyc < 84) {
           const bx = Math.min(crateX - 16, maidX + 17 + (cyc - kickAt) * 3.2);
-          ctx.drawImage(S.bomb[0], Math.round(bx), ground - 16);
+          ctx.drawImage(BM[0], Math.round(bx), ground - 16);
           for (let i = 1; i < 4; i++) E.rect(Math.round(bx - i * 5), ground - 8, 3, 1, i < 2 ? '#ffffff' : '#ffe14d');
+          for (let i = 1; i <= 3; i++) fx({ kind: 'flick', t: (cyc * 2 + i * 5) % 12, life: 12 }, Math.round(bx - i * 5 + 2), ground - 5 - (i % 2));
           if (cyc < kickAt + 8) ctx.drawImage(S.fx.star[(t >> 2) % 2], maidX + 16, ground - 14);
+          if (cyc < kickAt + 10) fx({ kind: 'impact', t: cyc - kickAt, life: 10, col: '#ffb13d' }, maidX + 19, ground - 8);
         } else if (cyc < 100) {
           const st = cyc < 87 ? 1 : cyc < 94 ? 2 : 3;
           for (const dx of [-16, 0, 16]) ctx.drawImage(S.flame[0][st], crateX - 16 + dx, ground - 16);
+          if (cyc < 96) fx({ kind: 'impact', t: cyc - 84, life: 12, col: '#ff9a2a', big: true }, crateX - 8, ground - 8);
         }
       } else if (k === 'yoru') {
         // one stroke splits the two crates in front of her
@@ -3097,9 +3493,16 @@
           }
           for (let i = 0; i < 36; i += 3) E.rect(x0 + 22 + i, ground - 10, 2, 1, '#ffffff');
         }
+        // a beat later the cut shows, and petals scatter from it
+        if (cyc >= cut + 7 && cyc < cut + 19) G.drawFx({ kind: 'cut', t: cyc - cut - 7, life: 12, dx: 1, dy: 0, len: 36 }, x0 + 22, ground - 10);
+        if (cyc >= cut + 8 && cyc < cut + 48) for (let j = 0; j < 8; j++) {
+          const a = cyc - cut - 8;
+          G.drawFx({ kind: 'petal', pal: j % 2 ? 'night' : 'rose', f: j % 3, ph: j, t: a, life: 40 }, x0 + 22 + j * 4.5 + Math.sin(j * 1.7) * a * 0.3, ground - 10 + (j % 2 ? 1 : -1) * a * 0.22 + a * 0.12);
+        }
       } else if (k === 'honey') {
         // a monster wanders up; her magic rings out and leaves it dizzy, her shield shimmering
         const magic = 70;
+        if (cyc >= magic && cyc < magic + 32) G.drawFx({ kind: 'glow', t: cyc - magic, life: 32, r0: 4, r1: 22, rgb: '255,159,187' }, maidX + 8, ground - 16);
         drawMaid('down', 0);
         ring(maidX + 8, ground - 21, 11, (t >> 3) % 3 === 0 ? '#ffffff' : '#ffb0d0');
         const cat = S.monsters.dustcat.frames[(t >> 5) % 2];
@@ -3108,12 +3511,18 @@
         if (cyc >= magic && cyc < magic + 22) ring(maidX + 8, ground - 18, 4 + (cyc - magic) * 2.2, '#ff9fbb');
         if (cyc >= magic + 8) for (let i = 0; i < 3; i++) { const a = t * 0.15 + (i * Math.PI * 2) / 3; ctx.drawImage(S.fx.star[(t >> 3) % 2], Math.round(catX + 5 + Math.cos(a) * 6), Math.round(ground - cat.height - 4 + Math.sin(a) * 2)); }
         if (cyc >= magic && cyc < magic + 30) ctx.drawImage(S.fx.heart, maidX + 6, ground - 34 - ((cyc - magic) >> 2));
+        for (let j = 0; j < 5; j++) { const a = cyc - magic - j * 4; if (a >= 0 && a < 30) G.drawFx({ kind: 'bubble', t: a, life: 30, ph: j, big: j % 2 === 0 }, maidX + j * 4, ground - 12 - a * 0.6); }
       } else if (k === 'yukino') {
         // two bombs wait; her remote signal sets them off together, frost glinting at the edges
         const go = 60;
         const bombs = [x0 + 52, x0 + 116];
         drawMaid('right', 0);
-        if (cyc < go + 16) bombs.forEach((bx) => ctx.drawImage(S.bomb[(t >> 4) % 3], bx, ground - 16));
+        if (cyc < go + 16) bombs.forEach((bx) => ctx.drawImage(BM[(t >> 4) % 3], bx, ground - 16));
+        bombs.forEach((bx, i) => {
+          const a = cyc - go - i * 3;
+          if (a >= 0 && a < 14) G.drawFx({ kind: 'beam', t: a, life: 14, x: maidX + 8, y: ground - 30, tx: bx + 8, ty: ground - 8 }, maidX + 8, ground - 30);
+          if (a >= 3 && a < 19) G.drawFx({ kind: 'lock', t: a - 3, life: 16 }, bx + 8, ground - 8);
+        });
         if (cyc >= go && cyc < go + 16 && (cyc >> 2) % 2) {
           for (let i = -2; i <= 2; i++) E.rect(maidX + 8 + i, ground - 34, 1, 1, '#9ff3ff');
           bombs.forEach((bx) => ring(bx + 8, ground - 8, 9 - (cyc - go) * 0.4, '#9ff3ff'));

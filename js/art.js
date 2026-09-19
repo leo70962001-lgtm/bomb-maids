@@ -1341,12 +1341,112 @@
     '................',
   ];
   const BOMB_SPARK = [['.y.', 'ywy', '.y.'], ['y.y', '.w.', 'y.y'], ['.w.', 'wyw', '.w.']];
-  function buildBomb(f) {
-    const pal = f === 3 ? Object.assign({}, BOMB_PAL, BOMB_HOT) : BOMB_PAL;
+  // Each maid throws her own bomb (the user's picks): Berry a cleaning bucket with a star, Honey a bunny, Yukino a
+  // European teacup on its saucer, Yoru a Japanese yunomi with a camellia. R r p h H are the body ramp, which flashes
+  // the same orange for everyone just before the bang, so the warning reads the same; fuse is the top of the fuse.
+  const BOMB_DESIGNS = {
+    berry: {
+      rows: [
+        '................',
+        '................',
+        '....kkkkkkkk....',
+        '...ks......sk...',
+        '..ks........sk..',
+        '.kkkkkkkkkkkkkk.',
+        '.kwWWWWWWWWWWsk.',
+        '.kkkkkkkkkkkkkk.',
+        '..kRprRRRRRRhk..',
+        '..kRrRRRwRRRhk..',
+        '..kRrRwwwwwRhk..',
+        '...kRRRwwwRhk...',
+        '...kRRwRRwRhk...',
+        '...khhRRRRhHk...',
+        '....kkkkkkkk....',
+        '................',
+      ],
+      pal: { 'R': '#e8203c', 'r': '#ff5a6a', 'p': '#ffb8c4', 'h': '#9a1024', 'H': '#5a0a18', 'w': '#ffffff', 'W': '#d8dce8', 's': '#9aa0b8' },
+      fuse: [10, 3],
+    },
+    honey: {
+      rows: [
+        '..kk........kk..',
+        '.kRqk......kqRk.',
+        '.kRqk......kqRk.',
+        '.kRqk......kqRk.',
+        '.kRRk.kkkk.kRhk.',
+        '..kRkkRRRRkkRk..',
+        '.kRRRRRRRRRRRhk.',
+        'kRpRRRRRRRRRRRhk',
+        'kRRREkRRRRkERRhk',
+        'kRqRRRRqqRRRRqhk',
+        'kRRRRRRRRRRRRRhk',
+        '.kRRRRyyYyyRRhk.',
+        '.khRRRRyyRRRhhk.',
+        '..khhhhhhhhhhk..',
+        '...kkkkkkkkkk...',
+        '................',
+      ],
+      pal: { 'R': '#fff6e8', 'r': '#ffffff', 'p': '#ffffff', 'h': '#d8c8b0', 'H': '#a89478', 'q': '#ffb0c4', 'E': '#e8203c', 'y': '#ffd23f', 'Y': '#e09a14' },
+      fuse: [7, 4],
+    },
+    yukino: {
+      rows: [
+        '................',
+        '................',
+        '................',
+        '................',
+        '.kkkkkkkkkkkk...',
+        'kpttttttttttTk..',
+        'kRbbbbbbbbbbbkkk',
+        'kRRRRRRRRRRRhk.k',
+        'kRRbRRRbRRRbhkkk',
+        '.kRRRRRRRRRRhk..',
+        '.kRbRRRbRRRbhk..',
+        '..kRRRRRRRRhk...',
+        'kkkkkkkkkkkkkkk.',
+        'kWwwwwwwwwwwwsk.',
+        '.kkkkkkkkkkkkk..',
+        '................',
+      ],
+      pal: { 'R': '#ffffff', 'r': '#ffffff', 'p': '#f4faff', 'h': '#c8d8ec', 'H': '#8aa0c0', 'b': '#3d86f0', 't': '#c98a4e', 'T': '#8a5a2c', 'w': '#ffffff', 'W': '#e8f0fa', 's': '#a8b8d0' },
+      fuse: [6, 3],
+    },
+    yoru: {
+      rows: [
+        '................',
+        '................',
+        '...kkkkkkkkkk...',
+        '...kttttttttk...',
+        '...kggggggggk...',
+        '...kgRgggRgRk...',
+        '...kRRgRRRRhk...',
+        '...kRpRRmmRhk...',
+        '...kRrRmMmRhk...',
+        '...kRrRRmlRhk...',
+        '...kRRRRRRRhk...',
+        '...kRRRRRRRhk...',
+        '...khRRRRRhHk...',
+        '....kkkkkkkk....',
+        '.....khhhhk.....',
+        '.....kkkkkk.....',
+      ],
+      pal: { 'R': '#2a2848', 'r': '#3e3c62', 'p': '#6a6898', 'h': '#1a1830', 'H': '#0e0c1c', 't': '#7ab04a', 'g': '#a8b8c8', 'm': '#e8203c', 'M': '#8a0f28', 'l': '#4cb84c' },
+      fuse: [8, 2],
+    },
+  };
+  function buildBomb(f, key) {
+    const d = BOMB_DESIGNS[key];
+    const pal = Object.assign({}, BOMB_PAL, d ? d.pal : {}, f === 3 ? BOMB_HOT : {});
     // frame 1 pulses the bomb down a pixel
     const dy = f === 1 ? 1 : 0;
     const p = new Pix(16, 16);
-    p.blit(fromRows(BOMB_BODY, pal, 16), 0, dy);
+    p.blit(fromRows(d ? d.rows : BOMB_BODY, pal, 16), 0, dy);
+    if (d) {
+      const [fx, fy] = d.fuse;
+      p.set(fx, fy - 1 + dy, pal.n); p.set(fx, fy + dy, pal.n);
+      p.blit(fromRows(BOMB_SPARK[f % 3], pal), fx - 1, fy - 4 + dy);
+      return p;
+    }
     const top = 3 + dy;
     p.set(8, top - 1, pal.n); p.set(8, top, pal.n);
     p.blit(fromRows(BOMB_SPARK[f % 3], pal), 7, top - 4);
@@ -1969,10 +2069,57 @@
     });
   }
   const block = (pix) => softInk(bevel(inkOutline(pix)), 0.5);
+  // Little things lying about on each theme's floor, three per theme: a knot, a scratch and a dropped pencil in the
+  // classroom; a daisy, a tuft and a clover in the garden; a glint, footprints and a drift in the snow; sprinkles, a
+  // heart candy and crumbs on the candy floor; a rivet, a scratch and a vent in the lab; a star, a brick and a marble in
+  // the toy box; a pebble, a ripple and a glint on the jewel sand; a petal, a sugar cube and crumbs in the café.
+  const FLOOR_DECALS = {
+    classroom: [
+      [['.hh.', 'hHHh', '.hh.'], { h: '#c8864a', H: '#a86a38' }],
+      [['l....', '.l...', '..ll.'], { l: '#f0bc80' }],
+      [['kyyyyp'], { k: '#5a3a2a', y: '#ffd23f', p: '#ff9fb4' }],
+    ],
+    garden: [
+      [['.w.', 'wyw', '.w.'], { w: '#ffffff', y: '#ffd23f' }],
+      [['g.g.g', '.ggg.'], { g: '#4a9a3a' }],
+      [['.l.', 'lLl', '.l.'], { l: '#56b048', L: '#3e8a34' }],
+    ],
+    snow: [
+      [['..w..', '..w..', 'ww.ww', '..w..', '..w..'], { w: '#ffffff' }],
+      [['bb...', 'bb...', '.....', '...bb', '...bb'], { b: '#d0def2' }],
+      [['.ww.', 'wwwb'], { w: '#ffffff', b: '#d8e6f8' }],
+    ],
+    candy: [
+      [['r..b.', '...y.', 'g....', '..r..'], { r: '#ff6f91', b: '#6ad0ff', y: '#ffd23f', g: '#8ee07a' }],
+      [['.rr.rr.', 'rwrrrrr', '.rrrrr.', '..rrr..', '...r...'], { r: '#ff9fbb', w: '#ffffff' }],
+      [['c.c.', '.c..', '...c'], { c: '#e0bc88' }],
+    ],
+    lab: [
+      [['.D.', 'DwD', '.D.'], { D: '#80869e', w: '#e4e8f2' }],
+      [['w...', '.w..', '..ww'], { w: '#cfd4e4' }],
+      [['DDDDD', '.....', 'DDDDD'], { D: '#8c92aa' }],
+    ],
+    toy: [
+      [['.y.', 'yyy', 'y.y'], { y: '#ffd23f' }],
+      [['R.R', 'rrr', 'rrr'], { r: '#ff6f91', R: '#ffb0c4' }],
+      [['.bb.', 'bwbb', '.bb.'], { b: '#6aa8ff', w: '#ffffff' }],
+    ],
+    jewel: [
+      [['.pp.', 'pPPp'], { p: '#c9a870', P: '#ae8c56' }],
+      [['.hhh.', 'h...h'], { h: '#d2b27a' }],
+      [['..w..', '.www.', '..w..'], { w: '#fff6d4' }],
+    ],
+    cafe: [
+      [['.p', 'pp'], { p: '#ffb4cc' }],
+      [['ww', 'wc'], { w: '#ffffff', c: '#e4dcec' }],
+      [['c.c', '...', '.c.'], { c: '#dcc09a' }],
+    ],
+  };
   function buildTheme(key) {
     const T = THEMES[key];
     return {
       key, name: T.name, bg: T.bg,
+      decals: (FLOOR_DECALS[key] || []).map(([rows, pal]) => fromRows(rows, pal)),
       floor: [calm(T.floor(0), 0.4), calm(T.floor(1), 0.4)],
       hard: block(T.hard()),
       hard2: T.hard2 ? block(T.hard2()) : null,
@@ -3312,7 +3459,9 @@
       bear: art.boss,
     };
     for (const t of Object.keys(THEMES)) art.themes[t] = buildTheme(t);
-    art.bomb = [0, 1, 2, 3].map(buildBomb);
+    art.bomb = [0, 1, 2, 3].map((f) => buildBomb(f));
+    art.bombs = {};
+    for (const k of Object.keys(BOMB_DESIGNS)) art.bombs[k] = [0, 1, 2, 3].map((f) => buildBomb(f, k));
     art.flame = {};
     for (let mask = 0; mask < 16; mask++) art.flame[mask] = [0, 1, 2, 3, 4, 5].map((s) => buildFlame(mask, s));
     art.decor = {};
@@ -3412,6 +3561,7 @@
     if (want('fx')) {
       nl();
       for (const b of art.bomb) put(b);
+      for (const k of Object.keys(art.bombs)) for (const b of art.bombs[k]) put(b);
       for (const k of Object.keys(ICONS)) put(art.items[k]);
       for (const c of art.items.coin) put(c);
       for (const d of art.items.dust) put(d);

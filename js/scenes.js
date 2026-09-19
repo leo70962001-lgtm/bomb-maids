@@ -1373,7 +1373,7 @@
       E.rect(x + 3, y + 36, 78, 31, '#9c5f3a');
       E.rect(x + 3, y + 36, 78, 4, '#c98a5a');
       for (let i = 0; i < 78; i += 6) E.rect(x + 4 + i, y + 42, 3, 23, '#8c5230');
-      ctx.drawImage(E.spr.bomb[(this.t >> 4) % 3], x + 27, y + 24);
+      ctx.drawImage((E.spr.bombs[k] || E.spr.bomb)[(this.t >> 4) % 3], x + 27, y + 24);
     },
     drawGifts() {
       E.text(G.t('禮物專櫃'), 106, 30, { color: C.red, size: 14 });
@@ -2289,13 +2289,27 @@
       lace(0, 74, 320, C.plum);
       E.text('CHAMPION', 160, 36, { color: C.gold, outline: C.red, align: 'center', scale: 3 });
       E.text(G.t('{name}（{who}）是最強的女僕！', { name: D.name, who: p.human ? (p.pad + 1) + 'P' : 'CPU' }), 160, 88, { color: C.plum, align: 'center', size: 14 });
-      const hop = Math.abs(Math.sin(t * 0.12)) * 12;
-      E.ctx.drawImage(maidImg(p.maid, 'down', [1, 2][(t >> 4) % 2], p.outfit), 136, 108 - hop, 48, 72);
       for (let i = 0; i < 24; i++) {
         const x = (i * 37 + t * (1 + (i % 3))) % 320, y = (i * 29 + t * 1.5) % 240;
         E.rect(x, y, 3, 3, [C.red, C.gold, C.sky, C.mint, C.pink][i % 5]);
       }
-      E.text(G.t('「{line}」', { line: D.line }), 160, 196, { color: C.ink, align: 'center' });
+      // the champion in her own picture (her joyful one), rising into a soft light and bobbing a little; her words beside her
+      const ctx = E.ctx;
+      const glow = ctx.createRadialGradient(118, 158, 6, 118, 158, 86);
+      glow.addColorStop(0, 'rgba(255,244,210,0.75)');
+      glow.addColorStop(1, 'rgba(255,244,210,0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(30, 80, 180, 160);
+      const pic = G.UI.portraitPicture(p.maid, 'joy');
+      const ph = 128, pw = Math.round((ph * pic.w) / pic.h);
+      const rise = Math.max(0, 24 - t);
+      const bob = Math.round(Math.sin(t * 0.08) * 2);
+      E.art('champion', pic.src, Math.round(118 - pw / 2), 100 + rise + bob, pw, ph, [0, 0, pic.w, pic.h, pic.w, pic.h], null, { fadeBottom: [0.82, 1], opacity: Math.min(1, t / 16) });
+      const quote = E.wrap(G.t('「{line}」', { line: D.line }), 118);
+      const qh = quote.length * 14 + 8, qy = 128 - (qh >> 1) + 20;
+      E.panel(184, qy, 128, qh, '#ffffff', D.color || C.plum, {});
+      E.rect(181, qy + 10, 4, 4, '#ffffff'); E.rect(180, qy + 11, 1, 2, D.color || C.plum);
+      quote.forEach((l, i) => E.text(l, 190, qy + 4 + i * 14, { color: C.ink }));
       if (t > 90) hint(G.t('Z 回到對決設定'));
     },
   };

@@ -386,5 +386,14 @@
     '打扮': ['おめかし', 'Dress up'],
     '坐坐': ['すわる', 'Sit'],
     '放唱片': ['レコード', 'Record'],
+    // ---- interactions that open up with affection
+    '互動': ['ふれあい', 'Interact'],
+    '牽手散步': ['手つなぎ散歩', 'Walk hand in hand'],
+    '拍照': ['写真を撮る', 'Take a photo'],
+    '悄悄話': ['ないしょ話', 'Whisper'],
+    '怎麼回答？': ['どう答える？', 'Your answer?'],
+    '移動手套帶她散步　Z 放開手': ['手袋を動かしてお散歩　Z 手を離す', 'Move the glove to lead her　Z let go'],
+    '拖曳手套帶她散步　點一下放開手': ['手袋をドラッグしてお散歩　タップで手を離す', 'Drag the glove to lead her　tap to let go'],
+    '解鎖：{what}': ['解放：{what}', 'Unlocks: {what}'],
   });
 })(window);
