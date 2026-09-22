@@ -1305,9 +1305,10 @@
       this.scroll = 0;
       this.msg = '';
       this.gacha = null;
+      this.pack = null;
       A.playMusic('cafe');
     },
-    tabs: ['甜點補給', '禮物專櫃', '家具店', '女僕強化', '扭蛋機', '女僕換班', '回房間'],
+    tabs: ['甜點補給', '禮物專櫃', '家具店', '女僕強化', '扭蛋機', '抽卡片', '女僕換班', '回房間'],
     listFor(tab) {
       if (tab === 0) return G.MENU_FOOD;
       if (tab === 1) return G.GIFTS;
@@ -1318,14 +1319,15 @@
     update() {
       this.t++;
       if (this.gacha) return this.updateGacha();
+      if (this.pack) return this.updatePack();
       const d = E.menuDir();
       const n = this.tabs.length;
       if (this.focus === 'tabs') {
         if (d === 'up') { this.tab = (this.tab + n - 1) % n; A.sfx('select'); this.msg = ''; }
         if (d === 'down') { this.tab = (this.tab + 1) % n; A.sfx('select'); this.msg = ''; }
         if (E.menuPressed('a') || d === 'right') {
-          if (this.tab === 6) { A.sfx('door'); E.go(SC.room); return; }
-          if (this.tab === 5) { A.sfx('confirm'); E.go(SC.select, { mode: 'switch', back: 'cafe' }); return; }
+          if (this.tab === 7) { A.sfx('door'); E.go(SC.room); return; }
+          if (this.tab === 6) { A.sfx('confirm'); E.go(SC.select, { mode: 'switch', back: 'cafe' }); return; }
           A.sfx('confirm');
           this.focus = 'list';
           this.row = 0;
@@ -1337,6 +1339,17 @@
       if (this.tab === 4) {
         if (E.menuPressed('a')) this.spin();
         if (E.menuPressed('b') || d === 'left') { this.focus = 'tabs'; A.sfx('cancel'); }
+        return;
+      }
+      // the card counter: one card, five cards, or the album (and the deck)
+      if (this.tab === 5) {
+        if (d === 'up') { this.row = (this.row + 2) % 3; A.sfx('select'); }
+        if (d === 'down') { this.row = (this.row + 1) % 3; A.sfx('select'); }
+        if (E.menuPressed('a')) {
+          if (this.row === 2) { A.sfx('confirm'); E.go(SC.album, { back: SC.cafe, backArg: { tab: 5 } }); return; }
+          this.openPack(this.row === 0 ? 1 : 5);
+        }
+        if (E.menuPressed('b') || d === 'left') { this.focus = 'tabs'; A.sfx('cancel'); this.msg = ''; }
         return;
       }
       const list = this.listFor(this.tab);
@@ -1386,22 +1399,66 @@
     spin() {
       if (SAVE.coins < G.GACHA_PRICE) { A.sfx('denied'); this.msg = G.t('需要 {n}G 才能轉扭蛋。', { n: G.GACHA_PRICE }); return; }
       SAVE.coins -= G.GACHA_PRICE;
-      const roll = Math.random();
-      const rare = roll < 0.07 ? 3 : roll < 0.32 ? 2 : 1;
-      const pool = G.CARDS.filter((c) => c.rare === rare);
-      const card = E.pick(pool);
-      const dup = !!SAVE.cards[card.id];
-      SAVE.cards[card.id] = (SAVE.cards[card.id] || 0) + 1;
-      if (dup) SAVE.coins += 30;
+      const prize = rollCapsule();
       persist();
-      this.gacha = { t: 0, card, dup };
-      A.sfx('gacha');
+      this.gacha = { t: 0, prize, rare: prize.rare };
+      A.sfx('coin');
     },
+    // the show, in beats: the coin (0-18), the crank (18-66), the capsule out of the chute (66-92), rolling up big
+    // (92-110), wobbling in its colour (110-150), popping open (150), the prize (160-)
     updateGacha() {
       const g = this.gacha;
       g.t++;
-      if (g.t === 70) A.sfx(g.card.rare >= 2 ? 'rare' : 'item');
-      if (g.t > 80 && (E.menuPressed('a') || E.menuPressed('b'))) { this.gacha = null; A.sfx('confirm'); }
+      const t = g.t;
+      if (t > 18 && t < 66 && (t - 18) % 12 === 0) A.sfx('tick');
+      if (t === 70) A.sfx('drop');
+      if (t > 110 && t < 150 && t % (g.rare >= 3 ? 8 : 12) === 0) A.sfx('tick');
+      if (t === 150) { A.sfx(g.rare >= 3 ? 'rare' : 'pop'); if (g.rare >= 4) A.sfx('love'); }
+      if (t === 162) A.sfx(g.rare >= 2 ? 'item' : 'coin');
+      if (t < 150 && (E.menuPressed('a') || E.pointer.pressed)) g.t = 149; // straight to the opening
+      else if (t > 175 && (E.menuPressed('a') || E.menuPressed('b') || E.pointer.pressed)) { this.gacha = null; A.sfx('confirm'); }
+    },
+    // ---------------- the card counter
+    openPack(n) {
+      const price = n === 1 ? G.CARD_PRICE : G.CARD_PRICE5;
+      if (SAVE.coins < price) { A.sfx('denied'); this.msg = G.t('需要 {n}G 才能抽卡片。', { n: price }); return; }
+      SAVE.coins -= price;
+      const cards = [];
+      for (let i = 0; i < n; i++) cards.push(pickCard(1));
+      if (n === 5 && !cards.some((c) => c.rare >= 3)) cards[E.randi(0, 4)] = pickCard(3);
+      const list = cards.map((card) => { const isNew = !SAVE.cards[card.id]; return { card, isNew, refund: giveCard(card), flip: -1 }; });
+      persist();
+      this.pack = { t: 0, list, next: 0, nextAt: 84, best: Math.max(...cards.map((c) => c.rare)), cut: null, flash: 0 };
+      A.sfx('gacha');
+    },
+    // the pack: in (0-40), torn open (40), the cards flying out (44-80), then turned one by one (on their own, or Z)
+    updatePack() {
+      const p = this.pack;
+      p.t++;
+      if (p.flash > 0) p.flash--;
+      if (p.t === 40) { A.sfx('pop'); if (p.best >= 3) A.sfx('rare'); }
+      if (p.cut) {
+        if (++p.cut.t > 90 || (p.cut.t > 20 && (E.menuPressed('a') || E.pointer.pressed))) { p.cut = null; p.nextAt = p.t + 20; }
+        return;
+      }
+      const all = p.next >= p.list.length;
+      const press = E.menuPressed('a') || E.pointer.pressed;
+      if (p.t < 80) { if (press) p.t = 80; return; }
+      if (!all && (p.t >= p.nextAt || press)) {
+        const c = p.list[p.next++];
+        c.flip = p.t;
+        p.nextAt = p.t + 26;
+        A.sfx('select');
+      }
+      // the face shows six frames into the turn: its sound and, for the best cards, their moment
+      for (const c of p.list) {
+        if (c.flip < 0 || p.t - c.flip !== 6) continue;
+        const r = c.card.rare;
+        A.sfx(r >= 4 ? 'love' : r >= 3 ? 'rare' : r >= 2 ? 'item' : 'coin');
+        if (r >= 4) { p.flash = 14; p.cut = { card: c.card, t: 0 }; }
+        else if (r >= 3) p.flash = 6;
+      }
+      if (all && p.t > p.nextAt + 10 && (press || E.menuPressed('b'))) { this.pack = null; A.sfx('confirm'); }
     },
     draw() {
       const t = this.t;
@@ -1409,12 +1466,12 @@
       header(G.t('女僕咖啡廳「蕾絲炸彈」'));
       coinLabel(312, 5, SAVE.coins, 'right');
       // tabs
-      darkPanel(6, 24, 84, 122);
+      darkPanel(6, 24, 84, 124);
       this.tabs.forEach((s, i) => {
-        const y = 29 + i * 16;
+        const y = 28 + i * 15;
         const on = i === this.tab;
-        if (on) E.rect(9, y - 2, 78, 15, this.focus === 'tabs' ? C.red : C.panel2);
-        E.text(G.t(s), 22, y, { color: on ? C.white : C.gray });
+        if (on) E.rect(9, y - 2, 78, 14, this.focus === 'tabs' ? C.red : C.panel2);
+        E.text(G.t(s), 22, y, { color: on ? C.white : C.gray, fit: 64 });
         if (on && this.focus === 'tabs') heartCursor(10, y + 3);
       });
       this.drawCounter(6, 150);
@@ -1425,7 +1482,8 @@
       else if (this.tab === 2) this.drawFurniture();
       else if (this.tab === 3) this.drawUpgrades();
       else if (this.tab === 4) this.drawGachaPanel();
-      else if (this.tab === 5) {
+      else if (this.tab === 5) this.drawCardPanel();
+      else if (this.tab === 6) {
         E.text(G.t('女僕換班'), 205, 40, { color: C.red, align: 'center', size: 14 });
         wrapLines([G.t('每打倒一個 BOSS，就有新的女僕加入。在這裡可以讓她們換班。'), '', G.t('按 Z 前往更衣室')], 112, 66, C.ink, 16, 190);
         const plan = unlockPlan();
@@ -1440,9 +1498,10 @@
         E.rect(98, 198, 214, 20, C.plum);
         marquee(this.msg, 102, 202, 206, C.mint);
       }
-      const hints = { tabs: G.t('↑↓ 選擇　Z 決定　X 回房間'), gacha: G.t('Z 轉扭蛋　X 返回'), grid: G.t('方向鍵 選擇　Z 購買　X 返回'), list: G.t('↑↓ 選擇　Z 購買　X 返回') };
-      hint(this.focus === 'tabs' ? hints.tabs : this.tab === 4 ? hints.gacha : this.tab === 1 ? hints.grid : hints.list);
+      const hints = { tabs: G.t('↑↓ 選擇　Z 決定　X 回房間'), gacha: G.t('Z 轉扭蛋　X 返回'), grid: G.t('方向鍵 選擇　Z 購買　X 返回'), list: G.t('↑↓ 選擇　Z 購買　X 返回'), cards: G.t('↑↓ 選擇　Z 決定　X 返回') };
+      hint(this.focus === 'tabs' ? hints.tabs : this.tab === 4 ? hints.gacha : this.tab === 5 ? hints.cards : this.tab === 1 ? hints.grid : hints.list);
       if (this.gacha) this.drawGachaReveal();
+      if (this.pack) this.drawPack();
     },
     drawCounter(x, y) {
       const ctx = E.ctx;
@@ -1548,61 +1607,339 @@
     drawGachaPanel() {
       const t = this.t;
       E.text(G.t('扭蛋機'), 106, 30, { color: C.red, size: 14 });
+      E.text(G.t('轉出小獎品'), 306, 32, { color: C.dim, align: 'right' });
+      drawCapsuleMachine(108, 50, t, 0, false);
+      E.text(G.t('轉一次'), 184, 54, { color: C.ink });
+      coinLabel(226, 56, G.GACHA_PRICE);
+      const n = wrapLines([G.t('金幣、禮物、甜點券、家具，運氣好還能抽到卡片或大獎！')], 184, 72, C.ink, 15, 122);
+      // what can come out, by colour
+      const rows = [[1, G.t('零錢包・小禮物')], [2, G.t('甜點券・金幣袋')], [3, G.t('卡片・家具')], [4, G.t('大獎 1000G')]];
+      rows.forEach(([r, label], i) => {
+        const y = 80 + n * 15 + i * 13;
+        drawCapsule(190, y + 5, 4, r, t, 0);
+        E.text(G.RARE_NAME[r] + ' ' + label, 198, y, { color: C.dim, fit: 106 });
+      });
+      const py = Math.max(176, 80 + n * 15 + rows.length * 13 + 2);
+      if (this.focus === 'list' && (t >> 5) % 2 === 0) E.text(G.t('按 Z 轉扭蛋！'), 184, py, { color: C.red });
+      else if (this.focus !== 'list') E.text(G.t('按 → 或 Z 進入'), 184, py, { color: C.dim });
+    },
+    drawCardPanel() {
+      const t = this.t;
+      E.text(G.t('抽卡片'), 106, 30, { color: C.red, size: 14 });
       const owned = G.CARDS.filter((c) => SAVE.cards[c.id]).length;
       E.text(G.t('收集 {n}/{total}', { n: owned, total: G.CARDS.length }), 306, 32, { color: C.dim, align: 'right' });
-      this.drawMachine(108, 56, t, false);
-      E.text(G.t('轉一次'), 180, 60, { color: C.ink });
-      coinLabel(222, 62, G.GACHA_PRICE);
-      const n = wrapLines([G.t('抽出怪物卡或女僕卡！重複的卡會退還 30G。')], 180, 80, C.ink, 15, 126);
-      E.text('N 68%  R 25%  SR 7%', 180, 88 + n * 15, { color: C.dim });
-      if (this.focus === 'list' && (t >> 5) % 2 === 0) E.text(G.t('按 Z 轉扭蛋！'), 180, 150, { color: C.red });
-      else if (this.focus !== 'list') E.text(G.t('按 → 或 Z 進入'), 180, 150, { color: C.dim });
+      drawPackArt(112, 52, 56, 76, t, 0);
+      const items = [[G.t('抽 1 張'), G.CARD_PRICE], [G.t('抽 5 張'), G.CARD_PRICE5], [G.t('卡片圖鑑・編組牌組'), null]];
+      items.forEach(([label, price], i) => {
+        const y = 52 + i * 26;
+        const on = this.focus === 'list' && i === this.row;
+        E.panel(180, y, 126, 22, on ? '#fff' : C.paper2, on ? C.red : C.pink);
+        E.text(label, 186, y + 5, { color: C.plum, fit: price != null ? 72 : 114 });
+        if (price != null) coinLabel(300, y + 7, price, 'right');
+        if (on) heartCursor(172, y + 7);
+      });
+      E.text('N 48%  R 32%  SR 16%  SSR 4%', 106, 134, { color: C.dim });
+      E.text(G.t('抽 5 張一定有 SR 以上的卡！'), 106, 148, { color: C.red, fit: 200 });
+      wrapLines([G.t('放進牌組的卡片（最多 3 張）會在每次委託發揮效果。重複的卡會退還金幣。')], 106, 163, C.ink, 13, 200);
+      const deck = (SAVE.deck || []).map((id) => G.CARDS.find((c) => c.id === id)).filter(Boolean);
+      E.text(G.t('牌組') + '：' + (deck.length ? deckText(deck) : G.t('（空）')), 106, 204, { color: C.red, fit: 200 });
     },
-    drawMachine(x, y, t, shake) {
-      const ox = shake ? E.randi(-1, 1) : 0;
-      E.panel(x + ox, y, 60, 120, '#8fc6ff', '#3d86f0', { shine: '#d9ecff' });
-      E.rect(x + 6 + ox, y + 8, 48, 48, '#e6f4ff');
-      const caps = [[12, 40, C.red], [26, 44, C.gold], [38, 38, C.mint], [18, 28, C.pink], [34, 26, C.sky], [24, 16, '#fff']];
-      for (const [cx, cy, col] of caps) { E.rect(x + ox + cx, y + cy, 8, 8, col); E.rect(x + ox + cx, y + cy + 4, 8, 4, '#ffffff'); }
-      E.rect(x + 6 + ox, y + 8, 48, 2, '#ffffff');
-      E.rect(x + 6 + ox, y + 64, 48, 48, '#3d86f0');
-      E.rect(x + 22 + ox, y + 72, 16, 16, C.plum);
-      E.rect(x + 28 + ox, y + 70 + ((t >> 3) % 4 === 0 ? 2 : 0), 4, 20, C.white);
-      E.rect(x + 12 + ox, y + 96, 36, 12, C.plum);
-    },
+    // the capsule show (see updateGacha for the beats)
     drawGachaReveal() {
       const g = this.gacha;
-      E.rect(0, 0, E.W, E.H, 'rgba(42,27,48,0.88)');
-      E.artShade(0); // hides the café counter portrait; the card drawn below shows its own picture
-      if (g.t < 60) {
-        this.drawMachine(130, 50, g.t, true);
-        if (g.t > 36) {
-          const cy = 150 + Math.min(30, (g.t - 36) * 2);
-          E.rect(152, cy, 16, 16, g.card.rare === 3 ? C.gold : g.card.rare === 2 ? C.pink : C.sky);
-          E.rect(152, cy + 8, 16, 8, C.white);
+      const t = g.t;
+      E.rect(0, 0, E.W, E.H, 'rgba(42,27,48,0.9)');
+      E.artShade(0);
+      if (t < 110) {
+        const crank = t >= 18 && t < 66 ? Math.floor((t - 18) / 12) + 1 : t >= 66 ? 4 : 0;
+        drawCapsuleMachine(128, 36, t, crank, t >= 18 && t < 66);
+        // the coin going into the slot
+        if (t < 18) E.ctx.drawImage(E.spr.items.coin[(t >> 2) % 4], 139, Math.round(40 + t * 2.4));
+        // out of the chute, bouncing, then rolling to the middle and growing
+        if (t >= 66) {
+          const k = Math.min(1, (t - 66) / 26);
+          const bounce = t < 92 ? Math.abs(Math.sin((t - 66) * 0.35)) * 10 * (1 - k) : 0;
+          const x = t < 92 ? 164 + k * 4 : 168 - Math.min(1, (t - 92) / 18) * 8;
+          const y = t < 92 ? 142 - bounce : 142 - Math.min(1, (t - 92) / 18) * 30;
+          const r = t < 92 ? 5 : 5 + Math.min(1, (t - 92) / 18) * 17;
+          drawCapsule(x, y, r, g.rare, t, 0);
         }
         return;
       }
-      const s = Math.min(1, (g.t - 60) / 12);
-      const w = Math.max(2, Math.round(84 * s));
-      if (g.card.rare >= 2) {
-        for (let i = 0; i < 12; i++) {
-          const a = i / 12 * Math.PI * 2 + g.t * 0.02;
-          E.ctx.drawImage(E.spr.fx.sparkle[(g.t >> 3) % 3], 160 + Math.cos(a) * 70 - 2, 110 + Math.sin(a) * 60 - 2);
+      // the capsule, big, wobbling in its colour: more and harder the rarer it is
+      if (t < 150) {
+        const hard = g.rare >= 3 ? 1.6 : 1;
+        const wob = Math.sin(t * (g.rare >= 3 ? 0.9 : 0.6)) * (t - 110) / 40 * 5 * hard;
+        rays(160, 112, 26 + (t - 110) * 0.8, rareColor(g.rare, t), 0.12 + (t - 110) / 40 * 0.25, t);
+        drawCapsule(160 + wob, 112, 22, g.rare, t, 0);
+        if (g.rare >= 3 && t % 6 === 0) for (let i = 0; i < 3; i++) E.ctx.drawImage(E.spr.fx.sparkle[(t >> 3) % 3], 160 + E.randi(-40, 40), 112 + E.randi(-34, 30));
+        return;
+      }
+      // open: the halves fly apart, light bursts out, the prize rises
+      const o = t - 150;
+      if (o < 4 && g.rare >= 3) { E.ctx.globalAlpha = 0.6 - o * 0.15; E.rect(0, 0, E.W, E.H, '#ffffff'); E.ctx.globalAlpha = 1; }
+      rays(160, 106, 70 + Math.min(40, o * 3), rareColor(g.rare, t), 0.3, t);
+      if (o < 30) drawCapsule(160, 112, 22, g.rare, t, Math.min(1, o / 14));
+      for (let i = 0; i < (g.rare >= 3 ? 16 : 8); i++) {
+        const a = (i / (g.rare >= 3 ? 16 : 8)) * Math.PI * 2 + t * 0.02, d = 40 + Math.min(30, o * 2);
+        E.ctx.drawImage(E.spr.fx.sparkle[((t >> 3) + i) % 3], Math.round(160 + Math.cos(a) * d - 2), Math.round(104 + Math.sin(a) * d * 0.6 - 2));
+      }
+      if (g.rare >= 3) for (let i = 0; i < 24; i++) {
+        const k = ((o * 2 + i * 13) % 90) / 90;
+        E.rect(Math.round(40 + ((i * 53) % 240)), Math.round(k * 240 - 20), 2, 3, ['#ff6f91', '#ffd23f', '#6ad0ff', '#8ee07a', '#c89aff'][i % 5]);
+      }
+      const rise = Math.round(Math.max(0, 1 - o / 12) * 20);
+      drawPrize(g.prize, 160, 104 + rise, t);
+      if (o > 10) {
+        E.text(G.RARE_NAME[g.rare] + '  ' + G.t(g.prize.cap.name), 160, 158, { color: rareTextColor(g.rare, t), outline: C.plum, align: 'center', size: 14 });
+        E.text(g.prize.label, 160, 178, { color: C.white, outline: C.plum, align: 'center', fit: 280 });
+        if (g.prize.refund) E.text(G.t('重複了！退還 {n}G', { n: g.prize.refund }), 160, 196, { color: C.gray, align: 'center' });
+        else if (g.prize.isNew) E.text('NEW!', 160, 196, { color: C.mint, outline: C.plum, align: 'center' });
+        if (o > 25) E.text(G.t('按 Z 繼續'), 160, 214, { color: C.gray, align: 'center' });
+      }
+    },
+    // the card pack show (see updatePack)
+    drawPack() {
+      const p = this.pack;
+      const t = p.t;
+      E.rect(0, 0, E.W, E.H, 'rgba(30,18,40,0.92)');
+      E.artShade(0);
+      const n = p.list.length;
+      const big = n === 1;
+      const cw = big ? 76 : 52, ch = big ? 104 : 72;
+      const slotX = (i) => (big ? 160 : 160 + (i - 2) * 58) - cw / 2, slotY = big ? 52 : 70;
+      // the pack: in, a shake, torn open with light spilling out in the colour of the best card inside
+      if (t < 56) {
+        const inK = E.ease.outCubic(Math.min(1, t / 20));
+        const shake = t > 22 && t < 40 ? Math.sin(t * 1.6) * 2 : 0;
+        if (t >= 40) rays(160, 110, 40 + (t - 40) * 5, rareColor(p.best, t), 0.35, t);
+        drawPackArt(132 + shake, Math.round(250 - inK * 170), 56, 76, t, t >= 40 ? Math.min(1, (t - 40) / 10) : 0);
+        return;
+      }
+      p.list.forEach((c, i) => {
+        // flying out of the pack to its place
+        const k = E.ease.outCubic(Math.min(1, (t - 56 - i * 3) / 20));
+        if (k <= 0) return;
+        const x = E.lerp(160 - cw / 2, slotX(i), k), y = E.lerp(118, slotY, k);
+        const turned = c.flip >= 0 ? t - c.flip : -1;
+        const r = c.card.rare;
+        if (turned < 0 || turned < 6) {
+          // face down (or turning away): an SR or better shows its edge glowing before it turns
+          const s = turned < 0 ? 1 : 1 - turned / 6;
+          const w = Math.max(1, Math.round(cw * s));
+          if (turned < 0 && r >= 3 && (t >> 2) % 2) E.panel(Math.round(x + cw / 2 - w / 2) - 2, y - 2, w + 4, ch + 4, rareColor(r, t), rareColor(r, t + 20), {});
+          drawCardBack(Math.round(x + cw / 2 - w / 2), y, w, ch, t);
+        } else {
+          const s = Math.min(1, (turned - 6) / 6);
+          const w = Math.max(1, Math.round(cw * s));
+          if (turned > 6 && r >= 3) rays(x + cw / 2, y + ch / 2, ch * 0.75, rareColor(r, t), 0.25, t + i * 9);
+          drawCard(c.card, Math.round(x + cw / 2 - w / 2), y, w, ch, true, 'pack-' + i);
+          if (turned > 12) {
+            if (c.isNew) E.text('NEW!', x + cw / 2, y - 12, { color: C.mint, outline: C.plum, align: 'center' });
+            E.text(G.RARE_NAME[r], x + cw / 2, y + ch + 2, { color: rareTextColor(r, t), outline: C.plum, align: 'center' });
+            if (c.refund) E.text('+' + c.refund + 'G', x + cw / 2, y + ch + 14, { color: C.gold, align: 'center' });
+            else if (big) E.text(cardInfo(c.card).name, x + cw / 2, y + ch + 16, { color: C.white, align: 'center', fit: 200 });
+          }
         }
+      });
+      if (p.flash > 0) { E.ctx.globalAlpha = p.flash / 20; E.rect(0, 0, E.W, E.H, '#ffffff'); E.ctx.globalAlpha = 1; }
+      // an SSR: her picture swept in on a rainbow band
+      if (p.cut) {
+        const c = p.cut.card, ct = p.cut.t;
+        const k = E.ease.outCubic(Math.min(1, ct / 14));
+        E.rect(0, 70, E.W, 100, 'rgba(20,10,30,0.8)');
+        for (let i = 0; i < 6; i++) E.rect(0, 70 + i * 17, E.W, 2, rareColor(4, ct + i * 12));
+        const x = Math.round(E.lerp(-120, 34, k));
+        E.artShade(0.3); // the cards' own pictures sink behind the band
+        if (c.kind === 'expr') {
+          const pic = UI.portraitFace(c.ref, c.pic, 4.6);
+          E.art('pack-cut', pic.src, x, 72, 96, 96, pic.crop, isLocked(c.ref) ? 'grayscale(1) brightness(0.18) contrast(1.4)' : null);
+        } else drawCard(c, x + 20, 76, 64, 88, true, 'pack-cut');
+        E.text('SSR', 190, 90, { color: rareColor(4, ct), outline: C.plum, scale: 3 });
+        E.text(cardInfo(c).name, 190, 128, { color: C.white, outline: C.plum, size: 14, fit: 124 });
+        E.text(fxText(c.fx), 190, 148, { color: C.gold, fit: 124 });
+        return;
       }
-      drawCard(g.card, 160 - w / 2, 58, w, 108, true, 'gacha');
-      if (g.t > 72) {
-        const info = cardInfo(g.card);
-        E.text(G.RARE_NAME[g.card.rare] + '  ' + info.name, 160, 174, { color: g.card.rare === 3 ? C.gold : g.card.rare === 2 ? C.pink : C.white, align: 'center', size: 14 });
-        E.text(G.t(g.dup ? '重複了！退還 30G' : 'NEW! 已加入卡片圖鑑'), 160, 194, { color: g.dup ? C.gray : C.mint, align: 'center' });
-        E.text(G.t('按 Z 繼續'), 160, 212, { color: C.gray, align: 'center' });
-      }
+      if (p.next >= n && t > p.nextAt + 10) {
+        const refund = p.list.reduce((s, c) => s + c.refund, 0);
+        if (refund) E.text(G.t('重複的卡退還了 {n}G', { n: refund }), 160, big ? 192 : 176, { color: C.gold, align: 'center' });
+        E.text(G.t('按 Z 繼續'), 160, 214, { color: C.gray, align: 'center' });
+      } else if (t > 80) E.text(G.t('Z 翻開'), 160, 214, { color: C.gray, align: 'center' });
     },
   };
 
   // ------------------------------------------------------------------ cards
+  // rarity colours: N sky, R pink, SR gold, SSR a turning rainbow
+  const RAINBOW = ['#ff6f91', '#ffb45c', '#ffe14d', '#8ee07a', '#6ad0ff', '#c89aff'];
+  function rareColor(r, t) { return r >= 4 ? RAINBOW[Math.floor((t || 0) / 5) % RAINBOW.length] : r === 3 ? '#ffd23f' : r === 2 ? '#ff9fbb' : '#8fd0ff'; }
+  function rareTextColor(r, t) { return r >= 4 ? rareColor(4, t) : r === 3 ? C.gold : r === 2 ? C.pink : C.white; }
+  // what a card does in the deck, in words
+  const FX_TEXT = { coin: '委託金幣 +{n}%', sp: '開場 SP +{n}', time: '時間 +{n} 秒', fire: '火力 +{n}', bombs: '炸彈 +{n}', speed: '速度 +{n}', heart: '愛心 +{n}', kick: '一開始就會踢炸彈', pierce: '火焰貫穿 +{n}', part: '部位破壞傷害 ×{n}' };
+  function fxText(fx) { return Object.keys(fx || {}).map((k) => G.t(FX_TEXT[k], { n: fx[k] })).join(G.LANG === 'en' ? ', ' : '、'); }
+  // the deck's effects added up (kick if any card kicks, part damage by the best card)
+  function deckFx(deck) {
+    const out = {};
+    for (const c of deck || (SAVE.deck || []).map((id) => G.CARDS.find((x) => x.id === id)).filter(Boolean)) {
+      for (const [k, v] of Object.entries(c.fx || {})) out[k] = k === 'part' ? Math.max(out[k] || 1, v) : k === 'kick' ? 1 : (out[k] || 0) + v;
+    }
+    return out;
+  }
+  function deckText(deck) { return fxText(deckFx(deck)); }
+  G.deckFx = deckFx;
+  // one card from the rates (at least minRare), and giving it: a card you had already pays back
+  function pickCard(minRare) {
+    let rare = 1, acc = 0;
+    const roll = Math.random();
+    for (const [r, p] of G.CARD_RATES) { acc += p; if (roll < acc) { rare = r; break; } }
+    rare = Math.max(rare, minRare || 1);
+    return E.pick(G.CARDS.filter((c) => c.rare === rare));
+  }
+  function giveCard(card) {
+    const dup = !!SAVE.cards[card.id];
+    SAVE.cards[card.id] = (SAVE.cards[card.id] || 0) + 1;
+    if (!dup) return 0;
+    const back = G.CARD_REFUND[card.rare] || 10;
+    SAVE.coins += back;
+    return back;
+  }
+  // the capsule machine's prize, given at once (so leaving in the middle of the show keeps it)
+  function rollCapsule() {
+    const total = G.CAPSULES.reduce((s, c) => s + c.w, 0);
+    let roll = Math.random() * total, cap = G.CAPSULES[0];
+    for (const c of G.CAPSULES) { roll -= c.w; if (roll < 0) { cap = c; break; } }
+    const out = { cap, rare: cap.rare, label: '', isNew: false, refund: 0 };
+    if (cap.kind === 'coins') { SAVE.coins += cap.n; out.label = '+' + cap.n + 'G'; out.coins = cap.n; }
+    else if (cap.kind === 'gift') { const g = E.pick(G.GIFTS); SAVE.gifts[g.id] = (SAVE.gifts[g.id] || 0) + 1; out.gift = g; out.label = G.t('{name}（回房間送給女僕吧）', { name: g.name }); }
+    else if (cap.kind === 'food') {
+      const opts = G.MENU_FOOD.filter((f) => !SAVE.buffs[f.id]);
+      if (opts.length) { const f = E.pick(opts); SAVE.buffs[f.id] = true; out.food = f; out.label = G.t('{name}（下個委託送上）', { name: f.name }); }
+      else { SAVE.coins += 150; out.coins = 150; out.label = '+150G'; }
+    } else if (cap.kind === 'furniture') {
+      const room = getRoom();
+      const opts = G.FURNITURE_SHOP.filter((id) => !(G.FURNITURE[id].unique && room.owned[id]));
+      if (opts.length) { const id = E.pick(opts); room.owned[id] = (room.owned[id] || 0) + 1; if (G.ROOMAPI) G.ROOMAPI.autoPlace(id); out.furniture = id; out.isNew = true; out.label = G.FURNITURE[id].name; }
+      else { SAVE.coins += 300; out.coins = 300; out.label = '+300G'; }
+    } else if (cap.kind === 'card') {
+      const card = pickCard(2);
+      out.card = card;
+      out.isNew = !SAVE.cards[card.id];
+      out.refund = giveCard(card);
+      out.rare = Math.max(cap.rare, card.rare);
+      out.label = cardInfo(card).name;
+    }
+    return out;
+  }
+  // a pixel disc, row by row (crisp at any size)
+  function pixDisc(cx, cy, r, col, from, to) {
+    for (let y = -Math.floor(r); y <= Math.floor(r); y++) {
+      if (from != null && (y < from || y > to)) continue;
+      const hw = Math.floor(Math.sqrt(Math.max(0, r * r - y * y)));
+      E.rect(Math.round(cx - hw), Math.round(cy + y), hw * 2 + 1, 1, col);
+    }
+  }
+  // a capsule: coloured top, clear bottom, a seam; open (0-1) sends the top up and the bottom down
+  function drawCapsule(cx, cy, r, rare, t, open) {
+    const col = rareColor(rare, t);
+    const up = open * 26, down = open * 16;
+    const ga = E.ctx.globalAlpha;
+    if (open > 0) E.ctx.globalAlpha = Math.max(0, 1 - open * 0.8);
+    pixDisc(cx, cy - up, r + 1, '#2a1b30', -r - 1, 0);
+    pixDisc(cx, cy - up, r, col, -r, 0);
+    pixDisc(cx, cy + down, r + 1, '#2a1b30', 0, r + 1);
+    pixDisc(cx, cy + down, r, '#f4f0fa', 0, r);
+    if (r >= 6) {
+      pixDisc(cx - r * 0.35, cy - up - r * 0.45, r * 0.22, '#ffffff');
+      E.rect(Math.round(cx - r), Math.round(cy - up), Math.round(r * 2) + 1, 1, '#2a1b30');
+      E.rect(Math.round(cx - r + 1), Math.round(cy + down + 1), Math.round(r * 2) - 1, 1, '#d8d0e4');
+    }
+    E.ctx.globalAlpha = ga;
+  }
+  // light rays turning round a point
+  function rays(cx, cy, len, col, alpha, t) {
+    const ctx = E.ctx;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = col;
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2 + t * 0.02, b = a + 0.14;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(a) * len, cy + Math.sin(a) * len);
+      ctx.lineTo(cx + Math.cos(b) * len, cy + Math.sin(b) * len);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+  // the capsule machine: a glass dome full of capsules on a red body with a coin slot, the crank and the chute.
+  // crank: which quarter turn the handle is at; rattle: the capsules jostle while it turns
+  function drawCapsuleMachine(x, y, t, crank, rattle) {
+    const cx = x + 32;
+    // dome: the glass, the capsules inside, a highlight
+    pixDisc(cx, y + 30, 29, '#2a1b30');
+    pixDisc(cx, y + 30, 28, '#d8f0ff');
+    const caps = [[-14, 12, 1], [-3, 16, 2], [9, 13, 3], [18, 7, 1], [-19, 2, 2], [-8, 4, 4], [4, 5, 1], [14, -4, 2], [-12, -8, 3], [0, -6, 1], [8, -14, 2], [-4, -18, 1]];
+    caps.forEach(([dx, dy, r], i) => {
+      const j = rattle ? Math.round(Math.sin(t * 0.9 + i * 1.7) * 2) : 0;
+      drawCapsule(cx + dx + j, y + 30 + dy + (rattle ? Math.round(Math.cos(t * 1.1 + i) * 1.5) : 0), 5, r, t + i * 7, 0);
+    });
+    E.ctx.globalAlpha = 0.5;
+    pixDisc(cx - 12, y + 16, 5, '#ffffff');
+    E.ctx.globalAlpha = 1;
+    // cap on top
+    E.rect(cx - 7, y, 14, 4, '#2a1b30'); E.rect(cx - 6, y + 1, 12, 3, '#ff6f91');
+    // body
+    E.panel(x + 2, y + 56, 60, 60, '#ff5a6a', '#a8102a', { shine: '#ffc8d0' });
+    E.rect(x + 4, y + 60, 56, 2, '#ffd23f');
+    // coin slot with its price
+    E.rect(x + 9, y + 66, 18, 12, '#2a1b30'); E.rect(x + 10, y + 67, 16, 10, '#ffd23f'); E.rect(x + 16, y + 69, 4, 6, '#2a1b30');
+    E.text('100', x + 18, y + 80, { color: C.white, align: 'center', small: true });
+    // the crank: a gold boss and a handle turned by quarters, a white knob
+    pixDisc(x + 46, y + 74, 7, '#2a1b30'); pixDisc(x + 46, y + 74, 6, '#ffd23f'); pixDisc(x + 45, y + 73, 2, '#fff3a0');
+    const ang = [[0, -1], [1, 0], [0, 1], [-1, 0]][crank % 4];
+    for (let i = 0; i <= 9; i++) E.rect(x + 45 + ang[0] * i, y + 73 + ang[1] * i, 3, 3, i > 7 ? '#ffffff' : '#c8c8dc');
+    // chute
+    E.rect(x + 22, y + 96, 20, 14, '#2a1b30'); E.rect(x + 24, y + 98, 16, 10, '#5a1428'); E.rect(x + 24, y + 98, 16, 2, '#ff9fbb');
+  }
+  // the card pack: a foil pack with the lace-heart crest; open (0-1) tears the top strip off
+  function drawPackArt(x, y, w, h, t, open) {
+    const shine = Math.floor(t / 4) % (w + 20);
+    const top = Math.round(open * 22);
+    E.panel(x, y + 10, w, h - 10, '#ff9fbb', '#a8285a', {});
+    E.rect(x + 3, y + 13, w - 6, h - 16, '#ffd0e0');
+    for (let i = 0; i < w - 6; i += 6) E.rect(x + 3 + i, y + 13, 3, h - 16, '#ffc0d4');
+    if (shine < w - 6) E.rect(x + 3 + shine, y + 13, 2, h - 16, '#ffffff');
+    E.panel(x, y - top, w, 14, '#ffd23f', '#a8285a', {});
+    E.rect(x + 4, y + 5 - top, w - 8, 2, '#fff3a0');
+    E.ctx.drawImage(E.spr.fx.bigHeart.love, Math.round(x + w / 2 - 5), Math.round(y + h / 2 - 2));
+    E.text('MAID', x + w / 2, y + h - 22, { color: '#a8285a', align: 'center', small: true });
+    E.text('CARDS', x + w / 2, y + h - 14, { color: '#a8285a', align: 'center', small: true });
+  }
+  // a card face down: pink with a lace border and the heart crest
+  function drawCardBack(x, y, w, h, t) {
+    E.panel(x, y, w, h, '#ff9fbb', '#a8285a', {});
+    if (w < 12) return;
+    E.rect(x + 3, y + 3, w - 6, h - 6, '#ffc0d4');
+    for (let i = 4; i < h - 4; i += 5) { E.rect(x + 3, y + i, 2, 2, '#ffffff'); E.rect(x + w - 5, y + i, 2, 2, '#ffffff'); }
+    E.ctx.drawImage(E.spr.fx.bigHeart.like, Math.round(x + w / 2 - 5), Math.round(y + h / 2 - 5));
+  }
+  // what came out of a capsule, big
+  function drawPrize(p, cx, cy, t) {
+    const ctx = E.ctx;
+    if (p.card) { drawCard(p.card, cx - 30, cy - 40, 60, 80, true, 'capsule-card'); return; }
+    const put = (img, s) => ctx.drawImage(img, Math.round(cx - (img.width * s) / 2), Math.round(cy - (img.height * s) / 2), img.width * s, img.height * s);
+    if (p.furniture) { const img = E.spr.room.furniture[p.furniture]; put(img, img.height > 40 ? 1 : 2); return; }
+    if (p.gift) { put(E.spr.room.gifts[p.gift.id], 3); return; }
+    if (p.food) { put(E.spr.items[p.food.icon], 3); return; }
+    // coins: a little pile that grows with the amount
+    const n = p.coins >= 1000 ? 9 : p.coins >= 200 ? 5 : 2;
+    for (let i = 0; i < n; i++) ctx.drawImage(E.spr.items.coin[((t >> 2) + i) % 4], Math.round(cx - 8 + ((i % 3) - 1) * 14), Math.round(cy - 8 - Math.floor(i / 3) * 10 + (i % 2) * 3));
+  }
   function cardInfo(card) {
+    if (card.kind === 'expr') {
+      if (isLocked(card.ref)) return { name: '？？？', desc: G.t('還沒加入的神秘女僕。') };
+      return { name: G.MAID_DATA[card.ref].name + (G.LANG === 'en' ? ': ' : '・') + card.label, desc: G.t('{name}的表情卡。', { name: G.MAID_DATA[card.ref].name }) };
+    }
     if (card.kind === 'monster') { const D = G.ENEMY_DATA[card.ref]; return { name: D.name, desc: D.desc }; }
     if (card.kind === 'maid') {
       if (isLocked(card.ref)) return { name: '？？？', desc: G.t('還沒加入的神秘女僕。') };
@@ -1614,14 +1951,19 @@
   // slot: a stable name for where the card is shown (its CG picture is reused frame to frame)
   function drawCard(card, x, y, w, h, faceUp, slot) {
     const ctx = E.ctx;
-    const rim = card.rare === 3 ? ['#ffd23f', '#ff9fbb', '#8fc6ff', '#b8f28a'][(E.frame >> 4) % 4] : card.rare === 2 ? C.gold : '#c6c0d8';
+    const rim = card.rare >= 4 ? rareColor(4, E.frame) : card.rare === 3 ? ['#ffd23f', '#ff9fbb', '#8fc6ff', '#b8f28a'][(E.frame >> 4) % 4] : card.rare === 2 ? C.gold : '#c6c0d8';
     E.panel(x, y, w, h, faceUp ? '#fff' : C.panel, rim, {});
     if (!faceUp || w < 30) return;
-    const inner = card.kind === 'maid' ? '#ffe0ea' : card.kind === 'monster' ? '#e6f4ff' : '#fff6cc';
+    const inner = card.kind === 'maid' || card.kind === 'expr' ? '#ffe0ea' : card.kind === 'monster' ? '#e6f4ff' : '#fff6cc';
     E.rect(x + 4, y + 4, w - 8, h - 22, inner);
     const cx = x + w / 2, cy = y + (h - 18) / 2;
     const big = h > 80;
-    if (card.kind === 'maid') {
+    if (card.kind === 'expr') {
+      // her expression picture, the face and shoulders (big cards show a little more of her)
+      const pic = UI.portraitFace(card.ref, card.pic, big ? 5.4 : 4.2);
+      E.art('card-' + slot, pic.src, x + 4, y + 4, w - 8, h - 22, pic.crop, isLocked(card.ref) ? 'grayscale(1) brightness(0.18) contrast(1.4)' : null);
+      if (card.rare >= 4 && (E.frame >> 3) % 4 === 0) ctx.drawImage(E.spr.fx.sparkle[(E.frame >> 2) % 3], x + 4 + ((E.frame * 7) % Math.max(1, w - 12)), y + 6 + ((E.frame * 3) % Math.max(1, h - 30)));
+    } else if (card.kind === 'maid') {
       // her CG fills the picture window: head to waist on the big card, head and shoulders on small ones
       // (a dark shadow while she has not joined yet, like the character select)
       E.art('card-' + slot, CG_ART, x + 4, y + 4, w - 8, h - 22, (big ? CG_CROP.select : CG_CROP.bust)[card.ref], isLocked(card.ref) ? 'grayscale(1) brightness(0.18) contrast(1.4)' : null);
@@ -1638,31 +1980,48 @@
       ctx.drawImage(E.spr.bomb[(E.frame >> 4) % 3], Math.round(cx - 8 * s), Math.round(cy - 8 * s), 16 * s, 16 * s);
     }
     const stars = card.rare;
-    for (let i = 0; i < stars; i++) ctx.drawImage(E.spr.fx.star[0], Math.round(cx - stars * 3.5 + i * 7), y + h - 14);
+    const gap = w < 40 ? 5 : 7;
+    for (let i = 0; i < stars; i++) ctx.drawImage(E.spr.fx.star[0], Math.round(cx - stars * gap / 2 + i * gap), y + h - 14);
   }
 
   SC.album = {
-    enter(arg) { this.t = 0; this.sel = 0; this.back = (arg && arg.back) || SC.title; },
+    enter(arg) { this.t = 0; this.sel = 0; this.back = (arg && arg.back) || SC.title; this.backArg = (arg && arg.backArg) || undefined; this.msg = ''; this.msgT = 0; SAVE.deck = SAVE.deck || []; },
     update() {
       this.t++;
+      if (this.msgT > 0) this.msgT--;
       const d = E.menuDir();
       const n = G.CARDS.length, cols = 9;
       if (d === 'left') { this.sel = (this.sel + n - 1) % n; A.sfx('select'); }
       if (d === 'right') { this.sel = (this.sel + 1) % n; A.sfx('select'); }
       if (d === 'up') { this.sel = (this.sel + n - cols) % n; A.sfx('select'); }
       if (d === 'down') { this.sel = (this.sel + cols) % n; A.sfx('select'); }
-      if (E.menuPressed('b') || E.menuPressed('start')) { A.sfx('cancel'); E.go(this.back); }
+      // Z puts the card in the deck or takes it out (three at most)
+      if (E.menuPressed('a')) {
+        const card = G.CARDS[this.sel];
+        const deck = SAVE.deck;
+        const at = deck.indexOf(card.id);
+        if (!SAVE.cards[card.id]) { A.sfx('denied'); this.say(G.t('還沒有抽到這張卡。')); }
+        else if (at >= 0) { deck.splice(at, 1); A.sfx('cancel'); this.say(G.t('從牌組拿出來了。')); persist(); }
+        else if (deck.length >= G.DECK_SIZE) { A.sfx('denied'); this.say(G.t('牌組最多放 {n} 張。', { n: G.DECK_SIZE })); }
+        else { deck.push(card.id); A.sfx('confirm'); this.say(G.t('放進牌組了！')); persist(); }
+      }
+      if (E.menuPressed('b') || E.menuPressed('start')) { A.sfx('cancel'); E.go(this.back, this.backArg); }
     },
+    say(text) { this.msg = text; this.msgT = 90; },
     draw() {
       bg(this.t);
       const owned = G.CARDS.filter((c) => SAVE.cards[c.id]).length;
-      header(G.t('卡片圖鑑'), owned + ' / ' + G.CARDS.length);
-      G.CARDS.forEach((card, i) => {
-        const col = i % 9, row = (i / 9) | 0;
+      const per = 18, page = Math.floor(this.sel / per), pages = Math.ceil(G.CARDS.length / per);
+      header(G.t('卡片圖鑑'), owned + ' / ' + G.CARDS.length + '　' + (page + 1) + '/' + pages);
+      const deck = SAVE.deck || [];
+      G.CARDS.slice(page * per, page * per + per).forEach((card, j) => {
+        const i = page * per + j;
+        const col = j % 9, row = (j / 9) | 0;
         const x = 9 + col * 34, y = 26 + row * 58;
         const has = !!SAVE.cards[card.id];
-        drawCard(card, x, y, 31, 52, has, 'album-' + i);
+        drawCard(card, x, y, 31, 52, has, 'album-' + j);
         if (!has) E.text('?', x + 15, y + 22, { color: C.gray, align: 'center' });
+        if (deck.includes(card.id)) { E.rect(x + 20, y - 3, 13, 9, C.red); E.text('★', x + 26, y - 4, { color: C.gold, align: 'center', small: true }); }
         if (i === this.sel) { E.ctx.strokeStyle = C.red; E.ctx.lineWidth = 2; E.ctx.strokeRect(x - 1, y - 1, 33, 54); }
       });
       const card = G.CARDS[this.sel];
@@ -1671,14 +2030,19 @@
       if (has) {
         drawCard(card, 16, 150, 50, 66, true, 'album-detail');
         const info = cardInfo(card);
-        E.text(G.RARE_NAME[card.rare] + '  ' + info.name, 76, 154, { color: card.rare === 3 ? C.gold : card.rare === 2 ? C.pink : C.white, size: 14 });
-        E.text(info.desc, 76, 176, { color: C.paper });
-        E.text(G.t('持有 ×{n}', { n: has }), 76, 196, { color: C.gray });
+        E.text(G.RARE_NAME[card.rare] + '  ' + info.name, 76, 147, { color: rareTextColor(card.rare, this.t), size: 14, fit: 230 });
+        E.text(info.desc, 76, 164, { color: C.paper, fit: 230 });
+        E.text(G.t('效果') + '：' + fxText(card.fx), 76, 178, { color: C.gold, fit: 230 });
+        E.text(G.t('持有 ×{n}', { n: has }) + (deck.includes(card.id) ? '　' + G.t('牌組中') : ''), 76, 192, { color: C.gray });
       } else {
-        E.text(G.t('還沒有抽到這張卡。'), 160, 170, { color: C.gray, align: 'center' });
-        E.text(G.t('到咖啡廳的扭蛋機試試手氣吧！'), 160, 188, { color: C.gray, align: 'center' });
+        E.text(G.t('還沒有抽到這張卡。'), 160, 162, { color: C.gray, align: 'center' });
+        E.text(G.t('到咖啡廳的「抽卡片」試試手氣吧！'), 160, 180, { color: C.gray, align: 'center' });
       }
-      hint(G.t('方向鍵 選擇　X 返回'));
+      // the deck: how many cards and their effects added up
+      const deckCards = deck.map((id) => G.CARDS.find((c) => c.id === id)).filter(Boolean);
+      E.text(G.t('牌組') + ' ' + deckCards.length + '/' + G.DECK_SIZE + '：' + (deckCards.length ? deckText(deckCards) : G.t('（空）')), 76, 206, { color: C.pink, fit: 230 });
+      if (this.msgT > 0) { E.rect(60, 118, 200, 20, C.plum); E.text(this.msg, 160, 122, { color: C.mint, align: 'center', fit: 190 }); }
+      hint(G.t('方向鍵 選擇　Z 放入／取出牌組　X 返回'));
     },
   };
 
@@ -1707,15 +2071,19 @@
       if (buffs.latte) st.speed++;
       if (buffs.charm) { if (pk.guard) st.hearts++; else pk.guard = true; }
       st.hearts += pk.heartBonus;
-      const sp = buffs.tea ? 100 : Math.min(100, 30 + pk.spStart);
+      // the deck: up to three cards, each adding its effect to every job
+      const fx = deckFx();
+      st.fire += fx.fire || 0; st.bombs += fx.bombs || 0; st.speed += fx.speed || 0; st.hearts += fx.heart || 0;
+      this.cardFx = fx;
+      const sp = buffs.tea ? 100 : Math.min(100, 30 + pk.spStart + (fx.sp || 0));
       this.perks = pk;
       this.usedBuffs = Object.keys(buffs).filter((k) => buffs[k]);
       SAVE.buffs = {};
       persist();
       this.world = new G.World({
         mode: 'story', stage: def, theme: def.theme, layout: def.layout, decor: def.decor, soft: def.soft, items: def.items,
-        enemies: def.enemies, dust: def.dust, time: def.time, boss: def.boss || null,
-        players: [{ maid: SAVE.maid, human: true, pad: 0, stats: st, sp, perks: pk }],
+        enemies: def.enemies, dust: def.dust, time: def.time + (fx.time || 0), boss: def.boss || null, partMul: fx.part || 1,
+        players: [{ maid: SAVE.maid, human: true, pad: 0, stats: st, sp, perks: pk, kick: !!fx.kick, pierce: fx.pierce || 0 }],
       });
       this.paused = false;
       this.pauseSel = 0;
@@ -1810,7 +2178,16 @@
       edgeBar({ y: 224, h: 16, rule: 224 });
       if (w.boss && w.boss.alive) {
         const nameW = E.text(this.def.title, 6, 226, { color: C.gold, fit: 80 });
-        E.bar(12 + nameW, 228, 222 - nameW, 8, w.boss.hp / w.boss.maxHp, w.boss.hitT > 0 && (E.frame >> 2) % 2 ? C.white : C.red);
+        // its health, and a mark for each part: gold while it holds, a grey cross once it is broken off
+        const parts = w.boss.parts || [];
+        const barW = 222 - nameW - parts.length * 9;
+        E.bar(12 + nameW, 228, barW, 8, w.boss.hp / w.boss.maxHp, w.boss.hitT > 0 && (E.frame >> 2) % 2 ? C.white : C.red);
+        parts.forEach((p, i) => {
+          const px = 16 + nameW + barW + i * 9;
+          E.rect(px, 227, 8, 10, '#000000');
+          if (p.broken) { E.rect(px + 1, 228, 6, 8, '#5a4a6e'); E.rect(px + 2, 229, 1, 1, '#ffffff'); E.rect(px + 5, 229, 1, 1, '#ffffff'); E.rect(px + 3, 231, 2, 2, '#ffffff'); E.rect(px + 2, 234, 1, 1, '#ffffff'); E.rect(px + 5, 234, 1, 1, '#ffffff'); }
+          else { E.rect(px + 1, 228, 6, 8, p.hitT > 0 && (E.frame >> 2) % 2 ? '#ffffff' : '#e0a014'); E.rect(px + 1, 236 - Math.ceil(8 * p.hp / p.max), 6, Math.ceil(8 * p.hp / p.max), '#ffd23f'); }
+        });
       } else marquee(G.t(this.tip), 4, 226, 232, C.gray);
       drawStoryPanel(w);
       drawCutin(w, 240);
@@ -1947,6 +2324,13 @@
     E.bar(x0 + 5, 151, 70, 7, clean, C.mint);
     if (w.freezeT > 0) { ctx.drawImage(E.spr.ui.clock, x0 + 5, 163); E.bar(x0 + 15, 163, 60, 5, w.freezeT / 330, '#9ff3ff'); }
     if (m.star > 0) { ctx.drawImage(E.spr.fx.star[0], x0 + 5, 171); E.bar(x0 + 15, 171, 60, 5, m.star / 480, C.gold); }
+    // what she has picked up (kick, pierce with its level, line bomb), and a curse with the time it has left
+    let ax = x0 + 5;
+    const ability = (icon, label) => { ctx.drawImage(E.spr.ui[icon], ax, 178); if (label) E.text(label, ax + 8, 177, { color: C.text, small: true }); ax += label ? 15 : 10; };
+    if (m.kick) ability('kick');
+    if (m.pierce > 0) ability('pierce', String(m.pierce));
+    if (m.line) ability('line');
+    if (m.curse) { ability('skull'); E.bar(ax, 179, x0 + 75 - ax, 5, m.curse.t / 600, (E.frame >> 3) % 2 ? '#b08ae0' : '#6a4a9e'); }
     // controls in a black box, like the original's soft-key strip
     const touch = E.input.lastDevice === 'touch';
     E.rect(x0 + 3, 186, 74, 51, '#000000');
@@ -1971,17 +2355,26 @@
       this.rank = score >= 82 ? 'S' : score >= 62 ? 'A' : score >= 42 ? 'B' : 'C';
       const mult = { S: 1.6, A: 1.3, B: 1.1, C: 1 }[this.rank];
       const killCoins = Math.min(w.stats.coins, w.stats.killCoins || 0);
+      const partCoins = w.stats.partCoins || 0, comboCoins = w.stats.comboCoins || 0;
       this.rows = [
         [G.t('委託報酬'), def.reward],
         [G.t('打倒怪物 ×{n}', { n: w.stats.kills }), killCoins],
-        [G.t('撿到的金幣'), w.stats.coins - killCoins],
+        [G.t('撿到的金幣'), Math.max(0, w.stats.coins - killCoins - partCoins - comboCoins)],
         [G.t('打掃度 {n}%', { n: Math.round(clean * 100) }), null],
         [G.t('剩餘時間 {n}秒', { n: Math.ceil(Math.max(0, w.timeLeft) / 60) }), null],
         [G.t('受傷次數 {n}', { n: w.stats.hits }), null],
       ];
+      // the extra coin rows go after the pickups, in the order they were earned: parts, chains and combos, then the cards
+      const fx = deckFx();
+      this.cardBonus = fx.coin ? Math.round((def.reward + w.stats.coins) * fx.coin / 100) : 0;
+      const extra = [];
+      if (w.stats.parts) extra.push([G.t('部位破壞 ×{n}', { n: w.stats.parts }), partCoins]);
+      if (comboCoins) extra.push([G.t('連鎖・連擊獎勵'), comboCoins]);
+      if (this.cardBonus) extra.push([G.t('卡片加成 +{n}%', { n: fx.coin }), this.cardBonus]);
+      this.rows.splice(3, 0, ...extra);
       const pk = perks(SAVE.maid);
       this.bonus = Math.round(def.reward * (mult * pk.rewardMul - 1));
-      this.total = def.reward + w.stats.coins + this.bonus;
+      this.total = def.reward + w.stats.coins + this.bonus + this.cardBonus;
       // the maid grows from the job
       const bond = getBond(SAVE.maid);
       const before = affLevel(bond.aff);
@@ -2017,12 +2410,16 @@
       bg(this.t);
       header(G.t('委託結算'), this.def.id + ' ' + this.def.title);
       paper(16, 26, 196, 190);
+      // more than six rows: they close up, and pale stripes take the place of the rules between them
+      const step = this.rows.length > 6 ? Math.floor(114 / this.rows.length) : 19;
+      const tight = step < 16;
       this.rows.forEach(([label, val], i) => {
         if (this.t < 10 + i * 12) return;
-        const y = 33 + i * 19;
-        E.text(label, 28, y, { color: C.ink });
-        if (val != null) coinLabel(200, y + 2, val, 'right');
-        E.rect(28, y + 15, 172, 1, C.paper2);
+        const y = 33 + i * step;
+        if (tight && i % 2 === 0) E.rect(24, y - 2, 180, step, '#ffeef3');
+        E.text(label, 28, y, { color: C.ink, fit: val != null ? 120 : 170 });
+        if (val != null) coinLabel(200, y + (tight ? 1 : 2), val, 'right');
+        if (!tight) E.rect(28, y + step - 4, 172, 1, C.paper2);
       });
       if (this.t > 80) {
         E.text(pk_label(), 28, 148, { color: C.ink });

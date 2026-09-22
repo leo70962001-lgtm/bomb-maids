@@ -82,77 +82,77 @@
     {
       id: '1-1', theme: 'classroom', title: '教室大掃除', client: '櫻丘學園 校長', reward: 150, time: 150, layout: 'desks',
       brief: ['放學後的教室被塵塵貓佔領了。', '請把牠們通通清掉！'],
-      enemies: { dustcat: 4 }, items: { bomb: 2, fire: 2, tea: 1 }, soft: 0.85, dust: 3,
+      enemies: { dustcat: 4 }, items: { bomb: 2, fire: 2, tea: 1, kick: 1 }, soft: 0.85, dust: 3,
     },
     {
       id: '1-2', theme: 'classroom', title: '福利社的貪吃鬼', client: '學生會長', reward: 220, time: 160, layout: 'store',
       brief: ['福利社的麵包被吃光了！', '犯人好像是粉紅色的……'],
-      enemies: { dustcat: 3, piggy: 3 }, items: { bomb: 2, fire: 2, speed: 1, heart: 1 }, soft: 0.62, dust: 4,
+      enemies: { dustcat: 3, piggy: 3 }, items: { bomb: 2, fire: 2, speed: 1, heart: 1, line: 1, skull: 1 }, soft: 0.62, dust: 4,
     },
     {
       id: '2-1', theme: 'garden', title: '玫瑰花園除蟲', client: '花園伯爵夫人', reward: 300, time: 170, layout: 'plaza', decor: 'treehouse',
       brief: ['暴走熊在玫瑰園裡橫衝直撞。', '別讓牠們弄壞樹屋！'],
-      enemies: { piggy: 2, teddy: 3 }, items: { bomb: 2, fire: 2, clock: 1, heart: 1 }, soft: 0.55, dust: 4,
+      enemies: { piggy: 2, teddy: 3 }, items: { bomb: 2, fire: 2, clock: 1, heart: 1, pierce: 1 }, soft: 0.55, dust: 4,
     },
     {
       id: '2-2', theme: 'garden', title: '果凍迷宮', client: '園丁老爺爺', reward: 360, time: 180, layout: 'hedgemaze',
       brief: ['果凍怪會穿過花叢！', '聽說牠們最怕長長的火力。'],
-      enemies: { teddy: 3, jelly: 3 }, items: { bomb: 2, fire: 3, speed: 1, star: 1 }, soft: 0.62, dust: 5,
+      enemies: { teddy: 3, jelly: 3 }, items: { bomb: 2, fire: 3, speed: 1, star: 1, fullfire: 1, skull: 1 }, soft: 0.62, dust: 5,
     },
     {
       id: 'BOSS1', theme: 'classroom', title: '鑽頭機器人', client: '理科社社長', reward: 450, time: 180, layout: 'boss', boss: 'drill',
       brief: ['理科社的掃除機器人失控了！', '牠撞到硬牆會暈一下，趁機炸牠！'],
-      enemies: {}, items: { bomb: 2, fire: 2, heart: 1 }, soft: 0.3, dust: 3,
+      enemies: {}, items: { bomb: 2, fire: 2, heart: 1, kick: 1, line: 1 }, soft: 0.3, dust: 3,
     },
     {
       id: '3-1', theme: 'snow', title: '雪原的企鵝管家', client: '冰雪山莊', reward: 420, time: 180, layout: 'snowfield',
       brief: ['企鵝紳士跑得飛快。', '在牠的路上等著放炸彈吧。'],
-      enemies: { penguin: 4, snowkid: 2 }, items: { bomb: 2, fire: 2, speed: 1, heart: 1, clock: 1 }, soft: 0.55, dust: 5,
+      enemies: { penguin: 4, snowkid: 2 }, items: { bomb: 2, fire: 2, speed: 1, heart: 1, clock: 1, pierce: 1, skull: 1 }, soft: 0.55, dust: 5,
     },
     {
       id: '3-2', theme: 'snow', title: '聰明的雪寶寶', client: '冰雪山莊', reward: 480, time: 190, layout: 'lanes',
       brief: ['雪寶寶會躲炸彈。', '用連環爆炸把牠逼進死角！'],
-      enemies: { snowkid: 4, jelly: 2, penguin: 1 }, items: { bomb: 3, fire: 2, star: 1, heart: 1 }, soft: 0.6, dust: 5,
+      enemies: { snowkid: 4, jelly: 2, penguin: 1 }, items: { bomb: 3, fire: 2, star: 1, heart: 1, line: 1, kick: 1 }, soft: 0.6, dust: 5,
     },
     {
       id: '4-1', theme: 'candy', title: '糖果城堡的午茶', client: '甜點女王', reward: 560, time: 200, layout: 'candyCastle',
       brief: ['杯子蛋糕怪的奶油很厚，', '要炸兩次才會投降。'],
-      enemies: { cupcake: 4, dragon: 2 }, items: { bomb: 2, fire: 2, speed: 1, heart: 1, tea: 1 }, soft: 0.58, dust: 6,
+      enemies: { cupcake: 4, dragon: 2 }, items: { bomb: 2, fire: 2, speed: 1, heart: 1, tea: 1, fullfire: 1, skull: 1 }, soft: 0.58, dust: 6,
     },
     {
       id: '4-2', theme: 'candy', title: '甜點大暴走', client: '甜點女王', reward: 650, time: 210, layout: 'lanes',
       brief: ['糖果龍帶著大軍來了！', '這是最後的甜點防衛戰。'],
-      enemies: { dragon: 4, cupcake: 2, teddy: 2 }, items: { bomb: 3, fire: 3, star: 1, heart: 2, clock: 1 }, soft: 0.6, dust: 6,
+      enemies: { dragon: 4, cupcake: 2, teddy: 2 }, items: { bomb: 3, fire: 3, star: 1, heart: 2, clock: 1, pierce: 1, line: 1 }, soft: 0.6, dust: 6,
     },
     {
       id: 'BOSS2', theme: 'candy', title: '火焰蜘蛛', client: '甜點女王', reward: 800, time: 200, layout: 'boss', boss: 'spider',
       brief: ['城堡地下出現了噴火的機械蜘蛛！', '火焰沿著直線噴出，別跟牠站同一排！'],
-      enemies: {}, items: { bomb: 2, fire: 3, speed: 1, heart: 1 }, soft: 0.28, dust: 4,
+      enemies: {}, items: { bomb: 2, fire: 3, speed: 1, heart: 1, fullfire: 1, pierce: 1 }, soft: 0.28, dust: 4,
     },
     {
       id: '5-1', theme: 'toy', title: '玩具箱演唱會', client: '玩具店老闆', reward: 700, time: 210, layout: 'toyStage',
       brief: ['玩具們在舞台上開起了演唱會！', '鼓鼓兔會追著人跑，小心被包圍。'],
-      enemies: { drumbun: 3, piggy: 2, teddy: 2 }, items: { bomb: 2, fire: 2, speed: 1, heart: 1, tea: 1 }, soft: 0.6, dust: 6,
+      enemies: { drumbun: 3, piggy: 2, teddy: 2 }, items: { bomb: 2, fire: 2, speed: 1, heart: 1, tea: 1, kick: 1, skull: 2 }, soft: 0.6, dust: 6,
     },
     {
       id: '5-2', theme: 'toy', title: '積木迷宮', client: '玩具店老闆', reward: 760, time: 220, layout: 'blocks',
       brief: ['積木塔堆成了迷宮。', '用炸彈打通一條路吧！'],
-      enemies: { drumbun: 4, jelly: 2, snowkid: 1 }, items: { bomb: 3, fire: 2, star: 1, heart: 1, clock: 1 }, soft: 0.62, dust: 6,
+      enemies: { drumbun: 4, jelly: 2, snowkid: 1 }, items: { bomb: 3, fire: 2, star: 1, heart: 1, clock: 1, line: 1, pierce: 1 }, soft: 0.62, dust: 6,
     },
     {
       id: '6-1', theme: 'jewel', title: '寶石宮殿', client: '寶石公主', reward: 850, time: 220, layout: 'jewelEgg',
       brief: ['宮殿中央的巨大寶石蛋被盯上了！', '寶石騎士很硬，要炸兩次。'],
-      enemies: { gemknight: 3, dragon: 2, cupcake: 1 }, items: { bomb: 2, fire: 3, speed: 1, heart: 1, tea: 1 }, soft: 0.58, dust: 6,
+      enemies: { gemknight: 3, dragon: 2, cupcake: 1 }, items: { bomb: 2, fire: 3, speed: 1, heart: 1, tea: 1, fullfire: 1, skull: 1 }, soft: 0.58, dust: 6,
     },
     {
       id: '6-2', theme: 'jewel', title: '閃耀迴廊', client: '寶石公主', reward: 950, time: 230, layout: 'jewelRing',
       brief: ['水晶柱排成菱形的迴廊。', '從四個缺口鑽進中央吧！'],
-      enemies: { gemknight: 4, dragon: 2, penguin: 2 }, items: { bomb: 3, fire: 3, star: 1, heart: 2, clock: 1 }, soft: 0.6, dust: 7,
+      enemies: { gemknight: 4, dragon: 2, penguin: 2 }, items: { bomb: 3, fire: 3, star: 1, heart: 2, clock: 1, kick: 1, line: 1, pierce: 1 }, soft: 0.6, dust: 7,
     },
     {
       id: 'BOSS3', theme: 'lab', title: '金熊機甲', client: '？？？', reward: 1500, time: 240, layout: 'boss', boss: 'bear', final: true,
       brief: ['所有灰塵的源頭——', '神秘研究所的巨大機甲！'],
-      enemies: {}, items: { bomb: 3, fire: 3, heart: 2 }, soft: 0.25, dust: 4,
+      enemies: {}, items: { bomb: 3, fire: 3, heart: 2, fullfire: 1, line: 1 }, soft: 0.25, dust: 4,
     },
   ];
 
@@ -326,27 +326,74 @@
     { id: 'hearts', name: '蕾絲圍裙', desc: '愛心上限 +1', prices: [500, 1100, 2000], icon: 'heart' },
   ];
   G.GACHA_PRICE = 100;
+  // Cards (N R SR SSR). fx is what a card does while it is in the deck (up to three cards, for every job):
+  // coin (reward %), sp (SP at the start), time (seconds added), fire / bombs / speed / heart (+n), kick (kicks from the
+  // start), pierce (+n), part (damage to a boss's parts, x n).
   G.CARDS = [
-    { id: 'm_dustcat', kind: 'monster', ref: 'dustcat', rare: 1 },
-    { id: 'm_piggy', kind: 'monster', ref: 'piggy', rare: 1 },
-    { id: 'm_teddy', kind: 'monster', ref: 'teddy', rare: 1 },
-    { id: 'm_jelly', kind: 'monster', ref: 'jelly', rare: 1 },
-    { id: 'm_penguin', kind: 'monster', ref: 'penguin', rare: 1 },
-    { id: 'm_snowkid', kind: 'monster', ref: 'snowkid', rare: 1 },
-    { id: 'm_cupcake', kind: 'monster', ref: 'cupcake', rare: 1 },
-    { id: 'm_dragon', kind: 'monster', ref: 'dragon', rare: 1 },
-    { id: 'm_drumbun', kind: 'monster', ref: 'drumbun', rare: 1 },
-    { id: 'm_gemknight', kind: 'monster', ref: 'gemknight', rare: 1 },
-    { id: 'c_berry', kind: 'maid', ref: 'berry', rare: 2 },
-    { id: 'c_yoru', kind: 'maid', ref: 'yoru', rare: 2 },
-    { id: 'c_honey', kind: 'maid', ref: 'honey', rare: 2 },
-    { id: 'c_yukino', kind: 'maid', ref: 'yukino', rare: 2 },
-    { id: 's_drill', kind: 'boss', ref: 'drill', rare: 3, name: '鑽頭機器人', desc: '理科社做的掃除機器人。' },
-    { id: 's_spider', kind: 'boss', ref: 'spider', rare: 3, name: '火焰蜘蛛', desc: '頭上燒著火焰的機械蜘蛛。' },
-    { id: 's_boss', kind: 'boss', ref: 'bear', rare: 3, name: '金熊機甲', desc: '研究所的最終兵器。' },
-    { id: 's_bomb', kind: 'bomb', ref: 'bomb', rare: 3, name: '女僕炸彈', desc: '戴著蕾絲髮箍的炸彈。' },
+    { id: 'm_dustcat', kind: 'monster', ref: 'dustcat', rare: 1, fx: { coin: 5 } },
+    { id: 'm_piggy', kind: 'monster', ref: 'piggy', rare: 1, fx: { sp: 10 } },
+    { id: 'm_teddy', kind: 'monster', ref: 'teddy', rare: 1, fx: { time: 5 } },
+    { id: 'm_jelly', kind: 'monster', ref: 'jelly', rare: 1, fx: { coin: 5 } },
+    { id: 'm_penguin', kind: 'monster', ref: 'penguin', rare: 1, fx: { sp: 10 } },
+    { id: 'm_snowkid', kind: 'monster', ref: 'snowkid', rare: 1, fx: { time: 5 } },
+    { id: 'm_cupcake', kind: 'monster', ref: 'cupcake', rare: 1, fx: { coin: 5 } },
+    { id: 'm_dragon', kind: 'monster', ref: 'dragon', rare: 1, fx: { sp: 10 } },
+    { id: 'm_drumbun', kind: 'monster', ref: 'drumbun', rare: 1, fx: { time: 5 } },
+    { id: 'm_gemknight', kind: 'monster', ref: 'gemknight', rare: 1, fx: { coin: 5 } },
+    { id: 'c_berry', kind: 'maid', ref: 'berry', rare: 2, fx: { kick: 1 } },
+    { id: 'c_yoru', kind: 'maid', ref: 'yoru', rare: 2, fx: { pierce: 1 } },
+    { id: 'c_honey', kind: 'maid', ref: 'honey', rare: 2, fx: { sp: 20 } },
+    { id: 'c_yukino', kind: 'maid', ref: 'yukino', rare: 2, fx: { time: 10 } },
+    { id: 's_drill', kind: 'boss', ref: 'drill', rare: 3, name: '鑽頭機器人', desc: '理科社做的掃除機器人。', fx: { bombs: 1 } },
+    { id: 's_spider', kind: 'boss', ref: 'spider', rare: 3, name: '火焰蜘蛛', desc: '頭上燒著火焰的機械蜘蛛。', fx: { fire: 1 } },
+    { id: 's_boss', kind: 'boss', ref: 'bear', rare: 3, name: '金熊機甲', desc: '研究所的最終兵器。', fx: { part: 2 } },
+    { id: 's_bomb', kind: 'bomb', ref: 'bomb', rare: 3, name: '女僕炸彈', desc: '戴著蕾絲髮箍的炸彈。', fx: { coin: 15 } },
   ];
-  G.RARE_NAME = { 1: 'N', 2: 'R', 3: 'SR' };
+  // the maids' expression cards (from the user's expression sheets): six R, four SR and two SSR a maid
+  const EXPR_CARDS = {
+    berry: { ssr: ['overjoy', 'peace'], sr: ['excited', 'proud', 'tender', 'smug'], r: ['rage', 'cheer', 'cry', 'wonder', 'giggle', 'panic'] },
+    yoru: { ssr: ['tender', 'shy'], sr: ['content', 'wonder', 'surprise', 'serve'], r: ['calm', 'sweat', 'pout', 'rage', 'disgust', 'cry'] },
+    honey: { ssr: ['gift', 'content'], sr: ['cheer', 'shy', 'wonder', 'dreamy'], r: ['worry', 'pout', 'panic', 'confused', 'nervous', 'fluster'] },
+    yukino: { ssr: ['seduce', 'tender'], sr: ['confident', 'shy', 'excited', 'tease'], r: ['arrogant', 'serious', 'sad', 'angry', 'tired', 'surprise'] },
+  };
+  const EXPR_LABEL = {
+    berry: { rage: '暴怒', smug: '得意', cheer: '元氣', cry: '哭哭', overjoy: '超開心', peace: '比YA', wonder: '驚嘆', tender: '溫柔', giggle: '偷笑', panic: '慌張', proud: '自豪', excited: '興奮' },
+    yoru: { calm: '平靜', tender: '溫柔', sweat: '尷尬', content: '滿足', pout: '不悅', rage: '生氣', disgust: '嫌棄', cry: '哭泣', surprise: '驚嚇', shy: '害羞', serve: '倒茶', wonder: '驚喜' },
+    honey: { cheer: '開心', worry: '擔心', pout: '鬧彆扭', panic: '慌張', confused: '暈頭轉向', dreamy: '發呆', nervous: '緊張', shy: '害羞', gift: '收到禮物', content: '滿足', fluster: '手忙腳亂', wonder: '好奇' },
+    yukino: { confident: '自信', tender: '溫柔', seduce: '誘惑', arrogant: '傲慢', serious: '嚴肅', shy: '害羞', sad: '悲傷', angry: '生氣', excited: '期待', tired: '疲憊', tease: '調皮', surprise: '驚訝' },
+  };
+  // what they do: each maid's SR and SSR cards lean her way (Berry fire, Yoru speed and pierce, Honey bombs and hearts,
+  // Yukino SP and time); the R cards take turns between coins, SP and time
+  const EXPR_FX = {
+    berry: { sr: { fire: 1 }, ssr: { fire: 2 } },
+    yoru: { sr: { speed: 1 }, ssr: { pierce: 2 } },
+    honey: { sr: { bombs: 1 }, ssr: { heart: 1 } },
+    yukino: { sr: { sp: 40 }, ssr: { time: 30 } },
+  };
+  const R_FX = [{ coin: 10 }, { sp: 20 }, { time: 10 }];
+  for (const k of Object.keys(EXPR_CARDS)) {
+    const set = EXPR_CARDS[k];
+    set.r.forEach((pic, i) => G.CARDS.push({ id: 'x_' + k + '_' + pic, kind: 'expr', ref: k, pic, rare: 2, label: EXPR_LABEL[k][pic], fx: Object.assign({}, R_FX[i % 3]) }));
+    set.sr.forEach((pic) => G.CARDS.push({ id: 'x_' + k + '_' + pic, kind: 'expr', ref: k, pic, rare: 3, label: EXPR_LABEL[k][pic], fx: Object.assign({}, EXPR_FX[k].sr) }));
+    set.ssr.forEach((pic) => G.CARDS.push({ id: 'x_' + k + '_' + pic, kind: 'expr', ref: k, pic, rare: 4, label: EXPR_LABEL[k][pic], fx: Object.assign({}, EXPR_FX[k].ssr) }));
+  }
+  G.RARE_NAME = { 1: 'N', 2: 'R', 3: 'SR', 4: 'SSR' };
+  // the card counter: one card or five (the five-pack always has an SR or better); a card you already have pays back
+  G.CARD_PRICE = 150;
+  G.CARD_PRICE5 = 650;
+  G.CARD_RATES = [[4, 0.04], [3, 0.16], [2, 0.32], [1, 0.48]];
+  G.CARD_REFUND = { 1: 10, 2: 30, 3: 80, 4: 200 };
+  G.DECK_SIZE = 3;
+  // the capsule machine (G.GACHA_PRICE a turn): capsule toys by rarity (N R SR SSR) and weight
+  G.CAPSULES = [
+    { id: 'coin30', kind: 'coins', n: 30, rare: 1, w: 26, name: '零錢包' },
+    { id: 'gift', kind: 'gift', rare: 1, w: 30, name: '小禮物' },
+    { id: 'food', kind: 'food', rare: 2, w: 16, name: '甜點招待券' },
+    { id: 'coin200', kind: 'coins', n: 200, rare: 2, w: 12, name: '金幣袋' },
+    { id: 'card', kind: 'card', rare: 3, w: 10, name: '卡片' },
+    { id: 'furniture', kind: 'furniture', rare: 3, w: 5, name: '家具' },
+    { id: 'jackpot', kind: 'coins', n: 1000, rare: 4, w: 1, name: '大獎' },
+  ];
 
   // ------------------------------------------------------------------ room & raising (育成)
   G.ROOM_SIZES = [
@@ -779,7 +826,7 @@
 
   G.SAVE_DEFAULT = {
     v: 1, coins: 0, maid: null, hired: {}, cleared: {}, upgrades: { bombs: 0, fire: 0, speed: 0, hearts: 0 },
-    buffs: {}, tastes: {}, cards: {}, sound: true, music: true, plays: 0, ending: false,
+    buffs: {}, tastes: {}, cards: {}, deck: [], sound: true, music: true, plays: 0, ending: false,
     day: 1, bond: {}, room: null, gifts: {}, guide: 0, intro: false, lastJob: null, lang: 'ja', first: null, outfits: {}, closet: { maid: true }, titleCast: [],
     seen: 0,
   };

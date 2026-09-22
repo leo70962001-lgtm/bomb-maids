@@ -968,7 +968,8 @@
   // gold crescent ears, small slanted eyes, a gold-rimmed mouth slot, big black cheek sockets with a grey glint, gold
   // drops on the lower sides and a gold V necklace with a pendant. Bottom: a neck standing in a gold-rimmed dish.
   // Odd width, so the spire comes to a single-pixel point on the centre column.
-  function buildDrill(f, hurt) {
+  function buildDrill(f, hurt, broken) {
+    broken = broken || {};
     const W = 31, H = 46, cx = 15;
     const S = RAMP.silver, Au = RAMP.gold, GR = RAMP.grey;
     const PAL = { k: BK, W: S[0], w: S[1], m: S[2], s: S[3], S: S[4], Y: Au[0], y: Au[1], o: Au[2], d: Au[3], D: Au[4], g: GR[2], G: GR[3], n: '#262440', N: '#6a6890' };
@@ -991,16 +992,24 @@
       both(L, ['oyy'], 10, 12);
       put(L, ['mwWWwms'], 12, 39);
     });
-    // gold crescent ears on the upper sides and little gold drops lower down
+    // gold crescent ears on the upper sides and little gold drops lower down (broken off: only a scorched socket)
     layer((L) => {
-      put(L, ['..yyo', '.yYo.', 'yYWo.', 'yyo..', 'oyd..', 'od...', '.d...'], 1, 13);
+      if (!broken.ears) put(L, ['..yyo', '.yYo.', 'yYWo.', 'yyo..', 'oyd..', 'od...', '.d...'], 1, 13);
+      else put(L, ['..Dd', '.dD.', '..n.'], 3, 15);
       put(L, ['y.', 'o.', 'W.', 'yo'], 1, 28);
       mirror(L);
     });
 
     // ---- top: the threaded spire; the white core and the thread turn every frame
     const spin = f % 2;
-    layer((L) => put(L, [
+    // snapped off: a jagged stub of thread on the gold collar
+    if (broken.spire) layer((L) => put(L, [
+      '...s.m.S...',
+      '..smSmsmS..',
+      '..soyYyoS..',
+      '...smwms...',
+    ], 10, 7));
+    else layer((L) => put(L, [
       '.....W.....',
       '....wWs....',
       '....yYo....',
@@ -1038,7 +1047,19 @@
       for (let j = 0; j < w; j++) for (let k = 0; k < w; k++) L.set(x + k, y + j, j === 0 ? lit : j === w - 1 ? dark : core);
     }
   }
-  function buildSpider(f, hurt) {
+  function buildSpider(f, hurt, broken) {
+    broken = broken || {};
+    // legs torn off one side: the outer part of that side's leg layers is cleared, stumps stay at the shoulders
+    const cut = (L) => {
+      for (let y = 0; y < 50; y++) for (let x = 0; x < 48; x++) {
+        if ((broken.legsL && x < 17) || (broken.legsR && x > 30)) L.clear(x, y);
+      }
+      // the torn ends: dark, with a hot glint where the joint snapped
+      for (let y = 0; y < 50; y++) {
+        if (broken.legsL && L.solid(17, y)) { L.set(17, y, '#4a0412'); if (y % 3 === 0) L.set(17, y, '#ffb03a'); }
+        if (broken.legsR && L.solid(30, y)) { L.set(30, y, '#4a0412'); if (y % 3 === 0) L.set(30, y, '#ffb03a'); }
+      }
+    };
     const W = 48, H = 50, cx = 24;
     const RED = RAMP.red, OR = RAMP.orange, Au = RAMP.gold, BL = RAMP.blue;
     // deep armour reds and browns with orange highlights, as in the original; gold and blue for the cup
@@ -1065,6 +1086,7 @@
         '.i..............',
       ], 1, 22 + s);
       mirror(L);
+      cut(L);
     });
     // ---- arching legs: a red upper segment from the shoulder out to a brown knee, the tip hanging down at the edge
     layer((L) => {
@@ -1080,6 +1102,7 @@
         '.........iI.',
       ], 4, 10 - s);
       mirror(L);
+      cut(L);
     });
     // ---- horn legs rising from the sides of the head to a point
     layer((L) => { put(L, ['.a.....', '.nj....', '..ni...', '...ni..', '....ji.', '.....ji', '......i'], 12, 7); mirror(L); });
@@ -1147,10 +1170,16 @@
     // ---- top: a flame head glowing from within: a jagged crown of tongues, flame strokes, a small star-bright core with
     // the eyes beside it
     layer((L) => {
+      if (broken.flame) {
+        // blown out: a lump of smouldering ash, a few embers still glowing in it
+        bossFire(L, cx, 9, 20, curve([[9, 3], [11, 5], [13, 6.5], [16, 7], [18, 6.5], [20, 5]]), ['#b8b0c0', '#8a8494', '#645e70', '#46404e', '#2a2432'], 16);
+        for (const [x, y] of [[20, 13], [26, 12], [23, 16], [18, 16], [29, 15]]) L.set(x, y, (x + s) % 3 ? '#ff7a3a' : '#ffd23f');
+      } else {
       bossFire(L, cx, 6, 20, curve([[6, 1.5], [8, 3], [10, 5], [12, 6.5], [15, 7.5], [18, 7], [20, 5.5]]), ['#fffbe0', '#ffe04a', '#ff5a2a', '#d81830', '#7a0c28'], 16);
       const tongues = [[23, 4, 3], [24, 5, 2], [21, 5 + s, 3], [26, 5 - s, 3], [19, 7, 3], [28, 7, 3], [17, 10 - s, 3], [30, 10 + s, 3]];
       for (const [x, y, hgt] of tongues) for (let t = 0; t < hgt; t++) L.set(x, y + t, t === 0 ? '#ff7a3a' : t === 1 ? '#ff5a2a' : '#d81830');
       for (const [x0, y0, dir] of [[19, 12, 1], [20, 9, 1], [27, 9, -1], [28, 12, -1]]) { L.set(x0, y0, '#ff8a4a'); L.set(x0 + dir, y0 - 1, '#ff8a4a'); L.set(x0 + dir * 2, y0 - 1, '#7a0c28'); }
+      }
       put(L, ['..yy..', '.yWWy.', 'yWWWWy', '.yWWy.', '.oyyo.'], 21, 13);
       put(L, ['kWk......kWk'], 18, 13);
     });
@@ -1170,7 +1199,7 @@
 
     // the wick stands clear of the outline, like the original's
     const out = bossFinish(p, null);
-    for (let y = 0; y < 5; y++) { out.set(23, y, '#ffffff'); out.set(24, y, '#a8a8c0'); }
+    if (!broken.flame) for (let y = 0; y < 5; y++) { out.set(23, y, '#ffffff'); out.set(24, y, '#a8a8c0'); }
     return hurt ? brightenBoss(out) : out;
   }
 
@@ -1179,8 +1208,11 @@
   // controls, round ears with rivets, a gold face with big grey-rimmed goggles, a snout over a toothy grille and a
   // bear-mouth jaw seam. Middle: shoulder pistons, a striped chest and pincer arms. Bottom: ridged legs in wide
   // boots. Each part goes down on its own layer with a black outline, so parts are separated by ink.
-  function buildBoss(f, hurt) {
+  function buildBoss(f, hurt, broken) {
+    broken = broken || {};
     const W = 36, H = 58, cx = 18;
+    // an arm torn off: that side of the arm's layer is cleared
+    const cutArm = (L) => { for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if ((broken.armL && x < cx) || (broken.armR && x >= cx)) L.clear(x, y); };
     const p = new Pix(W, H);
     const Au = RAMP.gold, GR = RAMP.grey, BR = RAMP.brown;
     const PAL = {
@@ -1224,9 +1256,11 @@
         '.DdD...DdD.',
       ], 0, 40);
       mirror(L);
+      cutArm(L);
     });
-    // shoulder pistons: grey caps on gold barrels with a chrome shaft
-    layer((L) => { put(L, ['mWm', 'yho', 'ohd'], 4, 36); put(L, ['mWm', 'yho', 'ohd'], 8, 36); mirror(L); });
+    // shoulder pistons: grey caps on gold barrels with a chrome shaft (a torn-off arm leaves its piston bent)
+    layer((L) => { put(L, ['mWm', 'yho', 'ohd'], 4, 36); put(L, ['mWm', 'yho', 'ohd'], 8, 36); mirror(L); cutArm(L); });
+    if (broken.armL || broken.armR) layer((L) => { const stub = ['Sm', 'ms', '.S']; if (broken.armL) put(L, stub, 9, 37); if (broken.armR) put(L, stub, 25, 37); });
     // chest: a notched lintel, a lit capsule between striped ribs, and a notched base
     layer((L) => put(L, [
       'oyYyyyyood',
@@ -1304,6 +1338,13 @@
         if (r < 1 && L.solid(x, y)) { const c = L.get(x, y); L.set(x, y, r < 0.18 ? '#e8f6ff' : [(c[0] + 170) >> 1, (c[1] + 220) >> 1, (c[2] + 255) >> 1, 255]); }
       }
       for (const [x, y] of [[9, 5], [10, 4], [11, 3], [12, 3]]) L.set(x, y, '#ffffff');
+      // cracked open: the glass splits from a hole over the pilot, shards missing round it
+      if (broken.dome) {
+        const crack = [[22, 2], [21, 3], [21, 4], [20, 5], [21, 6], [22, 7], [21, 8], [20, 9], [20, 10], [21, 11], [19, 6], [18, 6], [17, 7], [16, 7], [15, 8], [23, 8], [24, 9], [25, 10], [26, 10], [27, 11]];
+        for (const [x, y] of crack) if (L.solid(x, y)) L.set(x, y, '#ffffff');
+        for (const [x, y] of [[22, 3], [22, 4], [21, 5], [22, 5], [23, 5], [22, 6], [23, 6]]) if (L.solid(x, y)) L.set(x, y, '#1c2c58');
+        for (const [x, y] of crack) { if (L.solid(x + 1, y) && L.get(x + 1, y)[0] !== 255) L.set(x + 1, y, '#2e5c9c'); }
+      }
     });
     // hinges clamping the dome to the head
     layer((L) => { put(L, ['.m', 'yW', 'od', '.s'], 1, 14); mirror(L); });
@@ -1558,11 +1599,18 @@
     clock: ['...kkk....', '....k.....', '..kkkkk...', '.kwwkwwk..', 'kwwwkwwwk.', 'kwwwkkwwk.', 'kwwwwwwwk.', '.kwwwwwk..', '..kkkkk...', '..........'],
     star: ['....k.....', '...kyk....', '...kyk....', 'kkkyyykkk.', 'kyyywyyyk.', '.kyyyyyk..', '..kyyyk...', '.kyykyyk..', '.kyk.kyk..', '.kk...kk..'],
     tea: ['...w.w....', '....w.....', '.kkkkkkk..', '.kwwwwwkkk', '.kwrrrwk.k', '.kwwwwwkkk', '..kwwwk...', 'kkkkkkkkk.', '.kcccccck.', '..kkkkkk..'],
+    // the new power-ups: a kicking boot, a flame through a crate, three bombs in a row, a double flame, the skull
+    kick: ['..kkk.....', '..krrk....', '..krrk....', '..krrk....', '..krrrkk..', '..krrrrrk.', 'w.krwrrrrk', '..kwwwwwwk', 'w..kkkkkk.', '..........'],
+    pierce: ['..........', '...kkkk...', '...knnk...', 'kkkknnkkk.', 'oyywwwyyok', 'kkkknnkkk.', '...knnk...', '...kkkk...', '..........', '..........'],
+    line: ['..........', '..y..y..y.', '..k..k..k.', 'kkkkkkkkkk', 'kdwkdwkdwk', 'kddkddkddk', 'kDDkDDkDDk', 'kkkkkkkkkk', '..........', '.wwwwwwwk.'],
+    fullfire: ['....k.....', '...kok..k.', '..kook.kok', '..koyokoyk', '.koyyyoyyk', '.koywwyyok', 'koywwwwyok', 'koywwwwyok', '.koyyyyok.', '..kkkkkk..'],
+    skull: ['..kkkkk...', '.kwwwwwk..', 'kwwwwwwwk.', 'kwkkwkkwk.', 'kwkkwkkwk.', 'kwwwkwwwk.', '.kwwwwwk..', '..kwkwk...', '..kkkkk...', '..........'],
   };
 
   const ITEM_BG = {
     bomb: ['#fff4f8', '#ff6f91'], fire: ['#fff6e6', '#ff8a2e'], speed: ['#eef6ff', '#3d86f0'], heart: ['#fff0f4', '#ec3d5f'],
     clock: ['#eefcff', '#27a7b8'], star: ['#fffbe0', '#e0a014'], tea: ['#f2fff0', '#4cb84c'],
+    kick: ['#fff0f0', '#e8403a'], pierce: ['#f6f0ff', '#8a5ac8'], line: ['#fff4f8', '#ff6f91'], fullfire: ['#fff8d8', '#e8a014'], skull: ['#ece6f2', '#5a4a6e'],
   };
   function buildItem(type) {
     const p = new Pix(16, 16);
@@ -2377,6 +2425,11 @@
     enemy: ['.k...k.', 'kgk.kgk', 'kgggggk', 'kgwgwgk', 'kgggggk', '.kkkkk.'],
     clock: ['.kkk.', 'kwkwk', 'kwkkk', 'kwwwk', '.kkk.'],
     broom: ['...k..', '...k..', '...k..', '..krk.', '.kyyyk', '.kyyyk', '.kkkkk'],
+    // what she has picked up, for the HUD; the skull also floats over a cursed maid
+    kick: ['.kk....', '.krk...', '.krk...', '.krrkk.', '.krrrrk', '.kwwwwk', '..kkkk.'],
+    pierce: ['.......', '..kkk..', 'kkknkkk', 'oyywyyo', 'kkknkkk', '..kkk..', '.......'],
+    line: ['.y.y.y.', 'kkkkkkk', 'kdkdkdk', 'kDkDkDk', 'kkkkkkk'],
+    skull: ['.kkkkk.', 'kwwwwwk', 'kwkwkwk', 'kwwwwwk', '.kwkwk.', '.kkkkk.'],
   };
   const UI_PAL = Object.assign({}, ICON_PAL, { d: '#6b5a8e', g: '#a9a2c2', Y: '#e09a14' });
 
@@ -3459,6 +3512,16 @@
       art.monsters[k] = { frames, flipped: frames.map((f) => f.flipped()), white: frames.map((f) => tinted(f, '#ffffff', 0.8)) };
     }
     art.boss = { frames: [volume(buildBoss(0, false)), volume(buildBoss(1, false))], hurt: buildBoss(0, true) };
+    const BOSS_BUILD = { drill: buildDrill, spider: buildSpider, bear: buildBoss };
+    const bossSets = {};
+    art.bossSet = (kind, broken) => {
+      const key = kind + ':' + Object.keys(broken || {}).filter((k) => broken[k]).sort().join(',');
+      if (!bossSets[key]) {
+        const b = BOSS_BUILD[kind];
+        bossSets[key] = { frames: [volume(b(0, false, broken)), volume(b(1, false, broken))], hurt: b(0, true, broken) };
+      }
+      return bossSets[key];
+    };
     art.bosses = {
       drill: { frames: [volume(buildDrill(0, false)), volume(buildDrill(1, false))], hurt: buildDrill(0, true) },
       spider: { frames: [volume(buildSpider(0, false)), volume(buildSpider(1, false))], hurt: buildSpider(0, true) },

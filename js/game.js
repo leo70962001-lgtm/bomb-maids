@@ -178,6 +178,38 @@
 
   const CUTIN_FRAMES = 36;
   G.CUTIN_FRAMES = CUTIN_FRAMES;
+  // What a bomb can break off each boss: zone is the side a blast has to come from ('side' = either), pos the part's
+  // place on screen relative to the boss (for smoke, sparks and the pieces flying off).
+  const BOSS_PARTS = {
+    drill: [
+      { id: 'spire', zone: 'top', hp: 3, name: '鑽頭', pos: [[0, -32]] },
+      { id: 'ears', zone: 'side', hp: 3, name: '金色感應耳', pos: [[-13, -20], [13, -20]] },
+    ],
+    spider: [
+      { id: 'flame', zone: 'top', hp: 3, name: '火焰頭', pos: [[0, -30]] },
+      { id: 'legsL', zone: 'left', hp: 2, name: '左側的腳', pos: [[-18, -16]] },
+      { id: 'legsR', zone: 'right', hp: 2, name: '右側的腳', pos: [[18, -16]] },
+    ],
+    bear: [
+      { id: 'dome', zone: 'top', hp: 3, name: '玻璃罩', pos: [[0, -38]] },
+      { id: 'armL', zone: 'left', hp: 2, name: '左鉗臂', pos: [[-14, -4]] },
+      { id: 'armR', zone: 'right', hp: 2, name: '右鉗臂', pos: [[14, -4]] },
+    ],
+  };
+  G.BOSS_PARTS = BOSS_PARTS;
+  // the boss drawn with its broken parts (canvases made once per set)
+  const bossCanvas = {};
+  function bossSprites(kind, broken) {
+    const key = kind + ':' + Object.keys(broken).filter((k) => broken[k]).sort().join(',');
+    if (!bossCanvas[key]) {
+      const set = E.spr.bossSet(kind, broken);
+      bossCanvas[key] = { frames: set.frames.map(E.pixToCanvas), hurt: E.pixToCanvas(set.hurt) };
+    }
+    return bossCanvas[key];
+  }
+  // the skull's curses (ten seconds each)
+  const CURSE_NAME = { slow: '腳步變慢', weak: '火力變小', nobomb: '放不了炸彈', reverse: '方向顛倒', rush: '停不下來的炸彈' };
+  G.CURSE_NAME = CURSE_NAME;
 
   class World {
     constructor(cfg) {
@@ -287,6 +319,11 @@
           else if (roll < 0.28) this.hidden[softCells[si]] = 'fire';
           else if (roll < 0.36) this.hidden[softCells[si]] = 'speed';
           else if (roll < 0.39) this.hidden[softCells[si]] = 'tea';
+          else if (roll < 0.42) this.hidden[softCells[si]] = 'kick';
+          else if (roll < 0.45) this.hidden[softCells[si]] = 'pierce';
+          else if (roll < 0.47) this.hidden[softCells[si]] = 'line';
+          else if (roll < 0.485) this.hidden[softCells[si]] = 'fullfire';
+          else if (roll < 0.51) this.hidden[softCells[si]] = 'skull';
         }
       }
       this.softLeft = softCells.length;
@@ -349,8 +386,9 @@
         sp: p.sp || 0, active: 0, inv: 90, star: 0, burnT: 0, stun: 0, alive: true, deadT: 0,
         // passives: Berry kicks bombs she walks into, Yoru's flames pierce crates, Honey carries a sugar shield,
         // Yukino's blasts chill whatever stands next to them (and her fuses run long for remote play)
-        kick: p.maid === 'berry', remote: p.maid === 'yukino', fuse: p.maid === 'yukino' ? 190 : 150,
-        pierce: p.maid === 'yoru' ? G.SKILL.pierce : 0, frost: p.maid === 'yukino',
+        kick: p.maid === 'berry' || !!p.kick, remote: p.maid === 'yukino', fuse: p.maid === 'yukino' ? 190 : 150,
+        pierce: (p.maid === 'yoru' ? G.SKILL.pierce : 0) + (p.pierce || 0), frost: p.maid === 'yukino',
+        line: false, curse: null, comboN: 0, comboT: 0,
         shield: 0, shieldCD: 0, chill: 0,
         cool: 0, slashT: 0, magicT: 0, kickT: 0, remoteT: 0, skillCost: D.cost, name: D.name, color: D.color,
         perks: p.perks || {},
@@ -380,10 +418,11 @@
     spawnBoss() {
       // three bosses: 'drill' (BOSS1), 'spider' (BOSS2), 'bear' (BOSS3)
       const kind = typeof this.cfg.boss === 'string' ? this.cfg.boss : 'bear';
-      const hp = { drill: 8, spider: 10, bear: 12 }[kind] || 12;
+      const hp = { drill: 9, spider: 11, bear: 13 }[kind] || 13;
       this.boss = {
         kind, x: 7.5 * T, y: 3.5 * T, hp, maxHp: hp, state: 'intro', t: 0, hitT: 0, vx: 0, vy: 0,
         goalX: 7.5 * T, goalY: 4 * T, targets: [], deadT: 0, summonCD: 3, alive: true, dashDir: null, dashes: 0, volleys: 0,
+        parts: (BOSS_PARTS[kind] || []).map((p) => Object.assign({}, p, { max: p.hp, broken: false, hitT: 0 })), broken: {},
       };
     }
 
@@ -442,7 +481,7 @@
 
     // Grid movement with corner assist. Invariant: a maid is off-grid on at most one axis.
     moveMaid(m, dir) {
-      const speed = speedPx(m.speedLv) * (m.chill > 0 ? G.SKILL.chillSpeed : 1);
+      const speed = speedPx(m.speedLv) * (m.chill > 0 ? G.SKILL.chillSpeed : 1) * (m.curse && m.curse.type === 'slow' ? 0.55 : 1);
       const [dx, dy] = DV[dir];
       const horiz = dx !== 0;
       const perp = horiz ? m.y : m.x;
@@ -485,8 +524,14 @@
       if (!m.alive || m.stun > 0 || m.active >= m.bombs) return false;
       const [c, r] = cellOf(m);
       const k = idx(c, r);
+      if (m.line && this.bombAt[k]) return this.placeLine(m, c, r);
+      return this.placeBombAt(m, c, r);
+    }
+    placeBombAt(m, c, r) {
+      const k = idx(c, r);
       if (this.grid[k] !== FLOOR || this.bombAt[k] || (this.flames[k] && this.flames[k].t < FLAME_HOT)) return false;
-      const b = { c, r, x: c * T, y: r * T, owner: m, fire: m.fire, timer: m.fuse, fuse: m.fuse, passers: new Set(), slide: null, anim: 0, dead: false };
+      const fire = m.curse && m.curse.type === 'weak' ? 1 : m.fire;
+      const b = { c, r, x: c * T, y: r * T, owner: m, fire, timer: m.fuse, fuse: m.fuse, passers: new Set(), slide: null, anim: 0, dead: false };
       for (const a of this.maids) if (a.alive && this.overlapsTile(a, c, r)) b.passers.add(a);
       for (const e of this.enemies) if (e.alive && this.overlapsTile(e, c, r)) b.passers.add(e);
       this.bombs.push(b);
@@ -494,6 +539,21 @@
       m.active++;
       sfx('place');
       return true;
+    }
+    // the line bomb: every bomb she has left, laid out in front of her until something is in the way
+    placeLine(m, c, r) {
+      const [dx, dy] = DV[m.dir];
+      let n = 0;
+      for (let i = 1; m.active < m.bombs && i < COLS; i++) {
+        const tc = c + dx * i, tr = r + dy * i;
+        if (!inb(tc, tr) || this.grid[idx(tc, tr)] !== FLOOR || this.bombAt[idx(tc, tr)]) break;
+        if (this.enemies.some((e) => e.alive && this.overlapsTile(e, tc, tr))) break;
+        if (!this.placeBombAt(m, tc, tr)) break;
+        this.particles.push({ kind: 'ring', x: tc * T + 8, y: tr * T + 8, r0: 2, r1: 9, col: '#ffb8d0', t: 0, life: 8, wait: i * 2 });
+        n++;
+      }
+      if (n) this.floaters.push({ x: m.x + 8, y: m.y - 8, text: G.t('直線炸彈！'), col: '#ff9fb4', t: 0 });
+      return n > 0;
     }
 
     tryKick(m, dir, fromSkill) {
@@ -605,7 +665,7 @@
           }
           tiles.push([c, r]);
           const ob = this.bombAt[k];
-          if (ob && !ob.dead) { ob.timer = Math.min(ob.timer, 6); break; }
+          if (ob && !ob.dead) { ob.timer = Math.min(ob.timer, 6); ob.chain = Math.max(ob.chain || 1, (b.chain || 1) + 1); break; }
         }
         tiles.forEach(([c, r], j) => this.addFlame(c, r, BIT[OPP[d]] | (j < tiles.length - 1 ? BIT[d] : 0), owner, b.impact));
         if (tiles.length) centerMask |= BIT[d];
@@ -630,6 +690,14 @@
       if (owner && owner.frost) this.frostAround(blasted, owner);
       if (b.boost) this.particles.push({ kind: 'ring', x: b.c * T + 8, y: b.r * T + 8, r0: 6, r1: 22, col: '#9ff3ff', t: 0, life: 14 });
       if (b.impact) this.particles.push({ kind: 'impact', x: cx, y: cy, col: '#ff9a2a', t: 0, life: 12, big: true });
+      // a chain: every bomb set off by another's fire adds to it
+      if (b.chain >= 2) {
+        const bonus = 10 * (b.chain - 1);
+        this.floaters.push({ x: cx, y: cy - 12, text: G.t('連鎖×{n}', { n: b.chain }) + ' +' + bonus + 'G', col: '#ffd23f', t: 0 });
+        if (this.mode === 'story') { this.stats.coins += bonus; this.stats.comboCoins = (this.stats.comboCoins || 0) + bonus; }
+        this.stats.chainMax = Math.max(this.stats.chainMax || 0, b.chain);
+        this.particles.push({ kind: 'ring', x: cx, y: cy, r0: 6, r1: 24 + b.chain * 2, col: '#ffd23f', t: 0, life: 14 });
+      }
       this.shake = Math.max(this.shake, b.impact ? 9 : 6);
       sfx('boom');
     }
@@ -728,6 +796,11 @@
       if (m.kickT > 0) m.kickT--;
       if (m.remoteT > 0) m.remoteT--;
       if (m.castT > 0) m.castT--;
+      if (m.comboT > 0 && --m.comboT === 0) m.comboN = 0;
+      if (m.curse && --m.curse.t <= 0) {
+        m.curse = null;
+        this.floaters.push({ x: m.x + 8, y: m.y - 8, text: G.t('詛咒解除'), col: '#c8b0ff', t: 0 });
+      }
       if (m.chill > 0) m.chill--;
       // Honey's sugar shield grows back a while after it breaks
       if (m.maidKey === 'honey' && !m.shield && m.shieldCD > 0 && --m.shieldCD === 0) {
@@ -748,6 +821,11 @@
       } else {
         ctrl = m.ai.update();
       }
+      if (m.curse) {
+        if (m.curse.type === 'reverse' && ctrl.dir) ctrl.dir = OPP[ctrl.dir];
+        if (m.curse.type === 'rush' && m.curse.t % 40 === 0) ctrl.bomb = true;
+        if (m.curse.type === 'nobomb') ctrl.bomb = false;
+      }
       const busy = m.burnT > 20 || m.stun > 0 || this.state !== 'play';
       m.moving = false;
       if (!busy && ctrl.dir) {
@@ -758,6 +836,14 @@
       if (!busy && ctrl.bomb) this.placeBomb(m);
       if (!busy && ctrl.skill) this.useSkill(m);
 
+      if (m.curse && this.mode === 'battle') {
+        for (const o of this.maids) {
+          if (o === m || !o.alive || o.curse || o.star > 0 || Math.abs(o.x - m.x) > 10 || Math.abs(o.y - m.y) > 10) continue;
+          o.curse = { type: m.curse.type, t: m.curse.t };
+          this.floaters.push({ x: o.x + 8, y: o.y - 8, text: G.t('詛咒傳染！'), col: '#c8b0ff', t: 0 });
+          sfx('angry');
+        }
+      }
       // pickups
       const [c, r] = cellOf(m);
       const k = idx(c, r);
@@ -787,6 +873,22 @@
         case 'clock': this.freezeT = 330; pop(G.t('時間暫停！'), '#9ff3ff'); sfx('freeze'); break;
         case 'star': m.star = 480; pop(G.t('無敵！'), '#ffe14d'); sfx('power'); break;
         case 'tea': m.sp = 100; pop(G.t('特技全滿'), '#b8f28a'); sfx('item'); break;
+        case 'kick':
+          if (m.kick) { this.stats.coins += 30; pop('+30G', '#ffe14d'); } else { m.kick = true; pop(G.t('可以踢炸彈了！'), '#ff8a7a'); }
+          sfx('item');
+          break;
+        case 'pierce': m.pierce = Math.min(3, m.pierce + 1); pop(G.t('火焰貫穿 +1'), '#c8a0ff'); sfx('item'); break;
+        case 'line': m.line = true; pop(G.t('直線炸彈：站在炸彈上再放一次'), '#ff9fb4'); sfx('item'); break;
+        case 'fullfire': m.fire = 8; pop(G.t('火力全開！'), '#ffb45c'); sfx('power'); this.shake = Math.max(this.shake, 4); break;
+        case 'skull': {
+          // a gamble: one of five curses for ten seconds
+          const type = E.pick(m.human ? ['slow', 'weak', 'nobomb', 'reverse', 'rush'] : ['slow', 'weak', 'nobomb', 'rush']);
+          m.curse = { type, t: 600 };
+          pop(G.t('詛咒：{name}', { name: G.t(CURSE_NAME[type]) }), '#c8b0ff');
+          sfx('angry');
+          for (let n = 0; n < 6; n++) this.particles.push({ kind: 'petal', pal: 'night', x: x + E.rand(-6, 6), y: y + E.rand(0, 8), vx: E.rand(-0.6, 0.6), vy: E.rand(-1, -0.3), t: 0, life: 30 });
+          break;
+        }
         case 'coin': this.stats.coins += 10; pop('+10G', '#ffe14d'); sfx('coin'); break;
         case 'dust':
           this.stats.dustSwept++;
@@ -903,7 +1005,7 @@
             for (const e of this.enemies) if (e.alive && Math.abs(e.x - tc * T) < 12 && Math.abs(e.y - tr * T) < 12) this.hitEnemy(e, m);
             // against other maids the slash only knocks them dizzy
             for (const o of this.maids) if (o !== m && o.alive && o.star <= 0 && Math.abs(o.x - tc * T) < 12 && Math.abs(o.y - tr * T) < 12) o.stun = Math.max(o.stun, 45);
-            if (this.boss && this.boss.alive && Math.hypot(this.boss.x - (tc * T + 8), this.boss.y - (tr * T + 8)) < 22) this.hitBoss();
+            if (this.boss && this.boss.alive && Math.hypot(this.boss.x - (tc * T + 8), this.boss.y - (tr * T + 8)) < 22) this.hitBoss(tc * T + 8, tr * T + 8);
             if (cell === SOFT) { this.burnSoft(tc, tr, m); break; }
           }
           {
@@ -1062,6 +1164,18 @@
       this.stats.coins += D.coin;
       this.stats.killCoins += D.coin;
       this.floaters.push({ x: e.x + 8, y: e.y, text: '+' + D.coin + 'G', col: '#ffe14d', t: 0 });
+      if (by && by.kind === 'maid') {
+        by.comboN = by.comboT > 0 ? by.comboN + 1 : 1;
+        by.comboT = 70;
+        if (by.comboN >= 2) {
+          const bonus = 15 * (by.comboN - 1);
+          this.stats.coins += bonus;
+          this.stats.comboCoins = (this.stats.comboCoins || 0) + bonus;
+          this.stats.comboMax = Math.max(this.stats.comboMax || 0, by.comboN);
+          this.floaters.push({ x: e.x + 8, y: e.y - 12, text: by.comboN + ' COMBO! +' + bonus + 'G', col: '#ff9fbb', t: 0 });
+          this.particles.push({ kind: 'impact', x: e.x + 8, y: e.y + 6, col: '#ff9fbb', t: 0, life: 10 });
+        }
+      }
       for (const m of this.maids) if (m.alive) m.sp = Math.min(100, m.sp + 12);
       const [c, r] = cellOf(e);
       const k = idx(c, r);
@@ -1096,8 +1210,17 @@
         for (let dx = -1; dx <= 1; dx++) {
           const c = Math.floor((B.x + dx * 10) / T), r = Math.floor((B.y + dy * 10) / T);
           const hf = this.hotAt(c, r);
-          if (hf && hf.owner !== B && B.hitT <= 0) this.hitBoss();
+          if (hf && hf.owner !== B && B.hitT <= 0) this.hitBoss(c * T + 8, r * T + 8);
         }
+      // broken parts smoke and spark
+      for (const p of B.parts) {
+        if (p.hitT > 0) p.hitT--;
+        if (!p.broken) continue;
+        for (const [px, py] of p.pos) {
+          if ((B.t + px) % 14 === 0) this.particles.push({ kind: 'smoke', x: B.x + px + E.rand(-3, 3), y: B.y + py, vx: E.rand(-0.2, 0.2), vy: -0.5, t: 0, life: 26 });
+          if ((B.t + py) % 33 === 0) this.particles.push({ kind: 'spark', x: B.x + px, y: B.y + py, vx: E.rand(-1, 1), vy: E.rand(-1.2, -0.3), t: 0, life: 14 });
+        }
+      }
       // contact
       for (const m of this.maids) if (m.alive && Math.hypot(m.x + 8 - B.x, m.y + 8 - B.y) < 17) this.hurtMaid(m);
       if (this.state !== 'play' || this.freezeT > 0 || B.charm > 0) return;
@@ -1126,7 +1249,7 @@
             B.t = 0;
             if (phase2) B.summonCD -= 1;
             const roll = Math.random();
-            if (phase2 && roll < 0.35) B.state = 'dashAim';
+            if (phase2 && roll < 0.35 && !(B.broken.armL && B.broken.armR)) B.state = 'dashAim';
             else B.state = 'aim';
             if (phase2 && B.summonCD <= 0) { B.state = 'summon'; B.summonCD = 4; }
           }
@@ -1134,7 +1257,7 @@
         case 'aim':
           if (B.t === 1) {
             B.targets = [];
-            const n = phase2 ? 5 : 3;
+            const n = Math.max(1, (phase2 ? 5 : 3) - (B.broken.armL ? 1 : 0) - (B.broken.armR ? 1 : 0));
             if (target) B.targets.push(cellOf(target));
             let guard = 0;
             while (B.targets.length < n && guard++ < 60) {
@@ -1208,10 +1331,10 @@
             B.dashDir = DV[pick];
             sfx('tick');
           }
-          if (B.t > (phase2 ? 32 : 48)) { B.state = 'drill'; B.t = 0; sfx('missile'); }
+          if (B.t > (phase2 ? 32 : 48) + (B.broken.ears ? 24 : 0)) { B.state = 'drill'; B.t = 0; sfx('missile'); }
           break;
         case 'drill': {
-          const sp = phase2 ? 3.4 : 2.8;
+          const sp = (phase2 ? 3.4 : 2.8) * (B.broken.spire ? 0.7 : 1);
           B.x += B.dashDir[0] * sp;
           B.y += B.dashDir[1] * sp;
           if (B.t % 3 === 0) this.dust(B.x, B.y + 12, 2);
@@ -1219,8 +1342,8 @@
           let crash = !inb(c, r);
           if (!crash) {
             const cell = this.grid[idx(c, r)];
-            if (cell === SOFT) this.burnSoft(c, r, null);
-            else if (cell === HARD || cell === WALL || cell === DECOR) crash = true;
+            if (cell === SOFT && !B.broken.spire) this.burnSoft(c, r, null);
+            else if (cell === SOFT || cell === HARD || cell === WALL || cell === DECOR) crash = true;
           }
           if (crash || B.t > 80 || B.x <= 1.5 * T || B.x >= (COLS - 1.5) * T || B.y <= 2.6 * T || B.y >= (ROWS - 1.5) * T) {
             clampBoss();
@@ -1236,7 +1359,7 @@
             B.t = 0;
             B.dashes--;
             if (B.dashes > 0) B.state = 'drillAim';
-            else if (phase2 && --B.summonCD <= 0) { B.state = 'summon'; B.summonCD = 3; }
+            else if (phase2 && !B.broken.ears && --B.summonCD <= 0) { B.state = 'summon'; B.summonCD = 3; }
             else B.state = 'move';
           }
           break;
@@ -1273,11 +1396,12 @@
               break;
             }
           }
-          const arrived = moveTo(B.goalX, B.goalY, phase2 ? 1.2 : 0.9);
+          const legs = (B.broken.legsL ? 1 : 0) + (B.broken.legsR ? 1 : 0);
+          const arrived = moveTo(B.goalX, B.goalY, (phase2 ? 1.2 : 0.9) * (1 - 0.3 * legs));
           if ((arrived && B.t > 30) || B.t > 130) {
             B.t = 0;
             B.volleys = phase2 ? 2 : 1;
-            B.state = Math.random() < (phase2 ? 0.4 : 0.25) ? 'eggAim' : 'fireAim';
+            B.state = Math.random() < (B.broken.flame ? 0.75 : phase2 ? 0.4 : 0.25) ? 'eggAim' : 'fireAim';
           }
           break;
         }
@@ -1288,7 +1412,7 @@
         case 'fire':
           if (B.t === 1) {
             const c0 = E.clamp(Math.floor(B.x / T), 1, COLS - 2), r0 = E.clamp(Math.floor(B.y / T), 1, ROWS - 2);
-            for (const d of DIRS) this.fireballs.push({ c: c0, r: r0, d, t: 0, left: phase2 ? 7 : 5 });
+            for (const d of DIRS) this.fireballs.push({ c: c0, r: r0, d, t: 0, left: B.broken.flame ? 2 : phase2 ? 7 : 5 });
             this.shake = 6;
             sfx('boom');
           }
@@ -1301,8 +1425,9 @@
         case 'hop':
           if (B.t === 1) {
             const d = E.pick(DIRS);
-            B.goalX = E.clamp(B.x + DV[d][0] * 2 * T, 2 * T, 13 * T);
-            B.goalY = E.clamp(B.y + DV[d][1] * 2 * T, 3 * T, 10 * T);
+            const reach = B.broken.legsL || B.broken.legsR ? T : 2 * T;
+            B.goalX = E.clamp(B.x + DV[d][0] * reach, 2 * T, 13 * T);
+            B.goalY = E.clamp(B.y + DV[d][1] * reach, 3 * T, 10 * T);
           }
           moveTo(B.goalX, B.goalY, 1.8);
           if (B.t > 20) { B.state = 'fireAim'; B.t = 0; }
@@ -1346,10 +1471,27 @@
         if (fb.left <= 0) this.fireballs.splice(i, 1);
       }
     }
-    hitBoss() {
+    // which part a blow from (px, py) lands on: from above the top part, from either side a side part
+    bossPartAt(B, px, py) {
+      if (px == null) return null;
+      const dx = px - B.x, dy = py - B.y;
+      const zone = dy < -6 && Math.abs(dx) < 20 ? 'top' : dx < -6 ? 'left' : dx > 6 ? 'right' : null;
+      if (!zone) return null;
+      return B.parts.find((p) => !p.broken && (p.zone === zone || (p.zone === 'side' && zone !== 'top'))) || null;
+    }
+    hitBoss(px, py) {
       const B = this.boss;
       if (!B || !B.alive || B.hitT > 0) return;
-      B.hp--;
+      // the bear's pilot, once the dome is cracked open, takes double
+      let dmg = B.broken.dome && py != null && py - B.y < -6 && Math.abs(px - B.x) < 20 ? 2 : 1;
+      const part = this.bossPartAt(B, px, py);
+      if (part) {
+        part.hp -= this.cfg.partMul || 1;
+        part.hitT = 50;
+        if (part.hp <= 0) { this.breakPart(B, part); dmg++; }
+      }
+      if (dmg > 1 && !part) this.floaters.push({ x: B.x, y: B.y - 40, text: G.t('弱點！×2'), col: '#9ff3ff', t: 0 });
+      B.hp -= dmg;
       B.hitT = 55;
       this.shake = 12;
       sfx('hurt');
@@ -1362,6 +1504,43 @@
         this.floaters.push({ x: B.x, y: B.y - 20, text: '+500G', col: '#ffe14d', t: 0 });
         for (const e of this.enemies) if (e.alive) { e.alive = false; e.deadT = 0; this.puff(e.x + 8, e.y + 8); }
       }
+    }
+    breakPart(B, part) {
+      part.broken = true;
+      B.broken[part.id] = true;
+      this.stats.parts = (this.stats.parts || 0) + 1;
+      const bonus = 120;
+      this.stats.coins += bonus;
+      this.stats.partCoins = (this.stats.partCoins || 0) + bonus;
+      this.floaters.push({ x: B.x, y: B.y - 30, text: G.t('部位破壞！'), col: '#ffd23f', t: 0, big: true });
+      this.floaters.push({ x: B.x, y: B.y + 18, text: G.t(part.name) + ' +' + bonus + 'G', col: '#ffe14d', t: 0 });
+      const debris = { drill: '#d8dcea', spider: B.broken.flame && part.id === 'flame' ? '#8a8494' : '#d01828', bear: part.id === 'dome' ? '#bcdcf6' : '#e8a41a' }[B.kind] || '#ffffff';
+      for (const [px, py] of part.pos) {
+        const x = B.x + px, y = B.y + py;
+        this.particles.push({ kind: 'impact', x, y, col: '#ffd23f', t: 0, life: 14, big: true });
+        this.particles.push({ kind: 'blast', x, y, t: 0, life: 11 });
+        this.particles.push({ kind: 'ring', x, y, r0: 4, r1: 26, col: '#ffffff', t: 0, life: 14 });
+        for (let n = 0; n < 10; n++) {
+          const a = (n / 10) * Math.PI * 2;
+          this.particles.push({ kind: 'debris', x, y, vx: Math.cos(a) * E.rand(1, 2.4), vy: Math.sin(a) * E.rand(1, 2.4) - 1.5, t: 0, life: E.randi(20, 34), col: debris });
+        }
+      }
+      // what it drops: a power-up on the nearest free tile under the part
+      const [px, py] = part.pos[0];
+      const c0 = E.clamp(Math.floor((B.x + px) / T), 1, COLS - 2), r0 = E.clamp(Math.floor((B.y + py + 12) / T), 1, ROWS - 2);
+      const drop = E.pick(['fire', 'bomb', 'heart', 'tea', 'speed']);
+      for (let rad = 0; rad <= 3; rad++) {
+        const spots = [];
+        for (let dr = -rad; dr <= rad; dr++) for (let dc = -rad; dc <= rad; dc++) {
+          if (Math.max(Math.abs(dc), Math.abs(dr)) !== rad) continue;
+          const c = c0 + dc, r = r0 + dr;
+          if (inb(c, r) && this.grid[idx(c, r)] === FLOOR && !this.items[idx(c, r)] && !this.bombAt[idx(c, r)]) spots.push([c, r]);
+        }
+        if (spots.length) { const [c, r] = E.pick(spots); this.items[idx(c, r)] = { type: drop, age: 0 }; this.puff(c * T + 8, r * T + 8); break; }
+      }
+      this.shake = 16;
+      sfx('boom');
+      sfx('rare');
     }
     updateMissiles() {
       for (let i = this.missiles.length - 1; i >= 0; i--) {
@@ -1839,13 +2018,20 @@
           default: drawFx(p, x, y);
         }
       }
+      // popups stay on the field: one by the wall slides in until all of it shows
+      const onField = (text, x, o) => {
+        const half = E.textWidth(text, o) / 2 + 1;
+        return Math.max(ox + half, Math.min(ox + COLS * T - half, ox + x));
+      };
       for (const f of this.floaters) {
         const t = f.t;
         if (f.big) {
           const s = t < 10 ? 1 + (10 - t) * 0.1 : 1;
-          E.text(f.text, ox + f.x, oy + f.y, { color: f.col, outline: '#2a1b30', align: 'center', scale: 2 * s > 2.5 ? 3 : 2 });
+          const o = { color: f.col, outline: '#2a1b30', align: 'center', scale: 2 * s > 2.5 ? 3 : 2 };
+          E.text(f.text, onField(f.text, f.x, o), oy + f.y, o);
         } else {
-          E.text(f.text, ox + f.x, oy + f.y - Math.min(14, t * 0.6), { color: f.col, outline: '#2a1b30', align: 'center' });
+          const o = { color: f.col, outline: '#2a1b30', align: 'center' };
+          E.text(f.text, onField(f.text, f.x, o), oy + f.y - Math.min(14, t * 0.6), o);
         }
       }
       if (this.freezeT > 0) {
@@ -1981,6 +2167,11 @@
         E.rect(x + 2, y + 13, 12, 1, '#9ff3ff');
         E.rect(x + 1 + ((m.chill * 3) % 13), y + 4 + ((m.chill * 5) % 8), 1, 1, '#ffffff');
       }
+      if (m.curse) {
+        const bob = Math.round(Math.sin(this.frame * 0.2));
+        ctx.drawImage(E.spr.ui.skull, x + 5, y - 17 + bob);
+        if ((this.frame >> 2) % 2) { ctx.save(); ctx.globalAlpha = 0.35; ctx.drawImage(whiteOf(img), x + vx, y - 8 + vy); ctx.restore(); }
+      }
       if (this.mode === 'battle') {
         E.rect(x + 6, y - 14, 4, 2, m.color);
         E.text(String(m.slot + 1), x + 8, y - 22, { color: '#ffffff', outline: m.color, align: 'center', small: true });
@@ -2015,7 +2206,7 @@
 
     drawBoss(ox, oy) {
       const B = this.boss;
-      const S = (E.spr.bosses && E.spr.bosses[B.kind]) || E.spr.boss;
+      const S = B.parts.some((p) => p.broken) ? bossSprites(B.kind, B.broken) : (E.spr.bosses && E.spr.bosses[B.kind]) || E.spr.boss;
       const ctx = E.ctx;
       if (!B.alive && B.deadT > 110) return;
       const hover = B.kind === 'bear' ? Math.round(Math.sin(this.frame * 0.08) * 2) : 0;
@@ -2037,6 +2228,15 @@
         }
       }
       if (B.charm > 0) ctx.drawImage(E.spr.fx.heart, cx - 2, y - 8);
+      // a part just hit shows how much it has left: one pip per point, over the part
+      for (const p of B.parts) {
+        if (p.broken || p.hitT <= 0 || (p.hitT < 12 && p.hitT % 2)) continue;
+        for (const [px, py] of p.pos) {
+          const bx = Math.round(ox + B.x + px - p.max * 2), by = Math.round(oy + B.y + py - 6);
+          E.rect(bx - 1, by - 1, p.max * 4 + 1, 5, '#000000');
+          for (let i = 0; i < p.max; i++) E.rect(bx + i * 4, by, 3, 3, i < p.hp ? '#ffd23f' : '#5a4a6e');
+        }
+      }
     }
   }
 
@@ -2193,7 +2393,7 @@
         // score this tile
         let score = -Infinity;
         const it = w.items[k];
-        if (it && it.type !== 'dust' && it.type !== 'coin') score = 60 - dsteps * 3;
+        if (it && it.type !== 'dust' && it.type !== 'coin' && it.type !== 'skull') score = 60 - dsteps * 3;
         if (m.active < m.bombs) {
           const s = this.softsInBlast(kc, kr, m.fire);
           if (s) score = Math.max(score, 18 + s * 8 - dsteps * 2.2);
