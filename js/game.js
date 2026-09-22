@@ -693,7 +693,7 @@
       // a chain: every bomb set off by another's fire adds to it
       if (b.chain >= 2) {
         const bonus = 10 * (b.chain - 1);
-        this.floaters.push({ x: cx, y: cy - 12, text: G.t('連鎖×{n}', { n: b.chain }) + ' +' + bonus + 'G', col: '#ffd23f', t: 0 });
+        this.floatTag('chain' + (owner ? owner.slot : ''), { x: cx, y: cy - 12, text: G.t('連鎖×{n}', { n: b.chain }) + ' +' + bonus + 'G', col: '#ffd23f', t: 0 });
         if (this.mode === 'story') { this.stats.coins += bonus; this.stats.comboCoins = (this.stats.comboCoins || 0) + bonus; }
         this.stats.chainMax = Math.max(this.stats.chainMax || 0, b.chain);
         this.particles.push({ kind: 'ring', x: cx, y: cy, r0: 6, r1: 24 + b.chain * 2, col: '#ffd23f', t: 0, life: 14 });
@@ -1172,7 +1172,7 @@
           this.stats.coins += bonus;
           this.stats.comboCoins = (this.stats.comboCoins || 0) + bonus;
           this.stats.comboMax = Math.max(this.stats.comboMax || 0, by.comboN);
-          this.floaters.push({ x: e.x + 8, y: e.y - 12, text: by.comboN + ' COMBO! +' + bonus + 'G', col: '#ff9fbb', t: 0 });
+          this.floatTag('combo' + by.slot, { x: e.x + 8, y: e.y - 12, text: by.comboN + ' COMBO! +' + bonus + 'G', col: '#ff9fbb', t: 0 });
           this.particles.push({ kind: 'impact', x: e.x + 8, y: e.y + 6, col: '#ff9fbb', t: 0, life: 10 });
         }
       }
@@ -1505,6 +1505,14 @@
         for (const e of this.enemies) if (e.alive) { e.alive = false; e.deadT = 0; this.puff(e.x + 8, e.y + 8); }
       }
     }
+    // a popup that takes the place of the last one with its tag: a chain or a combo counts up in one place, a second
+    // part break does not pile its banner on the first
+    floatTag(tag, f) {
+      const i = this.floaters.findIndex((o) => o.tag === tag);
+      if (i >= 0) this.floaters.splice(i, 1);
+      f.tag = tag;
+      this.floaters.push(f);
+    }
     breakPart(B, part) {
       part.broken = true;
       B.broken[part.id] = true;
@@ -1512,8 +1520,8 @@
       const bonus = 120;
       this.stats.coins += bonus;
       this.stats.partCoins = (this.stats.partCoins || 0) + bonus;
-      this.floaters.push({ x: B.x, y: B.y - 30, text: G.t('部位破壞！'), col: '#ffd23f', t: 0, big: true });
-      this.floaters.push({ x: B.x, y: B.y + 18, text: G.t(part.name) + ' +' + bonus + 'G', col: '#ffe14d', t: 0 });
+      this.floatTag('part', { x: B.x, y: B.y - 30, text: G.t('部位破壞！'), col: '#ffd23f', t: 0, big: true });
+      this.floatTag('partName', { x: B.x, y: B.y + 18, text: G.t(part.name) + ' +' + bonus + 'G', col: '#ffe14d', t: 0 });
       const debris = { drill: '#d8dcea', spider: B.broken.flame && part.id === 'flame' ? '#8a8494' : '#d01828', bear: part.id === 'dome' ? '#bcdcf6' : '#e8a41a' }[B.kind] || '#ffffff';
       for (const [px, py] of part.pos) {
         const x = B.x + px, y = B.y + py;

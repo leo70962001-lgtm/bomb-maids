@@ -216,15 +216,21 @@
     out.forEach((l, i) => { if (l) E.text(l, x, y + i * (gap || 15), { color: col || C.ink }); });
     return out.length;
   }
-  function marquee(text, x, y, w, col) {
+  function marquee(text, x, y, w, col, left) {
     const ctx = E.ctx;
     const tw = E.textWidth(text);
     ctx.save();
     ctx.beginPath();
     ctx.rect(x, y - 2, w, 16);
     ctx.clip();
-    if (tw <= w) E.text(text, x + w / 2, y, { color: col, align: 'center' });
-    else {
+    if (tw <= w) E.text(text, left ? x : x + w / 2, y, { color: col, align: left ? 'left' : 'center' });
+    else if (left) {
+      // a line that starts where it stands: the beginning shows first, then it slides to its end and back
+      const over = tw - w + 2, hold = 90, run = over * 2;
+      const ph = E.frame % (hold * 2 + run);
+      const off = ph < hold ? 0 : ph < hold + run ? (ph - hold) / 2 : over;
+      E.text(text, x - Math.round(off), y, { color: col });
+    } else {
       const span = tw + 40;
       const off = (E.frame * 0.5) % span;
       E.text(text, x + w - off, y, { color: col });
@@ -1640,9 +1646,15 @@
       });
       E.text('N 48%  R 32%  SR 16%  SSR 4%', 106, 134, { color: C.dim });
       E.text(G.t('抽 5 張一定有 SR 以上的卡！'), 106, 148, { color: C.red, fit: 200 });
-      wrapLines([G.t('放進牌組的卡片（最多 3 張）會在每次委託發揮效果。重複的卡會退還金幣。')], 106, 163, C.ink, 13, 200);
       const deck = (SAVE.deck || []).map((id) => G.CARDS.find((c) => c.id === id)).filter(Boolean);
-      E.text(G.t('牌組') + '：' + (deck.length ? deckText(deck) : G.t('（空）')), 106, 204, { color: C.red, fit: 200 });
+      if (!deck.length) {
+        wrapLines([G.t('放進牌組的卡片（最多 3 張）會在每次委託發揮效果。重複的卡會退還金幣。')], 106, 163, C.ink, 13, 200);
+        E.text(G.t('牌組') + '：' + G.t('（空）'), 106, 204, { color: C.red, fit: 200 });
+      } else {
+        // with a deck, what it does takes the place of the rules
+        E.text(G.t('牌組') + ' ' + deck.length + '/' + G.DECK_SIZE, 106, 164, { color: C.red });
+        wrapLines([deckText(deck)], 106, 179, C.ink, 13, 200);
+      }
     },
     // the capsule show (see updateGacha for the beats)
     drawGachaReveal() {
@@ -2040,7 +2052,7 @@
       }
       // the deck: how many cards and their effects added up
       const deckCards = deck.map((id) => G.CARDS.find((c) => c.id === id)).filter(Boolean);
-      E.text(G.t('牌組') + ' ' + deckCards.length + '/' + G.DECK_SIZE + '：' + (deckCards.length ? deckText(deckCards) : G.t('（空）')), 76, 206, { color: C.pink, fit: 230 });
+      marquee(G.t('牌組') + ' ' + deckCards.length + '/' + G.DECK_SIZE + '：' + (deckCards.length ? deckText(deckCards) : G.t('（空）')), 76, 206, 232, C.pink, true);
       if (this.msgT > 0) { E.rect(60, 118, 200, 20, C.plum); E.text(this.msg, 160, 122, { color: C.mint, align: 'center', fit: 190 }); }
       hint(G.t('方向鍵 選擇　Z 放入／取出牌組　X 返回'));
     },
