@@ -397,6 +397,7 @@
     '可以踢炸彈了！': ['ボムキック解禁！', 'Bomb Kick!'],
     '火焰貫穿 +1': ['貫通+1', 'Pierce +1'],
     '直線炸彈：站在炸彈上再放一次': ['ラインボム：ボムの上でもう一度置く', 'Line Bomb: drop again on a bomb'],
+    '投擲手套：撿起炸彈丟出去': ['なげ手袋：ボムを持って投げられる', 'Glove: pick a bomb up and throw it'],
     '火力全開！': ['火力MAX！', 'Full Fire!'],
     '詛咒：{name}': ['のろい：{name}', 'Curse: {name}'],
     // ---- boss parts that break

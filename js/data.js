@@ -107,7 +107,7 @@
     {
       id: '3-1', theme: 'snow', title: '雪原的企鵝管家', client: '冰雪山莊', reward: 420, time: 180, layout: 'snowfield',
       brief: ['企鵝紳士跑得飛快。', '在牠的路上等著放炸彈吧。'],
-      enemies: { penguin: 4, snowkid: 2 }, items: { bomb: 2, fire: 2, speed: 1, heart: 1, clock: 1, pierce: 1, skull: 1 }, soft: 0.55, dust: 5,
+      enemies: { penguin: 4, snowkid: 2 }, items: { bomb: 2, fire: 2, speed: 1, heart: 1, clock: 1, pierce: 1, skull: 1, glove: 1 }, soft: 0.55, dust: 5,
     },
     {
       id: '3-2', theme: 'snow', title: '聰明的雪寶寶', client: '冰雪山莊', reward: 480, time: 190, layout: 'lanes',
@@ -117,7 +117,7 @@
     {
       id: '4-1', theme: 'candy', title: '糖果城堡的午茶', client: '甜點女王', reward: 560, time: 200, layout: 'candyCastle',
       brief: ['杯子蛋糕怪的奶油很厚，', '要炸兩次才會投降。'],
-      enemies: { cupcake: 4, dragon: 2 }, items: { bomb: 2, fire: 2, speed: 1, heart: 1, tea: 1, fullfire: 1, skull: 1 }, soft: 0.58, dust: 6,
+      enemies: { cupcake: 4, dragon: 2 }, items: { bomb: 2, fire: 2, speed: 1, heart: 1, tea: 1, fullfire: 1, skull: 1, glove: 1 }, soft: 0.58, dust: 6,
     },
     {
       id: '4-2', theme: 'candy', title: '甜點大暴走', client: '甜點女王', reward: 650, time: 210, layout: 'lanes',
@@ -127,7 +127,7 @@
     {
       id: 'BOSS2', theme: 'candy', title: '火焰蜘蛛', client: '甜點女王', reward: 800, time: 200, layout: 'boss', boss: 'spider',
       brief: ['城堡地下出現了噴火的機械蜘蛛！', '火焰沿著直線噴出，別跟牠站同一排！'],
-      enemies: {}, items: { bomb: 2, fire: 3, speed: 1, heart: 1, fullfire: 1, pierce: 1 }, soft: 0.28, dust: 4,
+      enemies: {}, items: { bomb: 2, fire: 3, speed: 1, heart: 1, fullfire: 1, pierce: 1, glove: 1 }, soft: 0.28, dust: 4,
     },
     {
       id: '5-1', theme: 'toy', title: '玩具箱演唱會', client: '玩具店老闆', reward: 700, time: 210, layout: 'toyStage',
@@ -137,22 +137,22 @@
     {
       id: '5-2', theme: 'toy', title: '積木迷宮', client: '玩具店老闆', reward: 760, time: 220, layout: 'blocks',
       brief: ['積木塔堆成了迷宮。', '用炸彈打通一條路吧！'],
-      enemies: { drumbun: 4, jelly: 2, snowkid: 1 }, items: { bomb: 3, fire: 2, star: 1, heart: 1, clock: 1, line: 1, pierce: 1 }, soft: 0.62, dust: 6,
+      enemies: { drumbun: 4, jelly: 2, snowkid: 1 }, items: { bomb: 3, fire: 2, star: 1, heart: 1, clock: 1, line: 1, glove: 1 }, soft: 0.62, dust: 6,
     },
     {
       id: '6-1', theme: 'jewel', title: '寶石宮殿', client: '寶石公主', reward: 850, time: 220, layout: 'jewelEgg',
       brief: ['宮殿中央的巨大寶石蛋被盯上了！', '寶石騎士很硬，要炸兩次。'],
-      enemies: { gemknight: 3, dragon: 2, cupcake: 1 }, items: { bomb: 2, fire: 3, speed: 1, heart: 1, tea: 1, fullfire: 1, skull: 1 }, soft: 0.58, dust: 6,
+      enemies: { gemknight: 3, dragon: 2, cupcake: 1 }, items: { bomb: 2, fire: 3, speed: 1, heart: 1, tea: 1, fullfire: 1, skull: 1, glove: 1 }, soft: 0.58, dust: 6,
     },
     {
       id: '6-2', theme: 'jewel', title: '閃耀迴廊', client: '寶石公主', reward: 950, time: 230, layout: 'jewelRing',
       brief: ['水晶柱排成菱形的迴廊。', '從四個缺口鑽進中央吧！'],
-      enemies: { gemknight: 4, dragon: 2, penguin: 2 }, items: { bomb: 3, fire: 3, star: 1, heart: 2, clock: 1, kick: 1, line: 1, pierce: 1 }, soft: 0.6, dust: 7,
+      enemies: { gemknight: 4, dragon: 2, penguin: 2 }, items: { bomb: 3, fire: 3, star: 1, heart: 2, clock: 1, kick: 1, line: 1, glove: 1 }, soft: 0.6, dust: 7,
     },
     {
       id: 'BOSS3', theme: 'lab', title: '金熊機甲', client: '？？？', reward: 1500, time: 240, layout: 'boss', boss: 'bear', final: true,
       brief: ['所有灰塵的源頭——', '神秘研究所的巨大機甲！'],
-      enemies: {}, items: { bomb: 3, fire: 3, heart: 2, fullfire: 1, line: 1 }, soft: 0.25, dust: 4,
+      enemies: {}, items: { bomb: 3, fire: 3, heart: 2, fullfire: 1, line: 1, glove: 1 }, soft: 0.25, dust: 4,
     },
   ];
 

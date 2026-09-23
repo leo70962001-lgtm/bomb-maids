@@ -1849,22 +1849,36 @@
       E.rect(Math.round(cx - hw), Math.round(cy + y), hw * 2 + 1, 1, col);
     }
   }
-  // a capsule: coloured top, clear bottom, a seam; open (0-1) sends the top up and the bottom down
+  // alpha for one drawing, then back
+  function alpha(a, fn) {
+    const ctx = E.ctx;
+    const g = ctx.globalAlpha;
+    ctx.globalAlpha = g * a;
+    fn();
+    ctx.globalAlpha = g;
+  }
+  // a capsule: a coloured lid lit from the top-left, a clear base with the light gathering in it, and the seam
+  // between them; open (0-1) sends the lid up and the base down
   function drawCapsule(cx, cy, r, rare, t, open) {
     const col = rareColor(rare, t);
     const up = open * 26, down = open * 16;
-    const ga = E.ctx.globalAlpha;
-    if (open > 0) E.ctx.globalAlpha = Math.max(0, 1 - open * 0.8);
+    const ctx = E.ctx;
+    const ga = ctx.globalAlpha;
+    if (open > 0) ctx.globalAlpha = Math.max(0, 1 - open * 0.8);
     pixDisc(cx, cy - up, r + 1, '#2a1b30', -r - 1, 0);
     pixDisc(cx, cy - up, r, col, -r, 0);
+    alpha(0.4, () => pixDisc(cx - r * 0.2, cy - up - r * 0.2, r * 0.8, '#ffffff', -r, -Math.round(r * 0.45)));
+    alpha(0.22, () => pixDisc(cx, cy - up, r, '#2a1b30', -Math.max(1, Math.round(r * 0.2)), 0));
     pixDisc(cx, cy + down, r + 1, '#2a1b30', 0, r + 1);
     pixDisc(cx, cy + down, r, '#f4f0fa', 0, r);
+    alpha(0.35, () => pixDisc(cx, cy + down, r - 1, '#9fb8d8', Math.round(r * 0.45), r));
     if (r >= 6) {
       pixDisc(cx - r * 0.35, cy - up - r * 0.45, r * 0.22, '#ffffff');
       E.rect(Math.round(cx - r), Math.round(cy - up), Math.round(r * 2) + 1, 1, '#2a1b30');
-      E.rect(Math.round(cx - r + 1), Math.round(cy + down + 1), Math.round(r * 2) - 1, 1, '#d8d0e4');
+      E.rect(Math.round(cx - r + 1), Math.round(cy + down + 1), Math.round(r * 2) - 1, 1, '#ffffff');
+      E.rect(Math.round(cx - r + 2), Math.round(cy + down + Math.round(r * 0.55)), 2, 1, '#ffffff');
     }
-    E.ctx.globalAlpha = ga;
+    ctx.globalAlpha = ga;
   }
   // light rays turning round a point
   function rays(cx, cy, len, col, alpha, t) {
@@ -1883,57 +1897,89 @@
     }
     ctx.restore();
   }
-  // the capsule machine: a glass dome full of capsules on a red body with a coin slot, the crank and the chute.
-  // crank: which quarter turn the handle is at; rattle: the capsules jostle while it turns
+  // the capsule machine: a glass dome full of capsules, a chrome ring, a red body with a coin slot, the crank and
+  // the chute. crank: which quarter turn the handle is at; rattle: the capsules jostle while it turns
   function drawCapsuleMachine(x, y, t, crank, rattle) {
     const cx = x + 32;
-    // dome: the glass, the capsules inside, a highlight
+    // the floor under it
+    alpha(0.16, () => pixDisc(cx, y + 119, 28, '#2a1b30', -4, 4));
+    // dome: glass, the capsules inside, then the glass again over them
     pixDisc(cx, y + 30, 29, '#2a1b30');
-    pixDisc(cx, y + 30, 28, '#d8f0ff');
+    pixDisc(cx, y + 30, 28, '#dff2ff');
+    alpha(0.45, () => pixDisc(cx, y + 30, 27, '#9cc8e4', 8, 27));
     const caps = [[-14, 12, 1], [-3, 16, 2], [9, 13, 3], [18, 7, 1], [-19, 2, 2], [-8, 4, 4], [4, 5, 1], [14, -4, 2], [-12, -8, 3], [0, -6, 1], [8, -14, 2], [-4, -18, 1]];
     caps.forEach(([dx, dy, r], i) => {
       const j = rattle ? Math.round(Math.sin(t * 0.9 + i * 1.7) * 2) : 0;
       drawCapsule(cx + dx + j, y + 30 + dy + (rattle ? Math.round(Math.cos(t * 1.1 + i) * 1.5) : 0), 5, r, t + i * 7, 0);
     });
-    E.ctx.globalAlpha = 0.5;
-    pixDisc(cx - 12, y + 16, 5, '#ffffff');
-    E.ctx.globalAlpha = 1;
+    alpha(0.4, () => { pixDisc(cx - 11, y + 17, 7, '#ffffff'); pixDisc(cx - 16, y + 26, 3, '#ffffff'); });
+    alpha(0.28, () => pixDisc(cx, y + 30, 28, '#ffffff', -28, -21));
     // cap on top
-    E.rect(cx - 7, y, 14, 4, '#2a1b30'); E.rect(cx - 6, y + 1, 12, 3, '#ff6f91');
-    // body
+    E.rect(cx - 7, y, 14, 4, '#2a1b30'); E.rect(cx - 6, y + 1, 12, 3, '#ff6f91'); E.rect(cx - 6, y + 1, 12, 1, '#ffc0d0');
+    // the chrome ring the dome sits in
+    E.rect(x, y + 50, 64, 8, '#2a1b30');
+    E.rect(x + 1, y + 51, 62, 6, '#b9c0d8');
+    E.rect(x + 1, y + 51, 62, 2, '#f2f5ff');
+    E.rect(x + 1, y + 56, 62, 1, '#6e7596');
+    // body, lit down its left side, with a gold trim and screws
     E.panel(x + 2, y + 56, 60, 60, '#ff5a6a', '#a8102a', { shine: '#ffc8d0' });
+    alpha(0.25, () => E.rect(x + 40, y + 60, 21, 54, '#7a0a20'));
     E.rect(x + 4, y + 60, 56, 2, '#ffd23f');
+    E.rect(x + 4, y + 62, 56, 1, '#c8860c');
+    for (const sx of [x + 6, x + 57]) for (const sy of [y + 66, y + 110]) { E.rect(sx, sy, 2, 2, '#f0f0ff'); E.rect(sx, sy + 1, 2, 1, '#8a86a8'); }
     // coin slot with its price
-    E.rect(x + 9, y + 66, 18, 12, '#2a1b30'); E.rect(x + 10, y + 67, 16, 10, '#ffd23f'); E.rect(x + 16, y + 69, 4, 6, '#2a1b30');
+    E.rect(x + 9, y + 66, 18, 12, '#2a1b30'); E.rect(x + 10, y + 67, 16, 10, '#ffd23f'); E.rect(x + 10, y + 67, 16, 2, '#fff3a0'); E.rect(x + 16, y + 69, 4, 6, '#2a1b30');
     E.text('100', x + 18, y + 80, { color: C.white, align: 'center', small: true });
     // the crank: a gold boss and a handle turned by quarters, a white knob
     pixDisc(x + 46, y + 74, 7, '#2a1b30'); pixDisc(x + 46, y + 74, 6, '#ffd23f'); pixDisc(x + 45, y + 73, 2, '#fff3a0');
+    alpha(0.3, () => pixDisc(x + 46, y + 75, 6, '#8a4a00', 2, 6));
     const ang = [[0, -1], [1, 0], [0, 1], [-1, 0]][crank % 4];
     for (let i = 0; i <= 9; i++) E.rect(x + 45 + ang[0] * i, y + 73 + ang[1] * i, 3, 3, i > 7 ? '#ffffff' : '#c8c8dc');
-    // chute
-    E.rect(x + 22, y + 96, 20, 14, '#2a1b30'); E.rect(x + 24, y + 98, 16, 10, '#5a1428'); E.rect(x + 24, y + 98, 16, 2, '#ff9fbb');
+    // chute: a dark mouth with a flap and its shadow
+    E.rect(x + 22, y + 96, 20, 16, '#2a1b30');
+    E.rect(x + 24, y + 98, 16, 12, '#5a1428');
+    E.rect(x + 24, y + 98, 16, 2, '#ff9fbb');
+    alpha(0.5, () => E.rect(x + 24, y + 100, 16, 3, '#2a1b30'));
+    E.rect(x + 23, y + 106, 18, 4, '#c8c8dc'); E.rect(x + 23, y + 106, 18, 1, '#f2f5ff'); E.rect(x + 23, y + 109, 18, 1, '#6e7596');
   }
-  // the card pack: a foil pack with the lace-heart crest; open (0-1) tears the top strip off
+  // the card pack: foil with a lace-heart crest and a gold strip that tears off (open 0-1)
   function drawPackArt(x, y, w, h, t, open) {
     const shine = Math.floor(t / 4) % (w + 20);
     const top = Math.round(open * 22);
     E.panel(x, y + 10, w, h - 10, '#ff9fbb', '#a8285a', {});
     E.rect(x + 3, y + 13, w - 6, h - 16, '#ffd0e0');
     for (let i = 0; i < w - 6; i += 6) E.rect(x + 3 + i, y + 13, 3, h - 16, '#ffc0d4');
-    if (shine < w - 6) E.rect(x + 3 + shine, y + 13, 2, h - 16, '#ffffff');
+    // the foil darkens along the bottom and the right, and a highlight sweeps across it
+    alpha(0.2, () => { E.rect(x + 3, y + h - 16, w - 6, 13, '#a8285a'); E.rect(x + w - 10, y + 13, 7, h - 16, '#a8285a'); });
+    if (shine < w - 6) { E.rect(x + 3 + shine, y + 13, 2, h - 16, '#ffffff'); alpha(0.45, () => E.rect(x + 5 + shine, y + 13, 2, h - 16, '#ffffff')); }
+    // the crest: a cream medallion with a gold rim behind the heart
+    const mx = Math.round(x + w / 2), my = Math.round(y + h / 2 + 2);
+    pixDisc(mx, my, 11, '#a8285a'); pixDisc(mx, my, 10, '#ffd23f'); pixDisc(mx, my, 8, '#fff6e6');
+    alpha(0.35, () => pixDisc(mx, my, 8, '#e8b8cc', 3, 8));
+    E.ctx.drawImage(E.spr.fx.bigHeart.love, mx - 5, my - 7);
+    // the strip: a gold band with a lace edge, torn along a zigzag once it opens
     E.panel(x, y - top, w, 14, '#ffd23f', '#a8285a', {});
     E.rect(x + 4, y + 5 - top, w - 8, 2, '#fff3a0');
-    E.ctx.drawImage(E.spr.fx.bigHeart.love, Math.round(x + w / 2 - 5), Math.round(y + h / 2 - 2));
+    for (let i = 2; i < w - 2; i += 4) E.rect(x + i, y + 12 - top, 2, 1, '#fff6e6');
+    if (open > 0) for (let i = 0; i < w; i += 4) { E.rect(x + i, y + 13 - top, 2, 2, '#ffd23f'); E.rect(x + i + 2, y + 13 - top, 2, 1, '#c8860c'); }
     E.text('MAID', x + w / 2, y + h - 22, { color: '#a8285a', align: 'center', small: true });
     E.text('CARDS', x + w / 2, y + h - 14, { color: '#a8285a', align: 'center', small: true });
   }
-  // a card face down: pink with a lace border and the heart crest
+  // a card face down: pink foil with a lace border and the heart crest
   function drawCardBack(x, y, w, h, t) {
     E.panel(x, y, w, h, '#ff9fbb', '#a8285a', {});
     if (w < 12) return;
     E.rect(x + 3, y + 3, w - 6, h - 6, '#ffc0d4');
+    // a woven diagonal in the field, darker toward the bottom right
+    for (let i = -h; i < w; i += 5) for (let j = 0; j < h - 6; j++) { const px = x + 3 + i + j; if (px >= x + 3 && px < x + w - 3) E.rect(px, y + 3 + j, 1, 1, '#ffd0e0'); }
+    alpha(0.18, () => E.rect(x + Math.round(w * 0.55), y + 3, Math.round(w * 0.45) - 3, h - 6, '#a8285a'));
+    // lace: scallops down both sides and a run of dots top and bottom
     for (let i = 4; i < h - 4; i += 5) { E.rect(x + 3, y + i, 2, 2, '#ffffff'); E.rect(x + w - 5, y + i, 2, 2, '#ffffff'); }
-    E.ctx.drawImage(E.spr.fx.bigHeart.like, Math.round(x + w / 2 - 5), Math.round(y + h / 2 - 5));
+    for (let i = 5; i < w - 5; i += 5) { E.rect(x + i, y + 3, 2, 1, '#ffffff'); E.rect(x + i, y + h - 4, 2, 1, '#fff0f6'); }
+    // the crest
+    const mx = Math.round(x + w / 2), my = Math.round(y + h / 2);
+    if (w >= 30) { pixDisc(mx, my, 9, '#a8285a'); pixDisc(mx, my, 8, '#ffe6ef'); alpha(0.3, () => pixDisc(mx, my, 8, '#c88aa0', 3, 8)); }
+    E.ctx.drawImage(E.spr.fx.bigHeart.like, mx - 5, my - 5);
   }
   // what came out of a capsule, big
   function drawPrize(p, cx, cy, t) {
@@ -2342,6 +2388,7 @@
     if (m.kick) ability('kick');
     if (m.pierce > 0) ability('pierce', String(m.pierce));
     if (m.line) ability('line');
+    if (m.glove) ability('glove');
     if (m.curse) { ability('skull'); E.bar(ax, 179, x0 + 75 - ax, 5, m.curse.t / 600, (E.frame >> 3) % 2 ? '#b08ae0' : '#6a4a9e'); }
     // controls in a black box, like the original's soft-key strip
     const touch = E.input.lastDevice === 'touch';

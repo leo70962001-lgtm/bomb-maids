@@ -225,6 +225,8 @@
       this.flames = new Array(COLS * ROWS).fill(null);
       this.scorch = new Array(COLS * ROWS).fill(0);
       this.bombs = [];
+      this.thrown = []; // bombs in the air after a throw
+      this.ice = null; // set on the snow stages: the tiles she slides on
       this.burning = [];
       this.decor = [];
       this.maids = [];
@@ -328,6 +330,16 @@
       }
       this.softLeft = softCells.length;
 
+      // the snow stages freeze over in patches (the same ones every time for a given tile): she keeps gliding there
+      if (this.cfg.theme === 'snow') {
+        this.ice = new Uint8Array(COLS * ROWS);
+        for (let r = 1; r < ROWS - 1; r++)
+          for (let c = 1; c < COLS - 1; c++) {
+            const h = ((((c >> 2) * 73856093) ^ ((r >> 2) * 19349663) ^ 0x51ed) >>> 0) % 100;
+            if (h < 56) this.ice[idx(c, r)] = 1;
+          }
+      }
+
       // enemies
       const far = [];
       for (let r = 1; r < ROWS - 1; r++)
@@ -388,7 +400,7 @@
         // Yukino's blasts chill whatever stands next to them (and her fuses run long for remote play)
         kick: p.maid === 'berry' || !!p.kick, remote: p.maid === 'yukino', fuse: p.maid === 'yukino' ? 190 : 150,
         pierce: (p.maid === 'yoru' ? G.SKILL.pierce : 0) + (p.pierce || 0), frost: p.maid === 'yukino',
-        line: false, curse: null, comboN: 0, comboT: 0,
+        line: false, glove: !!p.glove, carry: null, glide: 0, curse: null, comboN: 0, comboT: 0,
         shield: 0, shieldCD: 0, chill: 0,
         cool: 0, slashT: 0, magicT: 0, kickT: 0, remoteT: 0, skillCost: D.cost, name: D.name, color: D.color,
         perks: p.perks || {},
@@ -480,8 +492,8 @@
     }
 
     // Grid movement with corner assist. Invariant: a maid is off-grid on at most one axis.
-    moveMaid(m, dir) {
-      const speed = speedPx(m.speedLv) * (m.chill > 0 ? G.SKILL.chillSpeed : 1) * (m.curse && m.curse.type === 'slow' ? 0.55 : 1);
+    moveMaid(m, dir, mul) {
+      const speed = speedPx(m.speedLv) * (m.chill > 0 ? G.SKILL.chillSpeed : 1) * (m.curse && m.curse.type === 'slow' ? 0.55 : 1) * (mul || 1);
       const [dx, dy] = DV[dir];
       const horiz = dx !== 0;
       const perp = horiz ? m.y : m.x;
@@ -521,10 +533,17 @@
 
     // ---------------------------------------------------------------- bombs
     placeBomb(m) {
-      if (!m.alive || m.stun > 0 || m.active >= m.bombs) return false;
+      if (!m.alive || m.stun > 0) return false;
+      if (m.carry) return this.throwBomb(m); // holding one: this press sends it flying
       const [c, r] = cellOf(m);
       const k = idx(c, r);
-      if (m.line && this.bombAt[k]) return this.placeLine(m, c, r);
+      // standing on one: the glove lifts it (she may be out of bombs to place), the line bomb lays the rest out ahead
+      if (this.bombAt[k]) {
+        if (m.glove) return this.liftBomb(m, this.bombAt[k]);
+        if (m.line && m.active < m.bombs) return this.placeLine(m, c, r);
+        return false;
+      }
+      if (m.active >= m.bombs) return false;
       return this.placeBombAt(m, c, r);
     }
     placeBombAt(m, c, r) {
@@ -556,6 +575,75 @@
       return n > 0;
     }
 
+    // ---- the throwing glove
+    // she picks up the bomb she stands on; its fuse keeps burning in her hands
+    liftBomb(m, b) {
+      if (b.dead || b.slide) return false;
+      if (this.bombAt[idx(b.c, b.r)] === b) this.bombAt[idx(b.c, b.r)] = null;
+      const i = this.bombs.indexOf(b);
+      if (i >= 0) this.bombs.splice(i, 1);
+      b.passers.clear();
+      m.carry = b;
+      sfx('kick');
+      this.particles.push({ kind: 'ring', x: b.x + 8, y: b.y + 6, r0: 3, r1: 12, col: '#ffffff', t: 0, life: 10 });
+      return true;
+    }
+    // where a thrown bomb may come down
+    freeForBomb(c, r) {
+      if (!inb(c, r)) return false;
+      const k = idx(c, r);
+      return this.grid[k] === FLOOR && !this.bombAt[k];
+    }
+    // three tiles on, over anything in between; if that tile is taken it flies on, wrapping round the field
+    throwBomb(m) {
+      const b = m.carry;
+      const [dx, dy] = DV[m.dir];
+      const [c, r] = cellOf(m);
+      let tc = c + dx * 3, tr = r + dy * 3;
+      for (let i = 0; i < COLS + ROWS; i++) {
+        if (tc <= 0) tc = COLS - 2; else if (tc >= COLS - 1) tc = 1;
+        if (tr <= 0) tr = ROWS - 2; else if (tr >= ROWS - 1) tr = 1;
+        if (this.freeForBomb(tc, tr)) break;
+        tc += dx; tr += dy;
+      }
+      m.carry = null;
+      const tiles = Math.abs(tc - c) + Math.abs(tr - r);
+      this.thrown.push({ b, x0: m.x, y0: m.y - 14, x1: tc * T, y1: tr * T, c: tc, r: tr, t: 0, dur: Math.max(14, Math.min(34, tiles * 7)) });
+      sfx('kick');
+      this.dust(m.x + 8, m.y + 12, 2);
+      return true;
+    }
+    // back on the ground: out of her hands (the fuse ran out) or at the end of a throw
+    landBomb(b, c, r) {
+      b.c = c; b.r = r; b.x = c * T; b.y = r * T;
+      b.slide = null;
+      const k = idx(c, r);
+      if (this.bombAt[k]) { this.explode(b); return; }
+      b.passers = new Set();
+      for (const a of this.maids) if (a.alive && this.overlapsTile(a, c, r)) b.passers.add(a);
+      for (const e of this.enemies) if (e.alive && this.overlapsTile(e, c, r)) b.passers.add(e);
+      this.bombs.push(b);
+      this.bombAt[k] = b;
+      if (b.timer <= 0) this.explode(b);
+    }
+    updateThrown() {
+      for (let i = this.thrown.length - 1; i >= 0; i--) {
+        const f = this.thrown[i];
+        const b = f.b;
+        b.anim++;
+        b.timer--;
+        f.t++;
+        const k = Math.min(1, f.t / f.dur);
+        b.x = f.x0 + (f.x1 - f.x0) * k;
+        b.y = f.y0 + (f.y1 - f.y0) * k - Math.sin(Math.PI * k) * 20;
+        if (f.t % 4 === 0) this.particles.push({ kind: 'spark', x: b.x + 8, y: b.y + 10, vx: E.rand(-0.2, 0.2), vy: 0.2, t: 0, life: 12 });
+        if (k >= 1) {
+          this.thrown.splice(i, 1);
+          this.dust(f.x1 + 8, f.y1 + 12, 3);
+          this.landBomb(b, f.c, f.r);
+        }
+      }
+    }
     tryKick(m, dir, fromSkill) {
       const [c, r] = cellOf(m);
       const [dx, dy] = DV[dir];
@@ -828,11 +916,19 @@
       }
       const busy = m.burnT > 20 || m.stun > 0 || this.state !== 'play';
       m.moving = false;
+      const onIce = !!(this.ice && this.ice[idx(...cellOf(m))]);
       if (!busy && ctrl.dir) {
         m.dir = ctrl.dir;
         m.moving = this.moveMaid(m, ctrl.dir);
         if (m.moving) m.walkT++;
-      }
+        m.glide = onIce && m.moving ? 16 : 0;
+      } else if (!busy && m.glide > 0) {
+        // she lets go on the ice and slides on, carrying off the edge of the patch
+        m.glide--;
+        m.moving = this.moveMaid(m, m.dir, 0.7);
+        if (m.moving) m.walkT++; else m.glide = 0;
+        if (m.glide % 4 === 0) this.particles.push({ kind: 'frost', x: m.x + 8 + E.rand(-4, 4), y: m.y + 13, vx: E.rand(-0.3, 0.3), vy: -0.1, t: 0, life: 14 });
+      } else m.glide = 0;
       if (!busy && ctrl.bomb) this.placeBomb(m);
       if (!busy && ctrl.skill) this.useSkill(m);
 
@@ -844,6 +940,18 @@
           sfx('angry');
         }
       }
+      // the bomb she is holding: its fuse keeps burning, and it goes off in her hands if she waits too long
+      if (m.carry) {
+        const b = m.carry;
+        b.anim++;
+        b.timer--;
+        if (b.timer <= 0) {
+          m.carry = null;
+          const [bc, br] = cellOf(m);
+          this.landBomb(b, bc, br);
+        }
+      }
+
       // pickups
       const [c, r] = cellOf(m);
       const k = idx(c, r);
@@ -879,6 +987,10 @@
           break;
         case 'pierce': m.pierce = Math.min(3, m.pierce + 1); pop(G.t('火焰貫穿 +1'), '#c8a0ff'); sfx('item'); break;
         case 'line': m.line = true; pop(G.t('直線炸彈：站在炸彈上再放一次'), '#ff9fb4'); sfx('item'); break;
+        case 'glove':
+          if (m.glove) { this.stats.coins += 30; pop('+30G', '#ffe14d'); } else { m.glove = true; pop(G.t('投擲手套：撿起炸彈丟出去'), '#9ff3ff'); }
+          sfx('item');
+          break;
         case 'fullfire': m.fire = 8; pop(G.t('火力全開！'), '#ffb45c'); sfx('power'); this.shake = Math.max(this.shake, 4); break;
         case 'skull': {
           // a gamble: one of five curses for ten seconds
@@ -1803,6 +1915,7 @@
       for (const m of this.maids) this.updateMaid(m);
       if (this.state === 'play' || this.state === 'clear') {
         this.updateBombs();
+        this.updateThrown();
         this.updateFlames();
         this.updateBurning();
       }
@@ -1862,6 +1975,7 @@
             ctx.drawImage(r === 0 ? TH.wallTop[c % 2] : TH.wall, x, y);
           } else {
             ctx.drawImage(TH.floor[(c + r) % 2], x, y);
+            if (this.ice && this.ice[k]) { ctx.drawImage(S.ice[(c + r) % 2], x, y); continue; }
             // a little something lying on about a quarter of the floor, the same every time for the same tile
             const h = (((c * 73856093) ^ (r * 19349663) ^ (this.decalSeed || 0)) >>> 0) % 997;
             if (TH.decals && TH.decals.length && h < 250) {
@@ -1935,6 +2049,23 @@
           const BS = (b.owner && S.bombs[b.owner.maidKey]) || S.bomb;
           const img = b.timer < 40 && (b.anim >> 2) % 2 ? BS[3] : BS[fr];
           ctx.drawImage(img, Math.round(ox + b.x), Math.round(oy + b.y - 1));
+        }
+        for (const m of this.maids) {
+          if (!m.alive || !m.carry || Math.round(m.y / T) !== r) continue;
+          const b = m.carry;
+          const BS = (b.owner && S.bombs[b.owner.maidKey]) || S.bomb;
+          const img = b.timer < 40 && (b.anim >> 2) % 2 ? BS[3] : BS[(b.anim >> 3) % 3];
+          ctx.drawImage(img, Math.round(ox + m.x), Math.round(oy + m.y) - 15 - ((b.anim >> 3) % 2));
+        }
+        for (const f of this.thrown) {
+          const b = f.b;
+          const k2 = Math.min(1, f.t / f.dur);
+          const gy = f.y0 + (f.y1 - f.y0) * k2;
+          if (Math.round(gy / T) !== r) continue;
+          E.groundShadow(ox + b.x + 4, oy + gy + 12, 8, 3, 0.26);
+          const BS = (b.owner && S.bombs[b.owner.maidKey]) || S.bomb;
+          const img = b.timer < 40 && (b.anim >> 2) % 2 ? BS[3] : BS[(b.anim >> 2) % 3];
+          ctx.drawImage(img, Math.round(ox + b.x), Math.round(oy + b.y));
         }
         for (let c = 0; c < COLS; c++) {
           const k = idx(c, r);

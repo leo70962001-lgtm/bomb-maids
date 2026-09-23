@@ -1590,37 +1590,63 @@
   const ICON_PAL = {
     k: K, w: '#ffffff', c: '#bdd2ef', d: '#3a2d50', D: '#6b5a8e', r: '#ec3d5f', R: '#a51f40', y: '#ffd23f', Y: '#e09a14',
     o: '#ff7a1a', b: '#3d86f0', B: '#1f3b8f', g: '#4cb84c', G: '#2c7a33', p: '#ff9fb4', n: '#8a5a3c', s: '#ffe4d2',
+    // the shading tones the icons pick up: deep bomb shadow, ember rim, hot core, wood, bone grey, curse violet
+    x: '#241b33', q: '#d9281c', e: '#fff3c0', m: '#c08a5a', z: '#5a4630', l: '#dcd8ea', h: '#8f88a8', v: '#c8a0ff', a: '#8ee07a',
   };
   const ICONS = {
-    bomb: ['.....k.y..', '....k.ywy.', '..kkkk.y..', '.kddddk...', 'kdDwdddk..', 'kdwddddk..', 'kddddddk..', 'kddddddk..', '.kddddk...', '..kkkk....'],
-    fire: ['....k.....', '...kok....', '...kook...', '..koyok.k.', '..koyyokok', '.koyyyyook', '.koywwyyok', '.koywwwyok', '..koyyyok.', '...kkkkk..'],
-    speed: ['..........', '....kkkk..', '...kbbbbk.', '..kbwbbbk.', 'kkkbbbbbk.', '...kbbbbbk', 'kkk.kbbbbk', '...kBBBBBk', '....kkkkk.', '..........'],
-    heart: ['.kk...kk..', 'krrk.krrk.', 'krwrkrrrk.', 'krwrrrrrk.', 'krrrrrrrk.', '.krrrrrk..', '..krrrk...', '...krk....', '....k.....', '..........'],
-    clock: ['...kkk....', '....k.....', '..kkkkk...', '.kwwkwwk..', 'kwwwkwwwk.', 'kwwwkkwwk.', 'kwwwwwwwk.', '.kwwwwwk..', '..kkkkk...', '..........'],
-    star: ['....k.....', '...kyk....', '...kyk....', 'kkkyyykkk.', 'kyyywyyyk.', '.kyyyyyk..', '..kyyyk...', '.kyykyyk..', '.kyk.kyk..', '.kk...kk..'],
-    tea: ['...w.w....', '....w.....', '.kkkkkkk..', '.kwwwwwkkk', '.kwrrrwk.k', '.kwwwwwkkk', '..kwwwk...', 'kkkkkkkkk.', '.kcccccck.', '..kkkkkk..'],
-    // the new power-ups: a kicking boot, a flame through a crate, three bombs in a row, a double flame, the skull
-    kick: ['..kkk.....', '..krrk....', '..krrk....', '..krrk....', '..krrrkk..', '..krrrrrk.', 'w.krwrrrrk', '..kwwwwwwk', 'w..kkkkkk.', '..........'],
-    pierce: ['..........', '...kkkk...', '...knnk...', 'kkkknnkkk.', 'oyywwwyyok', 'kkkknnkkk.', '...knnk...', '...kkkk...', '..........', '..........'],
-    line: ['..........', '..y..y..y.', '..k..k..k.', 'kkkkkkkkkk', 'kdwkdwkdwk', 'kddkddkddk', 'kDDkDDkDDk', 'kkkkkkkkkk', '..........', '.wwwwwwwk.'],
-    fullfire: ['....k.....', '...kok..k.', '..kook.kok', '..koyokoyk', '.koyyyoyyk', '.koywwyyok', 'koywwwwyok', 'koywwwwyok', '.koyyyyok.', '..kkkkkk..'],
-    skull: ['..kkkkk...', '.kwwwwwk..', 'kwwwwwwwk.', 'kwkkwkkwk.', 'kwkkwkkwk.', 'kwwwkwwwk.', '.kwwwwwk..', '..kwkwk...', '..kkkkk...', '..........'],
+    bomb: ['.....k.q..', '....k.qeq.', '..kkyk.q..', '.kyYYYk...', 'kdDwdddk..', 'kdwddddxk.', 'kddddddxk.', 'kdddddxxk.', '.kdddxxk..', '..kkkkk...'],
+    fire: ['....k.....', '...kqk....', '...kqok...', '..kqook.k.', '..kqoyokok', '.kqoyyeook', '.kqoywweok', '.kqoywwyok', '..kqoyyok.', '...kkkkk..'],
+    speed: ['..........', '....kkkk..', '...kccbbk.', '..kcwbbbk.', 'BBBbbbbbk.', '...kbbbbbk', 'BBB.kbbbbk', '...kBBBBBk', '....kkkkk.', '..........'],
+    heart: ['.kk...kk..', 'krrk.krrk.', 'krwrkrrRk.', 'krprrrrRk.', 'krrrrrrRk.', '.krrrrRk..', '..krrRk...', '...kRk....', '....k.....', '..........'],
+    clock: ['...kkk....', '....k.....', '..kkkkk...', '.kwwkwwk..', 'kwwwkwwck.', 'kwwwkkwck.', 'kwwwwwcck.', '.kwwccck..', '..kkkkk...', '..........'],
+    star: ['....k.....', '...kyk....', '...kek....', 'kkkyeykkk.', 'kyyewyeyk.', '.kyeeeyk..', '..kyyYk...', '.kyYkYyk..', '.kYk.kYk..', '.kk...kk..'],
+    tea: ['...l.l....', '....l.....', '.kkkkkkk..', '.kGGaGGkkk', '.kwwwwck.k', '.kwwwwcckk', '..kwwcck..', 'kkkkkkkkk.', '.kcccccck.', '..kkkkkk..'],
+    // the newer power-ups: a kicking boot, a blast through a crate, three bombs in a row, a double flame, a skull, a glove
+    kick: ['..kkk.....', '..krRk....', '..krRk....', '..krRk....', '..krrRkk..', '..krrrrRk.', 'w.krwrrrRk', '..kwwwlllk', 'w..kkkkkk.', '..........'],
+    pierce: ['..........', '...kkkk...', '...kmnk...', 'kkkkmnkkk.', 'qoywwwyoqk', 'kkkkznkkk.', '...kznk...', '...kkkk...', '..........', '..........'],
+    line: ['..........', '..q..q..q.', '..y..y..y.', 'kkkkkkkkkk', 'kdwkdwkdwk', 'kddkddkddk', 'kdxkdxkdxk', 'kkkkkkkkkk', '..........', '.llllllll.'],
+    fullfire: ['....k.....', '...kqk..k.', '..kqqk.kqk', '..kqoyoqyk', '.kqoyyoyyk', '.kqoywyyok', 'kqoywweyok', 'kqoywwwyqk', '.kqoyyyqk.', '..kkkkkk..'],
+    skull: ['..kkkkk...', '.kwwwwlk..', 'kwwwwwllk.', 'kwvkwvkwk.', 'kwkkwkklk.', 'kwwwkwllk.', '.kwwwllk..', '..kwkwk...', '..kkkkk...', '..........'],
+    glove: ['.......q..', '......kyk.', '.....kdxk.', '..kk..kkk.', '.kwwk.....', 'kwwwwkk...', 'kwwwwcck..', 'kwwwwcck..', 'kbbbbbbk..', '.kkkkkk...'],
   };
+  const ITEM_KEYS = Object.keys(ICONS);
 
   const ITEM_BG = {
     bomb: ['#fff4f8', '#ff6f91'], fire: ['#fff6e6', '#ff8a2e'], speed: ['#eef6ff', '#3d86f0'], heart: ['#fff0f4', '#ec3d5f'],
     clock: ['#eefcff', '#27a7b8'], star: ['#fffbe0', '#e0a014'], tea: ['#f2fff0', '#4cb84c'],
-    kick: ['#fff0f0', '#e8403a'], pierce: ['#f6f0ff', '#8a5ac8'], line: ['#fff4f8', '#ff6f91'], fullfire: ['#fff8d8', '#e8a014'], skull: ['#ece6f2', '#5a4a6e'],
+    kick: ['#fff0f0', '#e8403a'], pierce: ['#f6f0ff', '#8a5ac8'], line: ['#fff4f8', '#ff6f91'], fullfire: ['#fff8d8', '#e8a014'],
+    skull: ['#ece6f2', '#5a4a6e'], glove: ['#eefaff', '#3aa0d8'],
   };
   function buildItem(type) {
     const p = new Pix(16, 16);
     const [bg, rim] = ITEM_BG[type];
-    // rounded panel
+    // the card: a coloured rim with cut corners, darker along the bottom and right, and a face that is lit at the top
     p.rect(2, 1, 12, 14, rim); p.rect(1, 2, 14, 12, rim);
+    p.hline(3, 14, 10, mix(rim, '#2a1b30', 0.4));
+    p.vline(14, 3, 11, mix(rim, '#2a1b30', 0.4));
     p.rect(3, 2, 10, 12, bg); p.rect(2, 3, 12, 10, bg);
-    p.hline(3, 13, 10, mix(bg, rim, 0.35));
+    for (let y = 9; y < 13; y++) p.hline(y === 12 ? 3 : 2, y, y === 12 ? 10 : 12, mix(bg, rim, 0.08 + (y - 9) * 0.06));
+    p.hline(3, 2, 10, mix(bg, '#ffffff', 0.75));
+    p.vline(2, 3, 9, mix(bg, '#ffffff', 0.6));
     stamp(p, ICONS[type], 3, 3, ICON_PAL);
     return p.outlined(K);
+  }
+  // an icy plate over a snow tile: lit at the top-left, a glint, a hairline crack, corners left open
+  function buildIce(v) {
+    const p = new Pix(16, 16);
+    p.rect(1, 1, 14, 14, '#dceeff');
+    for (const [x, y] of [[1, 1], [14, 1], [1, 14], [14, 14]]) p.clear(x, y);
+    p.hline(2, 1, 12, '#f4fbff'); p.vline(1, 2, 12, '#eaf6ff');
+    p.hline(2, 14, 12, '#a9ccE4'.toLowerCase()); p.vline(14, 2, 12, '#b6d4e8');
+    p.hline(2, 13, 12, '#c8e0f4');
+    if (v === 0) {
+      p.hline(3, 4, 4, '#ffffff'); p.set(7, 5, '#ffffff');
+      p.hline(9, 9, 3, '#b6d4e8'); p.set(8, 10, '#b6d4e8'); p.set(12, 8, '#b6d4e8');
+    } else {
+      p.hline(9, 3, 4, '#ffffff'); p.set(8, 4, '#ffffff');
+      p.hline(3, 10, 4, '#b6d4e8'); p.set(7, 9, '#b6d4e8'); p.set(3, 6, '#b6d4e8');
+    }
+    return p;
   }
   function buildCoin(f) {
     const p = new Pix(16, 16);
@@ -2430,6 +2456,7 @@
     pierce: ['.......', '..kkk..', 'kkknkkk', 'oyywyyo', 'kkknkkk', '..kkk..', '.......'],
     line: ['.y.y.y.', 'kkkkkkk', 'kdkdkdk', 'kDkDkDk', 'kkkkkkk'],
     skull: ['.kkkkk.', 'kwwwwwk', 'kwkwkwk', 'kwwwwwk', '.kwkwk.', '.kkkkk.'],
+    glove: ['..kk...', '.kwwkk.', 'kwwwwwk', 'kwcwwck', 'kwwwwwk', '.kkkkk.'],
   };
   const UI_PAL = Object.assign({}, ICON_PAL, { d: '#6b5a8e', g: '#a9a2c2', Y: '#e09a14' });
 
@@ -3536,8 +3563,9 @@
     art.decor = {};
     for (const k of ['treehouse', 'igloo', 'castle', 'podium', 'cane', 'stage', 'egg']) art.decor[k] = volume(softInk(bevel(buildDecor(k))), 0.8);
     art.bgTile = buildBgTile();
-    for (const k of Object.keys(ICONS)) art.items[k] = softInk(bevel(buildItem(k)));
+    for (const k of ITEM_KEYS) art.items[k] = softInk(bevel(buildItem(k)));
     art.items.coin = [0, 1, 2, 3].map(buildCoin);
+    art.ice = [buildIce(0), buildIce(1)];
     art.items.dust = [0, 1, 2].map(buildDust);
     for (const k of Object.keys(UI)) art.ui[k] = fromRows(UI[k], UI_PAL);
     art.ui.weather = {};
@@ -3631,7 +3659,8 @@
       nl();
       for (const b of art.bomb) put(b);
       for (const k of Object.keys(art.bombs)) for (const b of art.bombs[k]) put(b);
-      for (const k of Object.keys(ICONS)) put(art.items[k]);
+      for (const k of ITEM_KEYS) put(art.items[k]);
+      for (const i of art.ice) put(i);
       for (const c of art.items.coin) put(c);
       for (const d of art.items.dust) put(d);
       nl();
