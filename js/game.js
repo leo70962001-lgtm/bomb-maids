@@ -887,7 +887,11 @@
       if (m.comboT > 0 && --m.comboT === 0) m.comboN = 0;
       if (m.curse && --m.curse.t <= 0) {
         m.curse = null;
-        this.floaters.push({ x: m.x + 8, y: m.y - 8, text: G.t('詛咒解除'), col: '#c8b0ff', t: 0 });
+        // the skull is a gamble: ten seconds of trouble, and coins for riding it out
+        if (this.mode === 'story' && m.human) {
+          this.stats.coins += 60;
+          this.floaters.push({ x: m.x + 8, y: m.y - 8, text: G.t('撐過詛咒 +{n}G', { n: 60 }), col: '#ffe14d', t: 0 });
+        } else this.floaters.push({ x: m.x + 8, y: m.y - 8, text: G.t('詛咒解除'), col: '#c8b0ff', t: 0 });
       }
       if (m.chill > 0) m.chill--;
       // Honey's sugar shield grows back a while after it breaks
@@ -982,7 +986,10 @@
         case 'star': m.star = 480; pop(G.t('無敵！'), '#ffe14d'); sfx('power'); break;
         case 'tea': m.sp = 100; pop(G.t('特技全滿'), '#b8f28a'); sfx('item'); break;
         case 'kick':
-          if (m.kick) { this.stats.coins += 30; pop('+30G', '#ffe14d'); } else { m.kick = true; pop(G.t('可以踢炸彈了！'), '#ff8a7a'); }
+          // Berry already kicks, so the boot is a dud for her: it turns into a step of speed instead
+          if (!m.kick) { m.kick = true; pop(G.t('可以踢炸彈了！'), '#ff8a7a'); }
+          else if (m.speedLv < 6) { m.speedLv++; pop(G.t('速度+1'), '#8fc6ff'); }
+          else { this.stats.coins += 30; pop('+30G', '#ffe14d'); }
           sfx('item');
           break;
         case 'pierce': m.pierce = Math.min(3, m.pierce + 1); pop(G.t('火焰貫穿 +1'), '#c8a0ff'); sfx('item'); break;
@@ -991,7 +998,8 @@
           if (m.glove) { this.stats.coins += 30; pop('+30G', '#ffe14d'); } else { m.glove = true; pop(G.t('投擲手套：撿起炸彈丟出去'), '#9ff3ff'); }
           sfx('item');
           break;
-        case 'fullfire': m.fire = 8; pop(G.t('火力全開！'), '#ffb45c'); sfx('power'); this.shake = Math.max(this.shake, 4); break;
+        // full fire on a job; in a battle round it is a big step rather than the lot, or one pickup decides the match
+        case 'fullfire': m.fire = this.mode === 'battle' ? Math.min(8, m.fire + 3) : 8; pop(G.t('火力全開！'), '#ffb45c'); sfx('power'); this.shake = Math.max(this.shake, 4); break;
         case 'skull': {
           // a gamble: one of five curses for ten seconds
           const type = E.pick(m.human ? ['slow', 'weak', 'nobomb', 'reverse', 'rush'] : ['slow', 'weak', 'nobomb', 'rush']);

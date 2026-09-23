@@ -995,7 +995,7 @@
     // gold crescent ears on the upper sides and little gold drops lower down (broken off: only a scorched socket)
     layer((L) => {
       if (!broken.ears) put(L, ['..yyo', '.yYo.', 'yYWo.', 'yyo..', 'oyd..', 'od...', '.d...'], 1, 13);
-      else put(L, ['..Dd', '.dD.', '..n.'], 3, 15);
+      else put(L, ['.smS.', 'snNns', '.sYS.', '..d..'], 2, 14);
       put(L, ['y.', 'o.', 'W.', 'yo'], 1, 28);
       mirror(L);
     });
@@ -1004,10 +1004,10 @@
     const spin = f % 2;
     // snapped off: a jagged stub of thread on the gold collar
     if (broken.spire) layer((L) => put(L, [
-      '...s.m.S...',
-      '..smSmsmS..',
-      '..soyYyoS..',
-      '...smwms...',
+      '..s.S.m.s..',
+      '.SmnNnNnmS.',
+      '.soyYyYyos.',
+      '..smwWwms..',
     ], 10, 7));
     else layer((L) => put(L, [
       '.....W.....',
@@ -1056,8 +1056,14 @@
       }
       // the torn ends: dark, with a hot glint where the joint snapped
       for (let y = 0; y < 50; y++) {
-        if (broken.legsL && L.solid(17, y)) { L.set(17, y, '#4a0412'); if (y % 3 === 0) L.set(17, y, '#ffb03a'); }
-        if (broken.legsR && L.solid(30, y)) { L.set(30, y, '#4a0412'); if (y % 3 === 0) L.set(30, y, '#ffb03a'); }
+        if (broken.legsL && L.solid(17, y)) {
+          L.set(17, y, y % 3 === 0 ? '#ffb03a' : '#4a0412');
+          if (L.solid(18, y)) L.set(18, y, y % 3 === 1 ? '#c8462a' : '#6e0c1c');
+        }
+        if (broken.legsR && L.solid(30, y)) {
+          L.set(30, y, y % 3 === 0 ? '#ffb03a' : '#4a0412');
+          if (L.solid(29, y)) L.set(29, y, y % 3 === 1 ? '#c8462a' : '#6e0c1c');
+        }
       }
     };
     const W = 48, H = 50, cx = 24;
@@ -1260,7 +1266,11 @@
     });
     // shoulder pistons: grey caps on gold barrels with a chrome shaft (a torn-off arm leaves its piston bent)
     layer((L) => { put(L, ['mWm', 'yho', 'ohd'], 4, 36); put(L, ['mWm', 'yho', 'ohd'], 8, 36); mirror(L); cutArm(L); });
-    if (broken.armL || broken.armR) layer((L) => { const stub = ['Sm', 'ms', '.S']; if (broken.armL) put(L, stub, 9, 37); if (broken.armR) put(L, stub, 25, 37); });
+    if (broken.armL || broken.armR) layer((L) => {
+      const stub = ['sSm', 'nNn', 'mYs', '.s.']; // torn rim, dark socket, a wire still live
+      if (broken.armL) put(L, stub, 8, 36);
+      if (broken.armR) put(L, stub, 25, 36);
+    });
     // chest: a notched lintel, a lit capsule between striped ribs, and a notched base
     layer((L) => put(L, [
       'oyYyyyyood',
@@ -1652,18 +1662,37 @@
     const p = new Pix(16, 16);
     const widths = [10, 7, 3, 7];
     const w = widths[f % 4];
-    ball(p, 8 - w / 2, 3, w, 11, '#fff6b0', '#ffc53a', '#c47f16', 0.2);
-    if (w >= 7) stamp(p, ['w.w', 'www', '.w.'], 7, 7, { w: '#fff0a0' });
+    const x0 = Math.round(8 - w / 2);
+    ball(p, x0, 3, w, 11, '#fff6b0', '#ffc53a', '#c47f16', 0.2);
+    // a milled rim one shade down, the mark stamped in it, and the light catching the top-left edge
+    const rim = [];
+    for (let y = 2; y < 15; y++)
+      for (let x = 0; x < 16; x++) {
+        if (!p.solid(x, y)) continue;
+        if (!p.solid(x - 1, y) || !p.solid(x + 1, y) || !p.solid(x, y - 1) || !p.solid(x, y + 1)) rim.push([x, y]);
+      }
+    for (const [x, y] of rim) p.set(x, y, y < 8 ? '#ffe06a' : '#c47f16');
+    if (w >= 7) {
+      stamp(p, ['w.w', 'www', '.w.'], 7, 7, { w: '#fff0a0' });
+      p.set(x0 + 1, 5, '#fffce0'); p.set(x0 + 2, 4, '#fffce0');
+      p.set(x0 + w - 2, 11, '#a8660c');
+    } else {
+      p.set(x0, 5, '#fffce0');
+    }
     return p.outlined(K);
   }
   function buildDust(f) {
     const p = new Pix(16, 16);
-    ball(p, 2, 8, 12, 7, '#e8e4f2', '#b7b1cc', '#8a84a3');
-    ball(p, 4, 5, 6, 5, '#e8e4f2', '#c6c0d8', '#8a84a3');
-    ball(p, 9, 7, 4, 4, null, '#c6c0d8', '#8a84a3');
+    ball(p, 2, 8, 12, 7, '#f2eefb', '#b7b1cc', '#857f9e');
+    ball(p, 4, 5, 6, 5, '#f2eefb', '#c6c0d8', '#857f9e');
+    ball(p, 9, 7, 4, 4, null, '#c6c0d8', '#857f9e');
+    // tufts of fluff round the edge, a lit crown and a shaded underside
+    for (const [x, y] of [[2, 7], [5, 4], [11, 5], [14, 9], [3, 13], [12, 13]]) p.set(x, y, '#d8d2e8');
+    p.set(4, 6, '#ffffff'); p.set(5, 5, '#ffffff'); p.set(6, 9, '#fbf8ff');
+    for (let x = 4; x < 12; x++) if (p.solid(x, 13)) p.set(x, 13, '#6f6a8a');
     const out = p.outlined('#6d6788');
     const tw = [[12, 3], [3, 4], [13, 6]][f % 3];
-    stamp(out, ['.w.', 'www', '.w.'], tw[0] - 1, tw[1] - 1, { w: '#ffffff' });
+    stamp(out, ['.w.', 'wew', '.w.'], tw[0] - 1, tw[1] - 1, { w: '#ffffff', e: '#e8e4f2' });
     return out;
   }
 
@@ -2215,13 +2244,30 @@
     if (kind === 'treehouse') {
       p = new Pix(48, 62);
       ball(p, 5, 18, 38, 42, '#d99058', '#a8683c', '#74421f');
+      // bark: deep grooves, lighter ridges between them, a knot and roots flaring at the foot
       for (let i = 0; i < 9; i++) p.vline(9 + i * 4, 30 + (i % 3) * 3, 8, '#8c5530');
+      for (let i = 0; i < 5; i++) p.vline(8 + i * 8, 25 + (i % 2) * 6, 6, '#e0a878');
+      ball(p, 11, 33, 7, 6, '#8c5530', '#74421f', '#5a3422');
+      p.set(13, 35, '#c08048'); p.set(14, 35, '#a8683c');
+      for (const [x, w] of [[7, 5], [17, 7], [30, 6], [38, 4]]) { p.rect(x, 57, w, 3, '#8c5530'); p.hline(x, 57, w, '#c08048'); }
+      // door with plank lines and a lit frame
       p.rect(19, 44, 10, 16, '#5a3422'); p.rect(20, 45, 8, 1, '#8c5530'); p.set(26, 52, '#ffd23f');
-      p.rect(11, 32, 6, 6, '#2a1b30'); p.rect(12, 33, 4, 4, '#ffe38a');
-      p.rect(31, 30, 6, 6, '#2a1b30'); p.rect(32, 31, 4, 4, '#ffe38a');
+      p.hline(18, 43, 12, '#c08048'); p.vline(18, 44, 16, '#8c5530');
+      for (const x of [21, 24, 27]) p.vline(x, 46, 13, '#4a2a1a');
+      // windows: a cross frame and the light spilling on the sill
+      for (const [x, y] of [[11, 32], [31, 30]]) {
+        p.rect(x, y, 6, 6, '#2a1b30'); p.rect(x + 1, y + 1, 4, 4, '#ffe38a');
+        p.vline(x + 3, y + 1, 4, '#c8952c'); p.hline(x + 1, y + 3, 4, '#c8952c');
+        p.set(x + 1, y + 1, '#fff6d0'); p.hline(x, y + 6, 6, '#c08048');
+      }
       ball(p, 0, 0, 48, 28, '#8ee27a', '#4cb84c', '#2c7a33');
       ball(p, 6, -4, 22, 16, '#a6ee8e', '#5cc65a', null);
-      for (const [x, y] of [[9, 12], [20, 18], [34, 10], [40, 18], [27, 6]]) { p.rect(x, y, 3, 3, '#ec3d5f'); p.set(x, y, '#ff9aae'); }
+      // the canopy in clumps: lit crowns on top, shade tucked underneath
+      for (const [x, y, w, h] of [[2, 4, 16, 13], [16, 0, 18, 14], [30, 3, 16, 13], [8, 12, 14, 12], [26, 12, 16, 12]]) {
+        ball(p, x, y, w, h, '#b6f49e', '#63cc5c', null, 0.16);
+      }
+      for (let x = 1; x < 47; x++) for (let y = 27; y > 14; y--) if (p.solid(x, y) && !p.solid(x, y + 1)) { p.set(x, y, '#2c7a33'); if (p.solid(x, y - 1)) p.set(x, y - 1, '#3f9440'); break; }
+      for (const [x, y] of [[9, 12], [20, 18], [34, 10], [40, 18], [27, 6]]) { p.rect(x, y, 3, 3, '#ec3d5f'); p.set(x, y, '#ff9aae'); p.set(x + 2, y + 2, '#a51f40'); p.set(x + 1, y - 1, '#2c7a33'); }
       p.rect(22, 58, 4, 4, '#b78a5a');
       return p.outlined(K);
     }
@@ -2229,18 +2275,34 @@
       p = new Pix(48, 50);
       ball(p, 1, 6, 46, 50, '#ffffff', '#e8f2ff', '#aac3e6', 0.18);
       for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (!p.solid(x, y) || y > 43) p.clear(x, y);
-      for (const y of [16, 26, 36]) for (let x = 0; x < 48; x++) if (p.solid(x, y)) p.set(x, y, '#c3d5ef');
+      // snow blocks: a seam between the courses, each block lit along its top edge
+      for (const y of [16, 26, 36]) for (let x = 0; x < 48; x++) if (p.solid(x, y)) { p.set(x, y, '#b8cde9'); if (p.solid(x, y + 1)) p.set(x, y + 1, '#ffffff'); }
       for (let x = 8; x < 44; x += 10) { p.vline(x, 17, 9, '#c3d5ef'); p.vline(x + 5, 27, 9, '#c3d5ef'); }
+      // the sun on the left shoulder, cold shade down the right
+      for (let y = 6; y < 44; y++) for (let x = 0; x < 48; x++) {
+        if (!p.solid(x, y)) continue;
+        if (!p.solid(x - 1, y) && x < 24) { p.set(x, y, '#ffffff'); if (p.solid(x + 1, y)) p.set(x + 1, y, '#f4faff'); }
+        if (!p.solid(x + 1, y) && x > 24) { p.set(x, y, '#9fbadd'); if (p.solid(x - 1, y)) p.set(x - 1, y, '#c3d5ef'); }
+      }
       ball(p, 16, 28, 16, 22, null, '#3a5a8a', '#2a4570');
+      // the arch: a lit lip over the mouth and darkness inside it
+      for (let x = 16; x < 32; x++) for (let y = 28; y < 44; y++) if (p.get(x, y) && p.get(x, y)[2] > 100 && !p.solid(x, y - 1)) p.set(x, y, '#5e82b4');
+      ball(p, 19, 34, 10, 12, null, '#22355c', null);
       for (let y = 44; y < 50; y++) for (let x = 0; x < 48; x++) p.clear(x, y);
-      p.rect(22, 0, 1, 8, '#6d4a36'); p.rect(23, 0, 6, 4, '#ec3d5f');
+      // drifts at the foot and a glint on the crown
+      for (const [x, w] of [[4, 8], [38, 7], [14, 5]]) { p.rect(x, 41, w, 3, '#eef6ff'); p.hline(x, 41, w, '#ffffff'); }
+      stamp(p, ['.w.', 'wew', '.w.'], 12, 12, { w: '#ffffff', e: '#dcecff' });
+      p.rect(22, 0, 1, 8, '#6d4a36'); p.rect(23, 0, 6, 4, '#ec3d5f'); p.hline(23, 0, 6, '#ff8aa0'); p.set(22, 2, '#8c6a50');
       return p.outlined('#2c3b5c');
     }
     if (kind === 'castle') {
       p = new Pix(48, 64);
       p.rect(4, 28, 40, 34, '#ffc2d8');
-      for (let y = 30; y < 62; y += 6) p.hline(4, y, 40, '#ff9fbb');
+      // sugar bricks: a shaded course line with a lit edge under it, and the walls lighter to the left
+      for (let y = 30; y < 62; y += 6) { p.hline(4, y, 40, '#f085a6'); p.hline(4, y + 1, 40, '#ffd6e4'); }
       for (let x = 8; x < 44; x += 8) p.vline(x, 28, 34, '#ffd6e4');
+      p.vline(4, 28, 34, '#fff1f7'); p.vline(5, 28, 34, '#ffe2ec');
+      p.vline(43, 28, 34, '#e0748f'); p.vline(42, 28, 34, '#f59ab4');
       for (let x = 4; x < 44; x += 4) p.rect(x, 28, 2, 3 + ((x >> 2) % 2) * 2, '#ffffff');
       ball(p, 18, 44, 12, 24, null, '#6a3c26', null);
       for (let y = 62; y < 64; y++) for (let x = 0; x < 48; x++) p.clear(x, y);
@@ -2253,8 +2315,10 @@
       };
       tower(0, 22, 12, 26); tower(36, 22, 12, 26); tower(17, 14, 14, 20);
       p.rect(23, 0, 1, 4, '#6d4a36'); stamp(p, ['r.r', 'rrr', '.r.'], 24, 0, { r: '#ec3d5f' });
-      p.rect(3, 30, 6, 6, '#2a1b30'); p.rect(4, 31, 4, 4, '#ffe38a');
-      p.rect(39, 30, 6, 6, '#2a1b30'); p.rect(40, 31, 4, 4, '#ffe38a');
+      for (const [x, y] of [[3, 30], [39, 30]]) {
+        p.rect(x, y, 6, 6, '#2a1b30'); p.rect(x + 1, y + 1, 4, 4, '#ffe38a');
+        p.set(x + 1, y + 1, '#fff6d0'); p.hline(x + 1, y + 4, 4, '#c8952c'); p.hline(x, y + 6, 6, '#f085a6');
+      }
       return p.outlined(K);
     }
     if (kind === 'podium') { // 3x2: blackboard on the wall, teacher's desk in front
@@ -2308,12 +2372,22 @@
     if (kind === 'egg') { // 3x3: the palace's giant jewelled egg
       p = new Pix(48, 62);
       ball(p, 7, 2, 34, 50, '#ffffff', '#f4eefc', '#c9bfe0', 0.2);
-      for (const y of [16, 33]) for (let x = 0; x < 48; x++) if (p.solid(x, y)) { p.set(x, y, '#e0a014'); p.set(x, y + 1, '#ffd23f'); }
+      // enamel: a long highlight down the left, a cool crescent on the right, and the light gathering at the foot
+      for (let y = 2; y < 52; y++) for (let x = 0; x < 48; x++) {
+        if (!p.solid(x, y)) continue;
+        if (!p.solid(x - 1, y)) { p.set(x, y, '#e2d8f2'); if (p.solid(x + 1, y)) p.set(x + 1, y, '#ffffff'); }
+        if (!p.solid(x + 1, y)) { p.set(x, y, '#a89cc8'); if (p.solid(x - 1, y)) p.set(x - 1, y, '#c9bfe0'); }
+      }
+      for (let y = 40; y < 50; y++) for (let x = 14; x < 34; x++) if (p.solid(x, y) && (x + y) % 7 === 0) p.set(x, y, '#efe8fa');
+      // the gold bands, lit on top and deep underneath
+      for (const y of [16, 33]) for (let x = 0; x < 48; x++) if (p.solid(x, y)) { p.set(x, y - 1, '#fff0b0'); p.set(x, y, '#e0a014'); p.set(x, y + 1, '#ffd23f'); p.set(x, y + 2, '#a8730c'); }
       for (const [x, y, c] of [[15, 17, '#ec3d5f'], [24, 16, '#3d86f0'], [33, 17, '#4cb84c'], [19, 34, '#9b87c9'], [29, 34, '#ec3d5f']]) stamp(p, ['.c.', 'ccc', '.c.'], x - 1, y - 1, { c });
       stamp(p, ['.rr.rr.', 'rrrrrrr', 'rrrrrrr', '.rrrrr.', '..rrr..', '...r...'], 21, 22, { r: '#ff6f91' });
       p.set(24, 23, '#ffd6e2');
       for (const [x, y] of [[14, 8], [13, 9], [15, 9], [14, 10]]) p.set(x, y, '#ffffff');
-      p.rect(8, 50, 32, 9, '#e0a014'); p.hline(8, 50, 32, '#ffe38a'); p.rect(4, 58, 40, 4, '#c98f24');
+      p.rect(8, 50, 32, 9, '#e0a014'); p.hline(8, 50, 32, '#ffe38a'); p.hline(8, 57, 32, '#a8730c');
+      p.rect(4, 58, 40, 4, '#c98f24'); p.hline(4, 58, 40, '#ffd23f'); p.hline(4, 61, 40, '#8c6410');
+      for (const [x, y] of [[12, 53], [24, 53], [36, 53]]) stamp(p, ['.c.', 'cec', '.c.'], x - 1, y - 1, { c: '#ffe38a', e: '#fff6d0' });
       return p.outlined(K);
     }
     return null;
@@ -2442,21 +2516,21 @@
 
   // ---------------------------------------------------------------- UI icons (small)
   const UI = {
-    heart: ['.kk.kk.', 'krrkrrk', 'krwrrrk', 'krrrrrk', '.krrrk.', '..krk..', '...k...'],
+    heart: ['.kk.kk.', 'krwrrrk', 'krwrrRk', 'krrrrRk', '.krrRk.', '..krk..', '...k...'],
     heartEmpty: ['.kk.kk.', 'kddkddk', 'kdddddk', 'kdddddk', '.kdddk.', '..kdk..', '...k...'],
-    coin: ['.kkkk.', 'kyyyyk', 'kywyYk', 'kyyyYk', 'kyYYYk', '.kkkk.'],
-    bomb: ['....y.', '...k..', '.kkkk.', 'kdwddk', 'kdddDk', 'kddddk', '.kkkk.'],
-    fire: ['..k...', '.kok..', '.koyok', 'koyyok', 'koywok', '.kkkk.'],
-    speed: ['..kkk..', '.kbbbk.', 'kbwbbk.', 'kbbbbbk', '.kBBBBk', '..kkkk.'],
-    enemy: ['.k...k.', 'kgk.kgk', 'kgggggk', 'kgwgwgk', 'kgggggk', '.kkkkk.'],
-    clock: ['.kkk.', 'kwkwk', 'kwkkk', 'kwwwk', '.kkk.'],
-    broom: ['...k..', '...k..', '...k..', '..krk.', '.kyyyk', '.kyyyk', '.kkkkk'],
+    coin: ['.kkkk.', 'kyeyyk', 'kewyYk', 'kyyyYk', 'kyYYYk', '.kkkk.'],
+    bomb: ['....q.', '...y..', '.kkkk.', 'kdwddk', 'kddddk', 'kdddxk', '.kkkk.'],
+    fire: ['..k...', '.kqk..', '.kqoyk', 'kqoywk', 'kqoywk', '.kkkk.'],
+    speed: ['..kkk..', '.kcbbk.', 'kcwbbk.', 'kbbbbbk', '.kBBBBk', '..kkkk.'],
+    enemy: ['.k...k.', 'kgk.kgk', 'kgggggk', 'kgwgwgk', 'khhhhhk', '.kkkkk.'],
+    clock: ['.kkk.', 'kwkwk', 'kwkkk', 'kwwck', '.kkk.'],
+    broom: ['...k..', '...k..', '...n..', '..krk.', '.kyeyk', '.kyyYk', '.kkkkk'],
     // what she has picked up, for the HUD; the skull also floats over a cursed maid
-    kick: ['.kk....', '.krk...', '.krk...', '.krrkk.', '.krrrrk', '.kwwwwk', '..kkkk.'],
-    pierce: ['.......', '..kkk..', 'kkknkkk', 'oyywyyo', 'kkknkkk', '..kkk..', '.......'],
-    line: ['.y.y.y.', 'kkkkkkk', 'kdkdkdk', 'kDkDkDk', 'kkkkkkk'],
-    skull: ['.kkkkk.', 'kwwwwwk', 'kwkwkwk', 'kwwwwwk', '.kwkwk.', '.kkkkk.'],
-    glove: ['..kk...', '.kwwkk.', 'kwwwwwk', 'kwcwwck', 'kwwwwwk', '.kkkkk.'],
+    kick: ['.kk....', '.krk...', '.krk...', '.krRkk.', '.krrrRk', '.klwwlk', '..kkkk.'],
+    pierce: ['.......', '..kkk..', 'kkkmkkk', 'qoywyoq', 'kkkzkkk', '..kkk..', '.......'],
+    line: ['.q.q.q.', 'kkkkkkk', 'kwkwkwk', 'kdkdkdk', 'kkkkkkk'],
+    skull: ['.kkkkk.', 'kwwwwlk', 'kwvkwvk', 'kwwwwlk', '.kwkwk.', '.kkkkk.'],
+    glove: ['..kk...', '.kwwkk.', 'kwwwwlk', 'kwcwwck', 'kwbbblk', '.kkkkk.'],
   };
   const UI_PAL = Object.assign({}, ICON_PAL, { d: '#6b5a8e', g: '#a9a2c2', Y: '#e09a14' });
 

@@ -45,9 +45,9 @@
     slashReach: 2, // tiles Yoru's slash reaches
     pierce: 1, // crates Yoru's flames burn through before stopping
     shieldRecharge: 25 * 60, // frames until Honey's shield grows back
-    shieldRechargeBattle: 60 * 60, shieldStartBattle: false, magicShieldBattle: false, // battle rounds are one heart each, so the shield is slower there
+    shieldRechargeBattle: 45 * 60, shieldStartBattle: false, magicShieldBattle: false, // battle rounds are one heart each, so the shield is slower there
     charmRadius: 4, charmFrames: 270, bossCharm: 180, // Honey's magic on monsters
-    stunRadius: 2.5, stunFrames: 25, // and on rival maids
+    stunRadius: 2.2, stunFrames: 18, // and on rival maids
     frostEnemy: 120, frostMaid: 35, chillSpeed: 0.7, // Yukino's frost: monsters freeze, rivals slow down
     remoteBoost: 1, remoteDelay: 4, remoteDelayBattle: 16, // Yukino's remote blast
   };
