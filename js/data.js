@@ -80,29 +80,29 @@
   // ------------------------------------------------------------------ jobs (stages)
   G.STAGES = [
     {
-      id: '1-1', theme: 'classroom', title: '教室大掃除', client: '櫻丘學園 校長', reward: 150, time: 150, layout: 'desks',
+      id: '1-1', theme: 'classroom', title: '教室大掃除', client: '櫻丘學園 校長', reward: 150, time: 175, layout: 'desks',
       brief: ['放學後的教室被塵塵貓佔領了。', '請把牠們通通清掉！'],
-      enemies: { dustcat: 4 }, items: { bomb: 2, fire: 2, tea: 1, kick: 1 }, soft: 0.85, dust: 3,
+      enemies: { dustcat: 3 }, items: { bomb: 2, fire: 2, tea: 1, kick: 1, heart: 1 }, soft: 0.8, dust: 3,
     },
     {
-      id: '1-2', theme: 'classroom', title: '福利社的貪吃鬼', client: '學生會長', reward: 220, time: 160, layout: 'store',
+      id: '1-2', theme: 'classroom', title: '福利社的貪吃鬼', client: '學生會長', reward: 220, time: 180, layout: 'store',
       brief: ['福利社的麵包被吃光了！', '犯人好像是粉紅色的……'],
-      enemies: { dustcat: 3, piggy: 3 }, items: { bomb: 2, fire: 2, speed: 1, heart: 1, line: 1, skull: 1 }, soft: 0.62, dust: 4,
+      enemies: { dustcat: 3, piggy: 2 }, items: { bomb: 2, fire: 2, speed: 1, heart: 1, line: 1 }, soft: 0.6, dust: 4,
     },
     {
-      id: '2-1', theme: 'garden', title: '玫瑰花園除蟲', client: '花園伯爵夫人', reward: 300, time: 170, layout: 'plaza', decor: 'well',
+      id: '2-1', theme: 'garden', title: '玫瑰花園除蟲', client: '花園伯爵夫人', reward: 300, time: 185, layout: 'plaza', decor: 'well',
       brief: ['暴走熊在玫瑰園裡橫衝直撞。', '別讓牠們弄壞樹屋！'],
-      enemies: { piggy: 2, teddy: 3 }, items: { bomb: 2, fire: 2, clock: 1, heart: 1, pierce: 1 }, soft: 0.55, dust: 4,
+      enemies: { piggy: 3, teddy: 2 }, items: { bomb: 2, fire: 2, clock: 1, heart: 1, pierce: 1 }, soft: 0.55, dust: 4,
     },
     {
-      id: '2-2', theme: 'garden', title: '果凍迷宮', client: '園丁老爺爺', reward: 360, time: 180, layout: 'hedgemaze',
+      id: '2-2', theme: 'garden', title: '果凍迷宮', client: '園丁老爺爺', reward: 360, time: 190, layout: 'hedgemaze',
       brief: ['果凍怪會穿過花叢！', '聽說牠們最怕長長的火力。'],
-      enemies: { teddy: 3, jelly: 3 }, items: { bomb: 2, fire: 3, speed: 1, star: 1, fullfire: 1, skull: 1 }, soft: 0.62, dust: 5,
+      enemies: { teddy: 3, jelly: 2 }, items: { bomb: 2, fire: 3, speed: 1, star: 1, fullfire: 1, heart: 1 }, soft: 0.6, dust: 5,
     },
     {
-      id: 'BOSS1', theme: 'classroom', title: '鑽頭機器人', client: '理科社社長', reward: 450, time: 180, layout: 'boss', boss: 'drill',
+      id: 'BOSS1', theme: 'classroom', title: '鑽頭機器人', client: '理科社社長', reward: 450, time: 200, layout: 'boss', boss: 'drill',
       brief: ['理科社的掃除機器人失控了！', '牠撞到硬牆會暈一下，趁機炸牠！'],
-      enemies: {}, items: { bomb: 2, fire: 2, heart: 1, kick: 1, line: 1 }, soft: 0.3, dust: 3,
+      enemies: {}, items: { bomb: 2, fire: 3, heart: 2, kick: 1, line: 1 }, soft: 0.3, dust: 3,
     },
     {
       id: '3-1', theme: 'snow', title: '雪原的企鵝管家', client: '冰雪山莊', reward: 420, time: 180, layout: 'snowfield',
@@ -132,25 +132,25 @@
     {
       id: '5-1', theme: 'toy', title: '玩具箱演唱會', client: '玩具店老闆', reward: 700, time: 210, layout: 'toyStage',
       brief: ['玩具們在舞台上開起了演唱會！', '鼓鼓兔會追著人跑，小心被包圍。'],
-      enemies: { drumbun: 3, piggy: 2, teddy: 2 }, items: { bomb: 2, fire: 2, speed: 1, heart: 1, tea: 1, kick: 1, skull: 2 }, soft: 0.6, dust: 6,
+      enemies: { drumbun: 4, piggy: 2, teddy: 2 }, items: { bomb: 2, fire: 2, speed: 1, heart: 1, tea: 1, kick: 1, skull: 2 }, soft: 0.6, dust: 6,
     },
     {
-      id: '5-2', theme: 'toy', title: '積木迷宮', client: '玩具店老闆', reward: 760, time: 220, layout: 'blocks',
+      id: '5-2', theme: 'toy', title: '積木迷宮', client: '玩具店老闆', reward: 760, time: 215, layout: 'blocks',
       brief: ['積木塔堆成了迷宮。', '用炸彈打通一條路吧！'],
-      enemies: { drumbun: 4, jelly: 2, snowkid: 1 }, items: { bomb: 3, fire: 2, star: 1, heart: 1, clock: 1, line: 1, glove: 1 }, soft: 0.62, dust: 6,
+      enemies: { drumbun: 4, jelly: 2, snowkid: 2 }, items: { bomb: 3, fire: 2, star: 1, heart: 1, clock: 1, line: 1, glove: 1 }, soft: 0.62, dust: 6,
     },
     {
       id: '6-1', theme: 'jewel', title: '寶石宮殿', client: '寶石公主', reward: 850, time: 220, layout: 'jewelEgg',
       brief: ['宮殿中央的巨大寶石蛋被盯上了！', '寶石騎士很硬，要炸兩次。'],
-      enemies: { gemknight: 3, dragon: 2, cupcake: 1 }, items: { bomb: 2, fire: 3, speed: 1, heart: 1, tea: 1, fullfire: 1, skull: 1, glove: 1 }, soft: 0.58, dust: 6,
+      enemies: { gemknight: 4, dragon: 2, cupcake: 1 }, items: { bomb: 2, fire: 3, speed: 1, heart: 1, tea: 1, fullfire: 1, skull: 1, glove: 1 }, soft: 0.58, dust: 6,
     },
     {
-      id: '6-2', theme: 'jewel', title: '閃耀迴廊', client: '寶石公主', reward: 950, time: 230, layout: 'jewelRing',
+      id: '6-2', theme: 'jewel', title: '閃耀迴廊', client: '寶石公主', reward: 950, time: 220, layout: 'jewelRing',
       brief: ['水晶柱排成菱形的迴廊。', '從四個缺口鑽進中央吧！'],
-      enemies: { gemknight: 4, dragon: 2, penguin: 2 }, items: { bomb: 3, fire: 3, star: 1, heart: 2, clock: 1, kick: 1, line: 1, glove: 1 }, soft: 0.6, dust: 7,
+      enemies: { gemknight: 5, dragon: 2, penguin: 2 }, items: { bomb: 3, fire: 3, star: 1, heart: 2, clock: 1, kick: 1, line: 1, glove: 1 }, soft: 0.6, dust: 7,
     },
     {
-      id: 'BOSS3', theme: 'lab', title: '金熊機甲', client: '？？？', reward: 1500, time: 240, layout: 'boss', boss: 'bear', final: true,
+      id: 'BOSS3', theme: 'lab', title: '金熊機甲', client: '？？？', reward: 1500, time: 235, layout: 'boss', boss: 'bear', final: true,
       brief: ['所有灰塵的源頭——', '神秘研究所的巨大機甲！'],
       enemies: {}, items: { bomb: 3, fire: 3, heart: 2, fullfire: 1, line: 1, glove: 1 }, soft: 0.25, dust: 4,
     },
@@ -406,11 +406,14 @@
     { id: 'stripe', name: '草莓牛奶條紋', price: 150 },
     { id: 'strawberry', name: '草莓點點', price: 200 },
     { id: 'night', name: '星空壁紙', price: 250 },
+    { id: 'lace', name: '蕾絲壁紙', price: 260 },
+    { id: 'shoji', name: '和式紙門', price: 260 },
   ];
   G.FLOORS = [
     { id: 'wood', name: '木地板', price: 0 },
     { id: 'carpet', name: '粉紅地毯', price: 150 },
     { id: 'checker', name: '格子磁磚', price: 200 },
+    { id: 'tatami', name: '榻榻米', price: 220 },
   ];
   // w/h in tiles; over = pixels the sprite rises above its footprint; use = what clicking it does
   G.FURNITURE = {
@@ -429,9 +432,21 @@
     dresser: { name: '梳妝台', price: 350, w: 1, h: 1, over: 12, use: 'dresser', desc: '每天梳妝打扮，心情 +6。', unique: true },
     sofa: { name: '愛心沙發', price: 450, w: 2, h: 1, over: 6, use: 'sofa', desc: '每天坐著休息，體力 +15。', unique: true },
     gramophone: { name: '留聲機', price: 600, w: 1, h: 1, over: 12, use: 'music', desc: '播放唱片，心情 +5。', unique: true },
+    sandbag: { name: '沙包', price: 400, w: 1, h: 1, over: 14, use: 'punch', desc: '莓果專用。打一輪，心情 +5、力量經驗 +4。', unique: true, who: 'berry' },
+    toybox: { name: '玩具箱', price: 380, w: 1, h: 1, over: 6, use: 'toy', desc: '蜜糖專用。翻玩具，心情 +6。', unique: true, who: 'honey' },
+    vase: { name: '玫瑰花瓶', price: 420, w: 1, h: 1, over: 12, use: 'flower', desc: '雪乃專用。插花整理，心情 +5、好感 +1。', unique: true, who: 'yukino' },
+    screen: { name: '和式屏風', price: 480, w: 2, h: 1, over: 14, use: 'screen', desc: '夜子專用。她會躲到屏風後面。', unique: true, who: 'yoru' },
   };
   // cheapest first, so the shop reads as a wish list you work up
-  G.FURNITURE_SHOP = ['plant', 'lamp', 'rug', 'plush', 'fishbowl', 'teatable', 'dresser', 'bookshelf', 'sofa', 'gramophone', 'piano', 'princess'];
+  // who: only that maid's shop carries it, and it only ever stands in her room
+  G.FURNITURE_SHOP = ['plant', 'lamp', 'rug', 'plush', 'fishbowl', 'teatable', 'dresser', 'bookshelf', 'sofa', 'gramophone', 'piano', 'princess', 'sandbag', 'toybox', 'vase', 'screen'];
+  // every maid keeps her own room: her paper, her floor, and the piece that suits her
+  G.ROOM_STYLE = {
+    berry: { wall: 'bunny', floor: 'wood' },
+    honey: { wall: 'strawberry', floor: 'carpet' },
+    yukino: { wall: 'lace', floor: 'checker' },
+    yoru: { wall: 'shoji', floor: 'tatami' },
+  };
   G.ROOM_DEFAULT = {
     size: 0, wall: 'bunny', floor: 'wood',
     owned: { bed: 1, desk: 1, wardrobe: 1 },
@@ -521,6 +536,7 @@
         wardrobe: '換班？好啊——大家一起上！',
         tea: '茶！還有點心！點心呢——？',
         diary: '這本是我的成長紀錄！看看我變多強！',
+        sandbag: '看我的——！一、二、三！打完精神百倍！',
       },
       furnDone: '今天份的已經做完啦！明天再一起！',
       greet: ['主人早安！今天也要全力衝刺！', '主人！莓果已經熱身完畢，隨時可以上！', '嘿嘿，主人來啦～今天要打倒幾隻灰塵？'],
@@ -619,6 +635,7 @@
         wardrobe: '……我的衣服，別亂碰。',
         tea: '……茶泡好了。涼掉的話，是你的錯。',
         diary: '……這本，寫著你的事。要看嗎。',
+        screen: '……我在這後面。找得到再說。',
       },
       furnDone: '……今天已經夠了。別貪心。',
       greet: ['……主人。', '……來了啊。', '……嗯。（點頭）'],
@@ -718,6 +735,7 @@
         wardrobe: '咦，我的圍裙……啊，穿在身上。',
         tea: '我來倒……啊，滿出來了！等、等一下！',
         diary: '咦，書怎麼倒了……啊，是我放反了。',
+        toybox: '哇……好多玩具！咦，這個是什麼來著？',
       },
       furnDone: '咦……好像已經做過了？嗯，做過了。',
       greet: ['主人早安～咦，現在是早上……對吧？', '啊、主人！蜜糖剛剛在找主人……咦，找什麼來著？', '主人主人～今天的點心是……啊，忘記放糖了。'],
@@ -815,6 +833,7 @@
         wardrobe: '要換誰來值班呢？姊姊都可以喔。',
         tea: '今天泡的是紅茶。慢慢喝，不用急。',
         diary: '書要照順序放，找起來才快喔。',
+        vase: '花也要修剪過才漂亮喔。主人想要哪一朵？',
       },
       furnDone: '今天已經好囉。明天再說吧？',
       greet: ['主人，早安。姊姊等你很久囉。', '呵呵，主人來了。今天想做什麼呢？', '慢慢來就好，姊姊會陪著你。'],
@@ -899,7 +918,7 @@
   G.SAVE_DEFAULT = {
     v: 1, coins: 0, maid: null, hired: {}, cleared: {}, upgrades: { bombs: 0, fire: 0, speed: 0, hearts: 0 },
     buffs: {}, tastes: {}, cards: {}, deck: [], sound: true, music: true, plays: 0, ending: false,
-    day: 1, bond: {}, room: null, gifts: {}, guide: 0, intro: false, lastJob: null, lang: 'ja', first: null, outfits: {}, closet: { maid: true }, titleCast: [],
+    day: 1, bond: {}, room: null, rooms: null, gifts: {}, guide: 0, intro: false, lastJob: null, lang: 'ja', first: null, outfits: {}, closet: { maid: true }, titleCast: [],
     seen: 0,
   };
 
@@ -917,7 +936,7 @@
       bubble: { bg: '#fff4ee', edge: '#e2402a', ink: '#5a1a14' },
       // at the furniture: she throws herself at it, the room shakes, and she cannot sit still afterwards
       furn: { face: 'happy', feel: 'excited', emote: 'exclaim', hop: 6, aura: 5, pianoStep: 12, flair: 'burst',
-        pose: { sofa: 'punch', music: 'rope', rug: 'punch', plant: 'punch', plush: 'rope', dresser: 'punch' } },
+        pose: { sofa: 'punch', music: 'rope', rug: 'punch', plant: 'punch', plush: 'rope', dresser: 'punch', sandbag: 'punch' } },
       taste: { daifuku: 'love', drink: 'like', charm: 'like', honeycake: 'like', bouquet: 'like', ribbon: 'like', novel: 'meh' },
     },
     honey: {
@@ -929,7 +948,7 @@
       bubble: { bg: '#fffbe4', edge: '#e0a010', ink: '#5a3c08' },
       // she drifts in humming, takes a moment, and only then notices what she was doing
       furn: { face: 'happy', feel: 'happy', emote: 'note', hop: 3, aura: 4, pianoStep: 22, flair: 'late',
-        pose: { sofa: 'dream', music: 'hum', rug: 'dream', plush: 'dream', fish: 'trip', dresser: 'trip' } },
+        pose: { sofa: 'dream', music: 'hum', rug: 'dream', plush: 'dream', fish: 'trip', dresser: 'trip', toybox: 'dream' } },
       taste: { honeycake: 'love', icecream: 'like', daifuku: 'like', bouquet: 'like', ribbon: 'like', matcha: 'meh' },
     },
     yukino: {
@@ -941,7 +960,7 @@
       bubble: { bg: '#f0f7ff', edge: '#3d86f0', ink: '#16305c' },
       // she tidies as she goes, finishes with a glint, and settles in with a cup
       furn: { face: 'happy', feel: 'calm', emote: 'heart', hop: 1, aura: 4, pianoStep: 20, flair: 'glint',
-        pose: { sofa: 'tea', rug: 'tidy', plant: 'tidy', dresser: 'tidy', music: 'tidy', fish: 'read' } },
+        pose: { sofa: 'tea', rug: 'tidy', plant: 'tidy', dresser: 'tidy', music: 'tidy', fish: 'read', vase: 'tidy' } },
       taste: { icecream: 'love', novel: 'like', matcha: 'like', bouquet: 'like', ribbon: 'like', drink: 'meh' },
     },
     yoru: {
@@ -953,7 +972,7 @@
       bubble: { bg: '#262033', edge: '#8a6ac0', ink: '#f4ecff' },
       // she waits, looks, says little — and claims the seat
       furn: { face: 'normal', feel: 'calm', emote: 'dots', hop: 0, aura: 3, pianoStep: 30, flair: 'pause',
-        pose: { sofa: 'nap', lamp: 'stare', music: 'nap', rug: 'stare', plush: 'nap', fish: 'stare' } },
+        pose: { sofa: 'nap', lamp: 'stare', music: 'nap', rug: 'stare', plush: 'nap', fish: 'stare', screen: 'stare' } },
       taste: { matcha: 'love', novel: 'like', charm: 'like', bouquet: 'like', ribbon: 'secret', honeycake: 'meh' },
     },
   };

@@ -430,7 +430,8 @@
     spawnBoss() {
       // three bosses: 'drill' (BOSS1), 'spider' (BOSS2), 'bear' (BOSS3)
       const kind = typeof this.cfg.boss === 'string' ? this.cfg.boss : 'bear';
-      const hp = { drill: 9, spider: 11, bear: 13 }[kind] || 13;
+      // the first boss is the gentlest fight, the last the longest
+      const hp = { drill: 7, spider: 11, bear: 15 }[kind] || 13;
       this.boss = {
         kind, x: 7.5 * T, y: 3.5 * T, hp, maxHp: hp, state: 'intro', t: 0, hitT: 0, vx: 0, vy: 0,
         goalX: 7.5 * T, goalY: 4 * T, targets: [], deadT: 0, summonCD: 3, alive: true, dashDir: null, dashes: 0, volleys: 0,

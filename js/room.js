@@ -2139,6 +2139,53 @@
             this.toast(G.t('體力 +{n}', { n: 15 }), C.mint);
             G.persist();
           });
+        case 'punch': // Berry's bag
+          if (this.daily('punch') >= 1) { this.furnStart(p, 'bounce', 20); this.furnSay('sandbag', true); return; }
+          return this.goUse(p, () => {
+            this.bumpDaily('punch');
+            this.gain('mood', 5);
+            const b = bond(); b.exp.str = (b.exp.str || 0) + 4;
+            A.sfx('kick');
+            this.furnStart(p, 'squish', 44);
+            this.shake(4);
+            this.furnSay('sandbag');
+            this.furnFlair('sandbag', true, p);
+            G.persist();
+          });
+        case 'toy': // Honey's toy chest
+          if (this.daily('toy') >= 1) { this.furnStart(p, 'bounce', 20); this.furnSay('toybox', true); return; }
+          return this.goUse(p, () => {
+            this.bumpDaily('toy');
+            this.gain('mood', 6);
+            A.sfx('gift');
+            this.furnStart(p, 'open', 90);
+            this.furnSay('toybox');
+            this.furnFlair('toybox', true, p);
+            G.persist();
+          });
+        case 'flower': // Yukino's roses
+          if (this.daily('flower') >= 1) { this.furnStart(p, 'bounce', 20); this.furnSay('vase', true); return; }
+          return this.goUse(p, () => {
+            this.bumpDaily('flower');
+            this.gain('mood', 5);
+            this.gain('aff', 1);
+            A.sfx('item');
+            this.furnStart(p, 'glow', 60);
+            this.furnSay('vase');
+            this.furnFlair('vase', true, p);
+            G.persist();
+          });
+        case 'screen': // Yoru's folding screen
+          if (this.daily('screen') >= 1) { this.furnStart(p, 'bounce', 20); this.furnSay('screen', true); return; }
+          return this.goUse(p, () => {
+            this.bumpDaily('screen');
+            this.gain('mood', 5);
+            A.sfx('door');
+            this.furnStart(p, 'open', 80);
+            this.furnSay('screen');
+            this.furnFlair('screen', true, p);
+            G.persist();
+          });
         case 'music':
           return this.goUse(p, () => {
             A.playMusic('lullaby');

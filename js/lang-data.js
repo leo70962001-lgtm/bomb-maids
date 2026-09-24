@@ -890,5 +890,21 @@
     '……茶泡好了。涼掉的話，是你的錯。': ['……お茶、淹れた。冷めたらあなたのせい。', '...Tea\'s ready. If it goes cold, that\'s on you.'],
     '……這本，寫著你的事。要看嗎。': ['……これ、あなたのことが書いてある。読む？', '...This one\'s about you. Want to read it?'],
     '……今天已經夠了。別貪心。': ['……今日はもう十分。欲張らないで。', '...That\'s enough for today. Don\'t get greedy.'],
+    // ---- each maid's own room: her furniture, her paper and floor, and what she says there
+    '沙包': ['サンドバッグ', 'Punching bag'],
+    '莓果專用。打一輪，心情 +5、力量經驗 +4。': ['ベリー専用。一本打てば気分+5、パワー経験+4。', 'Berry\'s own. A round on it: +5 mood, +4 power XP.'],
+    '玩具箱': ['おもちゃ箱', 'Toy chest'],
+    '蜜糖專用。翻玩具，心情 +6。': ['ハニー専用。おもちゃをあさって気分+6。', 'Honey\'s own. Rummage through it: +6 mood.'],
+    '玫瑰花瓶': ['バラの花びん', 'Rose vase'],
+    '雪乃專用。插花整理，心情 +5、好感 +1。': ['雪乃専用。花を活けて気分+5、好感+1。', 'Yukino\'s own. Arrange them: +5 mood, +1 affection.'],
+    '和式屏風': ['和風びょうぶ', 'Folding screen'],
+    '夜子專用。她會躲到屏風後面。': ['夜子専用。その後ろに隠れます。', 'Yoru\'s own. She slips behind it.'],
+    '蕾絲壁紙': ['レースの壁紙', 'Lace paper'],
+    '和式紙門': ['障子の壁', 'Shoji wall'],
+    '榻榻米': ['畳', 'Tatami'],
+    '看我的——！一、二、三！打完精神百倍！': ['見てて――！いち、に、さん！スッキリした！', 'Watch this — one, two, three! Feeling sharp now!'],
+    '哇……好多玩具！咦，這個是什麼來著？': ['わぁ……おもちゃがいっぱい！あれ、これ何でしたっけ？', 'Wow... so many toys! Huh, what was this one again?'],
+    '花也要修剪過才漂亮喔。主人想要哪一朵？': ['お花も切りそろえると綺麗ですよ。どれがいいですか？', 'Flowers look better trimmed. Which one would you like?'],
+    '……我在這後面。找得到再說。': ['……この後ろにいる。見つけられたらね。', '...I\'m behind this. Find me if you can.'],
   });
 })(window);

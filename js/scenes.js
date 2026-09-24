@@ -254,9 +254,24 @@
     G.TRAIN_LV.forEach((t, i) => { if (exp >= t) lv = i; });
     return lv;
   }
-  function getRoom() {
-    if (!SAVE.room) SAVE.room = JSON.parse(JSON.stringify(G.ROOM_DEFAULT));
-    return SAVE.room;
+  // one room per maid: switching who is on duty switches the room with her
+  function getRoom(k) {
+    const key = k || SAVE.maid || 'berry';
+    if (!SAVE.rooms) {
+      SAVE.rooms = {};
+      // an older save kept a single room: it stays with whoever was on duty then
+      if (SAVE.room) { SAVE.rooms[SAVE.maid || 'berry'] = SAVE.room; delete SAVE.room; }
+    }
+    if (!SAVE.rooms[key]) {
+      const room = JSON.parse(JSON.stringify(G.ROOM_DEFAULT));
+      const style = (G.ROOM_STYLE || {})[key];
+      if (style) {
+        room.wall = style.wall; room.walls[style.wall] = true;
+        room.floor = style.floor; room.floors[style.floor] = true;
+      }
+      SAVE.rooms[key] = room;
+    }
+    return SAVE.rooms[key];
   }
   function roomHas(id) { return getRoom().placed.some((p) => p.id === id); }
   // what the maid's affection and training add to a job
@@ -1318,7 +1333,7 @@
     listFor(tab) {
       if (tab === 0) return G.MENU_FOOD;
       if (tab === 1) return G.GIFTS;
-      if (tab === 2) return G.FURNITURE_SHOP;
+      if (tab === 2) return G.FURNITURE_SHOP.filter((id) => { const F = G.FURNITURE[id]; return !F.who || F.who === SAVE.maid; });
       if (tab === 3) return G.UPGRADES;
       return [];
     },

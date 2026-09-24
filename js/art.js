@@ -3762,6 +3762,128 @@
     F.princess = () => T(princessRows.map((r) => sym(r, 18)));
 
     // round rug: a scalloped lace border, a pink body with a dotted ring, and a heart with a glint in the middle
+    // Berry's punching bag: a leather bag strapped at the waist, on a weighted stand
+    F.sandbag = () => T([
+      '.....kkkkkk.....',
+      '....kCMMMMCk....',
+      '...kMLLLLLLMk...',
+      '..kMLYYLLLLLMk..',
+      '..kMLYYLLLLLMk..',
+      '..kMLLLLLLLLMk..',
+      '..kCMMMMMMMMCk..',
+      '..kMLLLLLLLLMk..',
+      '..kMLLLLLLLLMk..',
+      '..kMLLLLLLLLMk..',
+      '..kMLLLLLLLLMk..',
+      '..kCMMMMMMMMCk..',
+      '..kMLLLLLLLLMk..',
+      '..kMLLLLLLLLMk..',
+      '..kMLLLLLLLLMk..',
+      '..kMLLLLLLLLMk..',
+      '...kMLLLLLLMk...',
+      '....kMDDDDMk....',
+      '.....kkkkkk.....',
+      '......kSSk......',
+      '......kSsk......',
+      '......kSSk......',
+      '......kSSk......',
+      '......kSSk......',
+      '....kkkSSkkk....',
+      '...kSssssssSk...',
+      '..kSssSSSSssSk..',
+      '..kSSSSSSSSSSk..',
+      '..kCCCCCCCCCCk..',
+      '...kkkkkkkkkk...',
+    ]);
+    // Honey's toy chest: the lid thrown open, a bunny and blocks spilling out
+    F.toybox = () => T([
+      '....kk....kk....',
+      '...kqPk..kbak...',
+      '...kqPk..kbak...',
+      '..kqPPqk.kbbak..',
+      '..kqWWqkkkbbak..',
+      '.kkqqqqkkkkbak..',
+      'kMLLLLLLLLLLLMk.',
+      'kMLYYLLLLLLLLMk.',
+      'kMLLLLLLLLLLLMk.',
+      'kkkkkkkkkkkkkkk.',
+      'kMLLLLLLLLLLLMk.',
+      'kMLYLLLvVLLLLMk.',
+      'kMLLLLLVVLLLLMk.',
+      'kMLLbaLLLqPLLMk.',
+      'kMLLbbLLLqqLLMk.',
+      'kMDDDDDDDDDDDMk.',
+      'kMLLLLLLLLLLLMk.',
+      'kMLLLLLLLLLLLMk.',
+      'kMDDDDDDDDDDDMk.',
+      'kkkkkkkkkkkkkkk.',
+      '.kXXXXXXXXXXXk..',
+      '..kkkkkkkkkkk...',
+    ]);
+    // Yukino's rose vase: three roses over long leaves in a tall white vase
+    F.vase = () => T([
+      '....kk....kk....',
+      '...kfrk..kfrk...',
+      '..kfrrek.krrek..',
+      '..krreEk.kreEk..',
+      '...kekk...kek...',
+      '....kh.kk.hk....',
+      '.....hkfrk.h....',
+      '.....hkrrek.h...',
+      '....vhkreEkh....',
+      '...vVhkekkhVv...',
+      '....VhkhkkhV....',
+      '.....hhhhhh.....',
+      '....kkhhhhkk....',
+      '...kWWwwwwWWk...',
+      '..kWWwwwwwwWWk..',
+      '..kWwwwwwwwwWk..',
+      '..kWwwWWwwwwWk..',
+      '..kWwwWWwwwwWk..',
+      '..kWwwwwwwwwWk..',
+      '..kWwwwwwwwwWk..',
+      '..kWwwwwwwwwWk..',
+      '...kWwwwwwwWk...',
+      '...kWwwwwwwWk...',
+      '....kWwwwwWk....',
+      '....kgwwwwgk....',
+      '....kGggggGk....',
+      '.....kkkkkk.....',
+      '................',
+    ]);
+    // Yoru's folding screen: three paper panels in a dark frame, a branch painted across them
+    F.screen = () => T([
+      '..kkkkkkkk..kkkkkkkkkk..kkkkkkk.',
+      '.kCCCCCCCCk.kCCCCCCCCk.kCCCCCCk.',
+      '.kCWWWWWWCk.kCWWWWWWCk.kCWWWWCk.',
+      '.kCWwwwwWCk.kCWwwwwWCk.kCWwwwCk.',
+      '.kCWwwwwWCk.kCWwwwwWCk.kCWwwwCk.',
+      '.kCWwwwwWCk.kCWwwwwWCk.kCWwwwCk.',
+      '.kCWwwCwWCk.kCWwCwwWCk.kCWwCwCk.',
+      '.kCWwCCwWCk.kCWCCwwWCk.kCWCCwCk.',
+      '.kCWCCwwWCk.kCWwCwwWCk.kCWwCwCk.',
+      '.kCWwCwwWCk.kCWwwCwWCk.kCWwCwCk.',
+      '.kCWwwCwWCk.kCWwwwCWCk.kCWwwCCk.',
+      '.kCWwwwCWCk.kCWwwwwWCk.kCWwwwCk.',
+      '.kCWwwwwWCk.kCWwwwwWCk.kCWwwwCk.',
+      '.kCCCCCCCCk.kCCCCCCCCk.kCCCCCCk.',
+      '.kCWWWWWWCk.kCWWWWWWCk.kCWWWWCk.',
+      '.kCWwwwwWCk.kCWwwwwWCk.kCWwwwCk.',
+      '.kCWwwwwWCk.kCWwwwwWCk.kCWwwwCk.',
+      '.kCWwwwwWCk.kCWwwwwWCk.kCWwwwCk.',
+      '.kCWwwwwWCk.kCWwwwwWCk.kCWwwwCk.',
+      '.kCWwwwwWCk.kCWwwwwWCk.kCWwwwCk.',
+      '.kCWwwwwWCk.kCWwwwwWCk.kCWwwwCk.',
+      '.kCWwwwwWCk.kCWwwwwWCk.kCWwwwCk.',
+      '.kCWwwwwWCk.kCWwwwwWCk.kCWwwwCk.',
+      '.kCWwwwwWCk.kCWwwwwWCk.kCWwwwCk.',
+      '.kCCCCCCCCk.kCCCCCCCCk.kCCCCCCk.',
+      '.kXXXXXXXXk.kXXXXXXXXk.kXXXXXXk.',
+      '.kkkkkkkkkk.kkkkkkkkkk.kkkkkkkk.',
+      '................................',
+      '................................',
+      '................................',
+    ]);
     F.rug = () => {
       const p = new Pix(32, 32);
       const col = (ch) => PAL[ch];
@@ -3805,6 +3927,20 @@
         p.rect(0, 0, 16, 24, '#314a78');
         p.set(3 + (i * 5) % 10, 4, '#ffffff'); p.set(10 - (i * 3) % 8, 11, '#fff0a0'); p.set(6, 16, '#9fb8e6');
         break;
+      case 'lace': // Yukino's room: a calm damask with a lace band along the skirting
+        p.rect(0, 0, 16, 24, '#e9eff9');
+        for (let y = 2; y < 16; y += 6) p.hline(0, y, 16, '#d6e0f0');
+        if (i % 2 === 0) stamp(p, ['..w..', '.wkw.', 'wkbkw', '.wkw.', '..w..'], 5, 4, { w: '#ffffff', k: '#c3d0e6', b: '#a8bcd8' });
+        else { p.set(3, 10, '#ffffff'); p.set(12, 4, '#ffffff'); p.set(8, 13, '#c3d0e6'); }
+        for (let x = 0; x < 16; x += 4) stamp(p, ['.ww.', 'wwww'], x, 14, { w: '#ffffff' });
+        break;
+      case 'shoji': // Yoru's room: paper panels in a dark wooden grid
+        p.rect(0, 0, 16, 24, '#f4eedc');
+        for (let y = 0; y < 17; y += 6) { p.hline(0, y, 16, '#6b4a2c'); p.hline(0, y + 1, 16, '#8c6a42'); }
+        p.vline(0, 0, 17, '#6b4a2c'); p.vline(8, 0, 17, '#6b4a2c');
+        p.vline(1, 0, 17, '#8c6a42'); p.vline(9, 0, 17, '#8c6a42');
+        if (i % 2 === 0) { p.set(4, 8, '#e4dcc4'); p.set(12, 3, '#e4dcc4'); }
+        break;
     }
     for (let x = 0; x < 16; x++) p.set(x, 16, mix(p.get(x, 16) || [255, 255, 255, 255], '#2a1b30', 0.12));
     p.rect(0, 17, 16, 7, '#b8763c'); p.hline(0, 17, 16, '#e0a262'); p.hline(0, 23, 16, '#8c5530');
@@ -3828,6 +3964,14 @@
       case 'checker':
         p.rect(0, 0, 16, 16, i ? '#e8def8' : '#fff7fa');
         p.hline(0, 15, 16, i ? '#d6c9ee' : '#f0e4ec');
+        break;
+      case 'tatami': // Yoru's room: woven mats bound in dark green
+        p.rect(0, 0, 16, 16, i ? '#d2d78e' : '#dae09a');
+        for (let y = 2; y < 15; y += 2) p.hline(2, y, 12, i ? '#c3c983' : '#cbd28d');
+        for (let x = 2; x < 15; x += 4) p.vline(x, 2, 12, i ? '#e2e7a8' : '#e8eeb2');
+        p.rect(0, 0, 16, 2, '#2f5a3a'); p.rect(0, 14, 16, 2, '#2f5a3a');
+        p.vline(0, 0, 16, '#25482e'); p.vline(15, 0, 16, '#25482e');
+        p.hline(0, 1, 16, '#3f7a4c'); p.hline(0, 14, 16, '#25482e');
         break;
     }
     return p;
@@ -3923,7 +4067,7 @@
       bunny: BUNNY.map((rows) => fromRows(rows, BUNNY_PAL, 9)),
     };
     for (const k of Object.keys(EMOTES)) art.room.emotes[k] = buildEmote(k);
-    for (const k of ['bed', 'princess', 'desk', 'wardrobe', 'teatable', 'bookshelf', 'plant', 'plush', 'rug', 'piano', 'lamp', 'fishbowl', 'dresser', 'sofa', 'gramophone']) art.room.furniture[k] = softInk(bevel(buildFurniture(k)));
+    for (const k of ['bed', 'princess', 'desk', 'wardrobe', 'teatable', 'bookshelf', 'plant', 'plush', 'rug', 'piano', 'lamp', 'fishbowl', 'dresser', 'sofa', 'gramophone', 'sandbag', 'toybox', 'vase', 'screen']) art.room.furniture[k] = softInk(bevel(buildFurniture(k)));
     // the moving parts: the bowl without its fish and the fish itself, the lamp switched off, the inside of the wardrobe
     art.room.furnParts = {
       fishbowlEmpty: softInk(bevel(buildFurniture('fishbowlEmpty'))),
@@ -3932,8 +4076,8 @@
       wardrobeInside: softInk(buildFurniture('wardrobeInside')),
     };
     art.room.furnParts.fishFlip = art.room.furnParts.fish.map((f) => f.flipped());
-    for (const k of ['bunny', 'stripe', 'strawberry', 'night']) art.room.walls[k] = [buildWall(k, 0), buildWall(k, 1)];
-    for (const k of ['wood', 'carpet', 'checker']) art.room.floors[k] = [buildFloor(k, 0), buildFloor(k, 1)];
+    for (const k of ['bunny', 'stripe', 'strawberry', 'night', 'lace', 'shoji']) art.room.walls[k] = [buildWall(k, 0), buildWall(k, 1)];
+    for (const k of ['wood', 'carpet', 'checker', 'tatami']) art.room.floors[k] = [buildFloor(k, 0), buildFloor(k, 1)];
     for (const k of ['daifuku', 'honeycake', 'icecream', 'matcha', 'drink', 'novel', 'charm', 'bouquet', 'ribbon']) art.room.gifts[k] = softInk(bevel(buildGift(k)));
     if (ROW_ERRORS.length) throw new Error('sprite rows:\n' + ROW_ERRORS.join('\n'));
     return art;
