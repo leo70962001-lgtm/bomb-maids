@@ -649,6 +649,7 @@
       this.seekT = 0; // while she waits for the pat she asked for
       this.wasOnMaid = false;
       this.furn = new Map(); // what each placed piece is doing: { kind, t, dur }
+      this.timers = []; // { t, fn }: a beat later, without taking the controls away
       this.lights = [];
       this.fish = null;
       this.recordOn = false;
@@ -1268,7 +1269,7 @@
         this.fx({ kind: 'glint', x: b.x + 8, y: b.y + 5, life: 16 });
       }
       this.emote(room.lampOff ? 'dots' : 'sparkle', 60);
-      this.speak(G.t(room.lampOff ? '關燈了。……房間暗下來了呢。' : '燈光好溫暖呢。'), 'normal');
+      if (!this.furnSay('lamp')) this.speak(G.t(room.lampOff ? '關燈了。……房間暗下來了呢。' : '燈光好溫暖呢。'), 'normal');
       G.persist();
     },
     // a book slides out of the shelf, glowing, before the diary opens
@@ -1744,7 +1745,7 @@
     teaTime() {
       const k = maidKey();
       const S = save();
-      if (this.daily('tea') >= 1) { this.say([{ who: k, face: 'normal', text: G.t('今天已經喝過下午茶了，明天再一起喝吧！') }]); return; }
+      if (this.daily('tea') >= 1) { this.furnSay('tea', true); return; }
       if (S.coins < 30) { this.say([{ who: null, text: G.t('茶葉要 30G……金幣不夠。') }]); return; }
       S.coins -= 30;
       this.bumpDaily('tea');
@@ -1756,13 +1757,14 @@
         this.maid.prop = 'cup';
         this.anim = { kind: 'tea', t: 0, dur: 110 };
         this.mode = 'anim';
+        this.furnSay('tea');
         this.furnStart(p, 'steam', 120);
       };
       if (spot && !(spot.c === this.maid.c && spot.r === this.maid.r) && this.walkTo(spot.c, spot.r, begin)) this.mode = 'wait';
       else begin();
     },
     playPiano() {
-      if (this.daily('piano') >= 1) { this.speak(G.t('今天已經彈過囉～'), 'happy'); return; }
+      if (this.daily('piano') >= 1) { this.furnSay('piano', true); return; }
       this.bumpDaily('piano');
       const p = B.getRoom().placed.find((q) => q.id === 'piano');
       const spot = this.useSpot(p);
@@ -1771,7 +1773,8 @@
         this.maid.state = 'hold';
         this.anim = { kind: 'piano', t: 0, dur: 160 };
         this.mode = 'anim';
-        this.furnStart(p, 'keys', 160, { step: 20 });
+        this.furnSay('piano');
+        this.furnStart(p, 'keys', 160, { step: (trait().furn && trait().furn.pianoStep) || 20 });
       };
       if (spot && !(spot.c === this.maid.c && spot.r === this.maid.r) && this.walkTo(spot.c, spot.r, begin)) this.mode = 'wait';
       else begin();
@@ -2011,30 +2014,83 @@
     },
     // A click on furniture: the piece answers at once (a bounce, a squash, the lamp's switch), and for the things she
     // does with it she walks over first; done for the day, the piece still answers.
+    // what she says at a piece of furniture (G.LINES[maid].furn), or when there is nothing left to do there today
+    furnSay(kind, done) {
+      const L = lines();
+      const tr = trait().furn || {};
+      const text = done ? L.furnDone : L.furn && L.furn[kind];
+      if (!text) return false;
+      this.speak(text, done ? 'normal' : tr.face || 'happy', done ? null : tr.feel || 'happy');
+      return true;
+    },
+    later(frames, fn) { this.timers.push({ t: frames, fn }); },
+    // and how she moves: her emote and particles, then her own flair — Berry throws herself at it and the room shakes,
+    // Honey only notices a beat later, Yukino finishes with a glint and a curtsy, Yoru waits, looks, and lets it go.
+    // At the pieces she stays at, she then falls into a pose of her own (G.TRAITS[maid].furn.pose).
+    furnFlair(kind, pose, piece) {
+      const tr = trait().furn || {};
+      const ms = this.maidScreen();
+      const x = ms.x + 8, y = ms.y - 2;
+      if (tr.emote) this.emote(tr.emote, 80);
+      if (tr.hop) this.maid.hop = tr.hop;
+      this.aura(x, y, tr.aura || 4);
+      const pose2 = () => { const p = pose && tr.pose && tr.pose[kind]; if (p) this.startPose(p); };
+      switch (tr.flair) {
+        case 'burst': // Berry: a whack, stars, and the piece rocks with her
+          this.shake(3);
+          this.burst(x, y - 6, 'star', 5, 1.2);
+          if (piece) this.furnStart(piece, 'bounce', 26);
+          this.later(16, () => { this.maid.hop = 4; this.emote('exclaim', 40); });
+          pose2();
+          break;
+        case 'late': // Honey: a blank moment, then it dawns on her
+          this.later(38, () => {
+            this.emote('question', 46);
+            this.setFace('surprise', 46);
+            this.fx({ kind: 'blossom', x: x + E.rand(-6, 6), y: y - 4, vx: E.rand(-0.3, 0.3), vy: -0.4, sway: 0.25, life: 44 });
+            this.later(26, pose2);
+          });
+          break;
+        case 'glint': // Yukino: a last tidy, a glint, a small curtsy
+          this.fx({ kind: 'glint', x: x + 6, y: y - 8, life: 20 });
+          this.ring(x, y + 8, 3, 16, '#dceaff', 18);
+          this.later(20, () => { this.maid.hop = 2; this.emote('heart', 40); pose2(); });
+          break;
+        case 'pause': // Yoru: she waits, looks, and a petal falls
+          this.later(24, () => {
+            this.emote('dots', 52);
+            for (let i = 0; i < 4; i++) this.fx({ kind: 'petal', pal: 'night', x: x + E.rand(-10, 10), y: y - 12, vx: E.rand(-0.2, 0.2), vy: 0.32, sway: 0.3, ph: i * 9, life: 60 });
+            this.later(18, pose2);
+          });
+          break;
+        default: pose2();
+      }
+    },
     furnitureAction(p) {
       const F = G.FURNITURE[p.id];
       const b = this.furnBox(p);
       switch (F.use) {
-        case 'sleep': this.furnStart(p, 'bounce', 24); return this.sleepConfirm();
-        case 'train': this.furnStart(p, 'bounce', 20); return this.trainMenu();
-        case 'wardrobe': this.furnStart(p, 'open', 120); A.sfx('door'); return this.wardrobeMenu();
+        case 'sleep': this.furnStart(p, 'bounce', 24); this.furnSay('sleep'); return this.sleepConfirm();
+        case 'train': this.furnStart(p, 'bounce', 20); this.furnSay('train'); return this.trainMenu();
+        case 'wardrobe': this.furnStart(p, 'open', 120); A.sfx('door'); this.furnSay('wardrobe'); return this.wardrobeMenu();
         case 'tea': return this.teaTime();
-        case 'diary': return this.openShelf(p);
+        case 'diary': this.furnSay('diary'); return this.openShelf(p);
         case 'piano': return this.playPiano();
-        case 'lamp': return this.toggleLamp(p);
+        case 'lamp': this.furnFlair('lamp', true, p); return this.toggleLamp(p); // toggleLamp says her line
         case 'water':
-          if (this.daily('water') >= 1) { this.furnStart(p, 'bounce', 20); this.speak(G.t('今天已經澆過水了！'), 'normal'); return; }
+          if (this.daily('water') >= 1) { this.furnStart(p, 'bounce', 20); this.furnSay('water', true); return; }
           return this.goUse(p, () => {
             this.bumpDaily('water');
             this.gain('mood', 4);
             this.emote('sparkle', 90);
             A.sfx('water');
             this.furnStart(p, 'water', 48);
-            this.speak(G.t('盆栽今天也要長高高喔♪'), 'happy');
+            this.furnSay('water');
+            this.furnFlair('plant', true, p);
             G.persist();
           });
         case 'hug':
-          if (this.daily('hug') >= 1) { this.furnStart(p, 'squish', 30); this.speak(G.t('兔兔抱枕軟綿綿的～'), 'happy'); return; }
+          if (this.daily('hug') >= 1) { this.furnStart(p, 'squish', 30); this.furnSay('hug', true); return; }
           return this.goUse(p, () => {
             this.bumpDaily('hug');
             this.gain('mood', 5);
@@ -2042,42 +2098,44 @@
             this.furnStart(p, 'squish', 44);
             this.hearts(b.x + 8, b.y + 4, 3);
             A.sfx('pat');
-            this.speak(G.t('借我抱一下兔兔嘛～'), 'blush');
+            this.furnSay('hug');
+            this.furnFlair('plush', true, p);
             G.persist();
           });
         case 'fish':
-          if (this.daily('fish') >= 1) { this.furnStart(p, 'watch', 60); this.speak(G.t('金魚已經吃飽囉～'), 'happy'); return; }
+          if (this.daily('fish') >= 1) { this.furnStart(p, 'watch', 60); this.furnSay('fish', true); return; }
           return this.goUse(p, () => {
             this.bumpDaily('fish');
             this.gain('mood', 4);
             this.emote('note', 90);
             A.sfx('water');
             this.furnStart(p, 'feed', 90);
-            this.speak(G.t('小金魚，開飯囉～'), 'happy');
+            this.furnSay('fish');
+            this.furnFlair('fish', true, p);
             G.persist();
           });
         case 'dresser':
-          if (this.daily('dress') >= 1) { this.furnStart(p, 'mirror', 50); this.speak(G.t('今天已經打扮好了！'), 'happy'); return; }
+          if (this.daily('dress') >= 1) { this.furnStart(p, 'mirror', 50); this.furnSay('dresser', true); return; }
           return this.goUse(p, () => {
             this.bumpDaily('dress');
             this.gain('mood', 6);
             this.emote('sparkle', 90);
             A.sfx('gift');
             this.furnStart(p, 'mirror', 60);
-            const ms = this.maidScreen();
-            this.aura(ms.x + 8, ms.y - 4, 5);
-            this.speak(G.t('緞帶綁好了……主人，好看嗎？'), 'blush');
+            this.furnSay('dresser');
+            this.furnFlair('dresser', true, p);
             G.persist();
           });
         case 'sofa':
-          if (this.daily('sofa') >= 1) { this.furnStart(p, 'squish', 30); this.speak(G.t('沙發好舒服……不過今天已經休息夠了。'), 'normal'); return; }
+          if (this.daily('sofa') >= 1) { this.furnStart(p, 'squish', 30); this.furnSay('sofa', true); return; }
           return this.goUse(p, () => {
             this.bumpDaily('sofa');
             this.gain('stamina', 15);
             this.emote('zzz', 90);
             A.sfx('pat');
             this.furnStart(p, 'squish', 44);
-            this.speak(G.t('呼～坐一下，體力恢復了！'), 'happy');
+            this.furnSay('sofa');
+            this.furnFlair('sofa', true, p);
             this.toast(G.t('體力 +{n}', { n: 15 }), C.mint);
             G.persist();
           });
@@ -2088,16 +2146,18 @@
             this.furnStart(p, 'bounce', 20);
             this.emote('note', 120);
             A.sfx('tick');
-            if (this.daily('music') >= 1) { this.speak(G.t('再聽一次這張唱片吧♪'), 'happy'); return; }
+            if (this.daily('music') >= 1) { this.furnSay('music', true); return; }
             this.bumpDaily('music');
             this.gain('mood', 5);
-            this.speak(G.t('放一張唱片吧♪'), 'happy');
+            this.furnSay('music');
+            this.furnFlair('music', true, p);
             G.persist();
           });
       }
       // anything else (the rug): a little flourish of its own
       this.furnStart(p, 'glow', 36);
-      this.speak(F.name, 'normal');
+      if (!this.furnSay('rug')) this.speak(F.name, 'normal');
+      this.furnFlair('rug', true, p);
     },
 
     // ---------------------------------------------------------------- dialog / menu / panels
@@ -2527,6 +2587,7 @@
         if (p.t >= p.life) this.particles.splice(i, 1);
       }
       if (this.shakeT > 0) this.shakeT--;
+      for (let i = this.timers.length - 1; i >= 0; i--) if (--this.timers[i].t <= 0) { const f = this.timers[i].fn; this.timers.splice(i, 1); f(); }
       if (this.hoverCD > 0) this.hoverCD--;
       if (this.seekCD > 0) this.seekCD--;
       if (this.seekT > 0) this.seekT--;
@@ -2586,11 +2647,20 @@
       }
       if (an.kind === 'piano') {
         const melody = [784, 659, 698, 784, 880, 784, 659, 523];
-        if (an.t % 20 === 0) {
-          const f = melody[(an.t / 20) % melody.length];
+        // Berry hammers away, Yukino keeps time, Yoru plays sparely — and Honey fumbles a note halfway through
+        const step = (trait().furn && trait().furn.pianoStep) || 20;
+        if (an.t % step === 0) {
+          const f = melody[((an.t / step) | 0) % melody.length];
           if (A.ctx && A.sound) { A.sfx('tick'); }
           this.emote('note', 18);
           this.particles.push({ kind: 'note', x: ms.x + E.randi(0, 16), y: ms.y - 12, vx: E.rand(-0.3, 0.3), vy: -0.6, t: 0, life: 40, f });
+          if (step <= 14) this.shake(2);
+        }
+        if (maidKey() === 'honey' && an.t === 84) {
+          A.sfx('denied');
+          this.emote('sweat', 46);
+          this.setFace('surprise', 46);
+          this.fx({ kind: 'gloom', x: ms.x + 8, y: ms.y - 10, vy: -0.2, life: 40 });
         }
         if (an.t >= an.dur) {
           this.anim = null;

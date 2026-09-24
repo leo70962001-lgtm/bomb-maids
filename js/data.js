@@ -505,6 +505,24 @@
   G.LINES = {
     berry: {
       intro: '初次見面！我是莓果！從今天起就是主人的女僕了，請多指教！',
+      // what she says at each piece of furniture, and when there is nothing left to do there today
+      furn: {
+        water: '水！給我長高高——！嘿咻！',
+        hug: '兔兔！陪我練習抱摔——開玩笑的啦！',
+        fish: '開飯囉！一、二、三，搶食比賽開始！',
+        dresser: '頭髮又翹起來了！壓一壓……好，出發！',
+        sofa: '呼——！剛剛的特訓超累的！再五分鐘就好！',
+        music: '這首超燃！跟著節奏動起來——！',
+        lamp: '開燈！這樣才看得清楚敵人……啊，沒有敵人。',
+        piano: '我只會彈這首——嘿！咚咚咚！',
+        rug: '地毯！翻滾練習的最佳場地！',
+        sleep: '睡飽才有力氣！晚安，主人！',
+        train: '特訓時間！今天要打破紀錄！',
+        wardrobe: '換班？好啊——大家一起上！',
+        tea: '茶！還有點心！點心呢——？',
+        diary: '這本是我的成長紀錄！看看我變多強！',
+      },
+      furnDone: '今天份的已經做完啦！明天再一起！',
       greet: ['主人早安！今天也要全力衝刺！', '主人！莓果已經熱身完畢，隨時可以上！', '嘿嘿，主人來啦～今天要打倒幾隻灰塵？'],
       pat: ['欸嘿嘿……被摸頭了～力量湧上來了！', '唔、主人的手好溫暖……', '再、再摸一下也可以喔！'],
       patMany: ['主人，頭髮要被摸亂啦！', '好、好了啦！夠了夠了！'],
@@ -585,6 +603,24 @@
     },
     yoru: {
       intro: '……夜子。從今天起，主人的一切，由我管理。',
+      // what she says at each piece of furniture, and when there is nothing left to do there today
+      furn: {
+        water: '……喝吧。長不大的話，我可不管你。',
+        hug: '……只有現在。看到了就當作沒看到。',
+        fish: '……吃吧。被養著的感覺，不壞吧。',
+        dresser: '……看什麼。轉過去。',
+        sofa: '……這個位子是我的。要坐的話，坐地上。',
+        music: '……安靜一點的曲子。吵的話，我就關掉。',
+        lamp: '……太亮了。這樣剛好。',
+        piano: '……（一個低音）。這樣就夠了。',
+        rug: '……踩起來，還不錯。',
+        sleep: '……先說好，不准偷看我的睡臉。',
+        train: '……看著。學得起來就算你厲害。',
+        wardrobe: '……我的衣服，別亂碰。',
+        tea: '……茶泡好了。涼掉的話，是你的錯。',
+        diary: '……這本，寫著你的事。要看嗎。',
+      },
+      furnDone: '……今天已經夠了。別貪心。',
       greet: ['……主人。', '……來了啊。', '……嗯。（點頭）'],
       pat: ['……哼。', '……可以，繼續。', '……這種事，只准主人做。'],
       patMany: ['……夠了。', '……再摸，這隻手就不還你了。'],
@@ -666,6 +702,24 @@
     },
     honey: {
       intro: '主人好～我是蜜糖！以後每天都做點心給主人吃喔♪',
+      // what she says at each piece of furniture, and when there is nothing left to do there today
+      furn: {
+        water: '咦？剛剛是不是已經澆過了……？再一點點好了。',
+        hug: '呼……兔兔最會聽人說話了呢。',
+        fish: '啊，飼料……咦，我剛剛是不是倒太多了？',
+        dresser: '咦，髮夾……剛剛明明放在這裡的……',
+        sofa: '這裡好軟……主人，我睡一下下就好……呼……',
+        music: '啊，這首歌……咦，歌名是什麼來著？',
+        lamp: '暖暖的……啊，飛蛾！沒事沒事，不要怕～',
+        piano: '咦……啊，彈錯了。再、再一次！',
+        rug: '毛毛的……在這裡打滾一下下好了……',
+        sleep: '棉被……啊，是不是忘了關燈……算了……',
+        train: '筆記……咦，昨天寫到哪裡了呢？',
+        wardrobe: '咦，我的圍裙……啊，穿在身上。',
+        tea: '我來倒……啊，滿出來了！等、等一下！',
+        diary: '咦，書怎麼倒了……啊，是我放反了。',
+      },
+      furnDone: '咦……好像已經做過了？嗯，做過了。',
       greet: ['主人早安～咦，現在是早上……對吧？', '啊、主人！蜜糖剛剛在找主人……咦，找什麼來著？', '主人主人～今天的點心是……啊，忘記放糖了。'],
       pat: ['欸嘿嘿……舒服～', '呼哇……頭有點暈……啊不是，是開心！', '主人的手，聞起來有餅乾的味道……咦？'],
       patMany: ['呀……頭髮會變成鳥窩啦～', '好、好了啦……蜜糖要暈了……'],
@@ -745,6 +799,24 @@
     },
     yukino: {
       intro: '我是雪乃。年紀比大家都大一點，就讓姊姊來照顧主人吧。',
+      // what she says at each piece of furniture, and when there is nothing left to do there today
+      furn: {
+        water: '葉子上的灰塵也擦一擦……好，這樣才漂亮。',
+        hug: '呵呵，主人也想抱抱嗎？姊姊讓給你喔。',
+        fish: '水溫也要顧好喔。金魚是很怕冷的。',
+        dresser: '主人，姊姊今天的髮型……還可以嗎？',
+        sofa: '主人也坐下吧？姊姊的腿可以借你。',
+        music: '這張唱片很有味道呢。要一起聽嗎？',
+        lamp: '燈光調暗一點，眼睛比較舒服喔。',
+        piano: '小時候學過一點點。……還記得呢。',
+        rug: '地毯下面也要掃喔，灰塵最愛躲在那裡。',
+        sleep: '主人也早點休息喔。姊姊會擔心的。',
+        train: '先複習昨天的，再往前走一步。',
+        wardrobe: '要換誰來值班呢？姊姊都可以喔。',
+        tea: '今天泡的是紅茶。慢慢喝，不用急。',
+        diary: '書要照順序放，找起來才快喔。',
+      },
+      furnDone: '今天已經好囉。明天再說吧？',
       greet: ['主人，早安。姊姊等你很久囉。', '呵呵，主人來了。今天想做什麼呢？', '慢慢來就好，姊姊會陪著你。'],
       pat: ['呵呵……被主人摸頭，感覺很新鮮呢。', '好乖好乖……啊，反過來了。', '真是的，主人也太會撒嬌了。'],
       patMany: ['好了好了，頭髮會亂掉喔。', '呵呵，撒嬌也要適可而止呢。'],
@@ -843,6 +915,9 @@
       // she runs everywhere and kicks up dust; talks fast; sparks and flames
       walk: { speed: 1.4, dust: true }, talk: 1.1, voice: ['blipHi', 3], aura: 'flame', hover: { emote: 'exclaim', hop: 3 }, shy: { face: 'surprise', emote: 'exclaim' },
       bubble: { bg: '#fff4ee', edge: '#e2402a', ink: '#5a1a14' },
+      // at the furniture: she throws herself at it, the room shakes, and she cannot sit still afterwards
+      furn: { face: 'happy', feel: 'excited', emote: 'exclaim', hop: 6, aura: 5, pianoStep: 12, flair: 'burst',
+        pose: { sofa: 'punch', music: 'rope', rug: 'punch', plant: 'punch', plush: 'rope', dresser: 'punch' } },
       taste: { daifuku: 'love', drink: 'like', charm: 'like', honeycake: 'like', bouquet: 'like', ribbon: 'like', novel: 'meh' },
     },
     honey: {
@@ -852,6 +927,9 @@
       // she wanders, sometimes stops mid-way to wonder where she was going; talks slowly; bubbles and blossoms
       walk: { speed: 0.85, wobble: true }, talk: 0.5, voice: ['blipSoft', 5], aura: 'bubble', hover: { emote: 'question', hop: 1 }, shy: { face: 'surprise', emote: 'question' },
       bubble: { bg: '#fffbe4', edge: '#e0a010', ink: '#5a3c08' },
+      // she drifts in humming, takes a moment, and only then notices what she was doing
+      furn: { face: 'happy', feel: 'happy', emote: 'note', hop: 3, aura: 4, pianoStep: 22, flair: 'late',
+        pose: { sofa: 'dream', music: 'hum', rug: 'dream', plush: 'dream', fish: 'trip', dresser: 'trip' } },
       taste: { honeycake: 'love', icecream: 'like', daifuku: 'like', bouquet: 'like', ribbon: 'like', matcha: 'meh' },
     },
     yukino: {
@@ -861,6 +939,9 @@
       // she glides, unhurried, a glint trailing now and then; talks evenly; snowflakes and glints
       walk: { speed: 0.8, glide: true }, talk: 0.65, voice: ['blip', 4], aura: 'snow', hover: { emote: 'heart', hop: 0 }, shy: { face: 'normal', emote: 'dots' },
       bubble: { bg: '#f0f7ff', edge: '#3d86f0', ink: '#16305c' },
+      // she tidies as she goes, finishes with a glint, and settles in with a cup
+      furn: { face: 'happy', feel: 'calm', emote: 'heart', hop: 1, aura: 4, pianoStep: 20, flair: 'glint',
+        pose: { sofa: 'tea', rug: 'tidy', plant: 'tidy', dresser: 'tidy', music: 'tidy', fish: 'read' } },
       taste: { icecream: 'love', novel: 'like', matcha: 'like', bouquet: 'like', ribbon: 'like', drink: 'meh' },
     },
     yoru: {
@@ -870,6 +951,9 @@
       // she moves without a sound and takes her time; her words come out slowly, with long silences; dark petals
       walk: { speed: 0.7 }, talk: 0.38, voice: ['blipLo', 6], aura: 'night', hover: { emote: 'dots', hop: 0 }, shy: { face: 'angry', emote: 'anger' },
       bubble: { bg: '#262033', edge: '#8a6ac0', ink: '#f4ecff' },
+      // she waits, looks, says little — and claims the seat
+      furn: { face: 'normal', feel: 'calm', emote: 'dots', hop: 0, aura: 3, pianoStep: 30, flair: 'pause',
+        pose: { sofa: 'nap', lamp: 'stare', music: 'nap', rug: 'stare', plush: 'nap', fish: 'stare' } },
       taste: { matcha: 'love', novel: 'like', charm: 'like', bouquet: 'like', ribbon: 'secret', honeycake: 'meh' },
     },
   };
