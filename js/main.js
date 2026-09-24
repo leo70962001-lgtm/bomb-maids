@@ -25,7 +25,8 @@
       if (Math.hypot(dx, dy) < r.width * 0.12) return null;
       return Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
     };
-    dpad.addEventListener('pointerdown', (e) => { dpadId = e.pointerId; dpad.setPointerCapture(e.pointerId); setDir(fromPoint(e)); e.preventDefault(); });
+    const capture = (el, e) => { try { el.setPointerCapture(e.pointerId); } catch (err) { /* the pointer is already gone */ } };
+    dpad.addEventListener('pointerdown', (e) => { dpadId = e.pointerId; capture(dpad, e); setDir(fromPoint(e)); e.preventDefault(); });
     dpad.addEventListener('pointermove', (e) => { if (e.pointerId === dpadId) setDir(fromPoint(e)); });
     const endD = (e) => { if (e.pointerId === dpadId) { dpadId = null; setDir(null); } };
     dpad.addEventListener('pointerup', endD);
@@ -33,7 +34,7 @@
 
     for (const btn of pad.querySelectorAll('[data-btn]')) {
       const name = btn.dataset.btn;
-      const on = (e) => { btn.setPointerCapture(e.pointerId); E.setTouch(name, true); btn.classList.add('on'); e.preventDefault(); };
+      const on = (e) => { capture(btn, e); E.setTouch(name, true); btn.classList.add('on'); e.preventDefault(); };
       const off = () => { E.setTouch(name, false); btn.classList.remove('on'); };
       btn.addEventListener('pointerdown', on);
       btn.addEventListener('pointerup', off);
@@ -105,7 +106,7 @@
   function boot() {
     const canvas = document.getElementById('screen');
     E.holder = document.getElementById('holder');
-    E.holderPad = 40;
+    E.holderPad = 22; // the apron frame round the canvas; the holder padding is measured on its own
     E.init(canvas);
     E.bindInput();
     E.bindPointer(canvas);

@@ -121,13 +121,17 @@
   E.fit = function () {
     const c = E.canvas;
     const holder = E.holder || c.parentElement;
-    const pad = E.holderPad || 0;
+    const frame = E.holderPad || 0; // the apron drawn round the canvas
     E.fitKey = fitKey();
     // measure with the canvas collapsed: the holder grows around its content, so a wide canvas would otherwise keep
     // it (and the next fit) wider than a phone held upright
     c.style.width = '0px';
     c.style.height = '0px';
-    const aw = holder.clientWidth - pad, ah = holder.clientHeight - pad;
+    // the holder's own padding is where the touch controls sit when the phone is sideways, so keep out of it
+    const cs = getComputedStyle(holder);
+    const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+    const padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+    const aw = holder.clientWidth - padX - frame, ah = holder.clientHeight - padY - frame;
     // phones held upright have no room beside the game, so the portrait panel folds away there
     E.setWide(!(aw < ah && aw < 560));
     let s = Math.min(aw / E.SW, ah / H);
