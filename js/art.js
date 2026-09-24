@@ -1708,27 +1708,30 @@
       name: '教室', bg: '#2b1b30',
       floor(i) {
         const p = new Pix(16, 16);
-        const base = i ? '#dc9a5a' : '#e2a262';
+        const base = i ? '#e8a34e' : '#f0ae5a';
         p.rect(0, 0, 16, 16, base);
         for (let r = 0; r < 2; r++) {
           const y = r * 8;
-          p.hline(0, y, 16, '#eab47a');
-          p.hline(0, y + 7, 16, '#b87440');
+          p.hline(0, y, 16, '#ffcb8a');
+          p.hline(0, y + 7, 16, '#b0681c');
           const j = Math.floor(hash(r, i, 3) * 10) + 3;
-          p.vline(j, y, 7, '#b87440'); p.vline(j + 1, y + 1, 6, '#eab47a');
+          p.vline(j, y, 7, '#b0681c'); p.vline(j + 1, y + 1, 6, '#ffcb8a');
           // grain: short streaks a shade darker than the plank
           const g = Math.floor(hash(r, i, 5) * 8) + 1;
-          p.hline((j + 3) % 16, y + 3, 4, '#d08e52'); p.hline((g + 9) % 16, y + 5, 3, '#d08e52');
+          p.hline((j + 3) % 16, y + 3, 4, '#d89443'); p.hline((g + 9) % 16, y + 5, 3, '#d89443');
         }
         return p;
       },
-      hard() { // steel locker
+      hard() { // the classroom's own wooden cabinet, warm like the original's
         const p = new Pix(16, 20);
-        p.rect(0, 0, 16, 5, '#b8cbe2'); p.hline(0, 0, 16, '#dfe9f5');
-        p.rect(0, 5, 16, 15, '#6f89ad'); p.vline(8, 5, 15, '#4e6688');
-        for (let y = 7; y < 12; y += 2) { p.hline(2, y, 4, '#4e6688'); p.hline(10, y, 4, '#4e6688'); }
-        p.set(6, 14, '#dfe9f5'); p.set(9, 14, '#dfe9f5');
-        p.hline(0, 19, 16, '#3c5070');
+        p.rect(0, 0, 16, 5, '#f0a85c'); p.hline(0, 0, 16, '#ffd29c'); p.hline(0, 4, 16, '#b86c28');
+        p.rect(0, 5, 16, 15, '#d4762e');
+        p.vline(8, 5, 15, '#8c4414');
+        p.rect(1, 7, 6, 9, '#e08a3c'); p.rect(9, 7, 6, 9, '#e08a3c');
+        p.hline(1, 7, 6, '#ffbe78'); p.hline(9, 7, 6, '#ffbe78');
+        p.set(6, 11, '#ffe9c0'); p.set(9, 11, '#ffe9c0');
+        stamp(p, ['.r.r.', 'rrrrr', '.rrr.', '..r..'], 5, 16, { r: '#e8384f' });
+        p.hline(0, 19, 16, '#8c4414');
         return p.outlined(K);
       },
       hard2() { // bookshelf
@@ -1773,15 +1776,16 @@
     },
     garden: {
       name: '花園', bg: '#1d3b24',
-      floor(i) { // two-tone grass checker with little tufts
+      floor(i) { // mown grass: the mower's stripe across each tile, blades catching the light
         const p = new Pix(16, 16);
-        p.rect(0, 0, 16, 16, i ? '#74bd52' : '#82c95c');
-        for (let n = 0; n < 5; n++) {
+        p.rect(0, 0, 16, 16, i ? '#7cc44e' : '#8ad158');
+        for (let y = 2; y < 16; y += 5) p.hline(0, y, 16, i ? '#74bc46' : '#82c950');
+        for (let n = 0; n < 6; n++) {
           const x = Math.floor(hash(n, i, 21) * 13) + 1, y = Math.floor(hash(n, i, 22) * 12) + 2;
-          p.set(x, y, i ? '#5aa543' : '#66b04b'); p.set(x + 2, y, i ? '#5aa543' : '#66b04b'); p.set(x + 1, y - 1, i ? '#5aa543' : '#66b04b');
-          p.set(x + 1, y - 2, i ? '#9ed576' : '#a8de80');
+          p.set(x, y, i ? '#5fa83e' : '#6cb648'); p.set(x + 2, y, i ? '#5fa83e' : '#6cb648');
+          p.set(x + 1, y - 1, i ? '#a2df76' : '#aee882');
         }
-        p.hline(0, 15, 16, i ? '#68b34c' : '#74bd54'); p.vline(15, 0, 16, i ? '#68b34c' : '#74bd54');
+        p.hline(0, 15, 16, i ? '#6cb648' : '#74bd4e'); p.vline(15, 0, 16, i ? '#6cb648' : '#74bd4e');
         return p;
       },
       hard() { // trimmed hedge cube: a lit top, a deep green front with leaf clumps
@@ -1799,35 +1803,35 @@
         p.hline(0, 19, 16, '#6b4a2c');
         return p.outlined(K);
       },
-      soft(i) { // rose bush
+      soft(i) { // one big rose over its leaves, the way the original's garden is planted
         const p = new Pix(16, 20);
-        ball(p, 0, 5, 16, 14, '#6fd060', '#3f9c44', '#2a6e32');
-        const roses = [[3, 6], [9, 4], [8, 11]];
-        for (const [x, y] of roses) {
-          ball(p, x, y, 6, 6, '#ff8a9a', '#e8384f', '#a01c33');
-          p.set(x + 2, y + 2, '#a01c33'); p.set(x + 3, y + 3, '#ffc2cb');
-        }
+        ball(p, 0, 11, 16, 9, '#6fd060', '#3f9c44', '#2a6e32');
+        for (const [x, y] of [[1, 13], [12, 12], [6, 17]]) { p.set(x, y, '#8ae070'); p.set(x + 1, y + 1, '#2a6e32'); }
+        ball(p, 2, 2, 12, 11, '#ff8a9a', '#e8384f', '#9c1a30', 0.2);
+        stamp(p, ['.ddd.', 'dmlmd', 'dlmld', '.dmd.'], 5, 5, { d: '#9c1a30', m: '#e8384f', l: '#ff8a9a' });
+        p.set(6, 4, '#ffc2cb'); p.set(10, 9, '#9c1a30');
+        p.set(3 + (i % 3), 10, '#ffe14d');
         return p.outlined(K);
       },
-      wallTop(i) { // strip of sky over a hedge dotted with little red flowers
+      wallTop(i) { // the original's band of sky, a white horizon, then the hedge and its flower bed
         const p = new Pix(16, 16);
-        p.rect(0, 0, 16, 6, '#6ab8ff'); p.hline(0, 4, 16, '#a8dcff');
-        p.rect(0, 6, 16, 10, '#2e7a2a');
-        for (let x = 0; x < 16; x++) { p.set(x, 6, '#000000'); p.set(x, 7 + ((x + i) % 2), '#4aa83c'); }
+        p.rect(0, 0, 16, 8, '#6ab8ff'); p.hline(0, 0, 16, '#8fcdff'); p.hline(0, 5, 16, '#a8dcff'); p.hline(0, 7, 16, '#eaf7ff');
+        p.rect(0, 8, 16, 8, '#2e7a2a');
+        for (let x = 0; x < 16; x++) { p.set(x, 8, '#1a5018'); p.set(x, 9 + ((x + i) % 2), '#4aa83c'); }
         const flower = (x, y) => { for (const [dx, dy] of [[0, -1], [-1, 0], [1, 0], [0, 1]]) p.set(x + dx, y + dy, '#ff3a4a'); p.set(x, y, '#ffe040'); };
-        flower(4, 10); flower(11, 12 - i);
+        flower(4, 12); flower(11, 13 - i);
         p.hline(0, 15, 16, '#1a5018');
         return p;
       },
-      wall(i) {
+      wall(i) { // a clipped hedge, lit along the top, leaf clumps in the shade
         const p = new Pix(16, 16);
-        p.rect(0, 0, 16, 16, '#b0603c');
-        for (let r = 0; r < 4; r++) {
-          p.hline(0, r * 4 + 3, 16, '#7e3e24');
-          const o = r % 2 ? 4 : 0;
-          p.vline(o + 2, r * 4, 3, '#7e3e24'); p.vline(o + 10, r * 4, 3, '#7e3e24');
+        p.rect(0, 0, 16, 16, '#2c7a34');
+        p.rect(0, 0, 16, 4, '#3f9e4e'); p.hline(0, 0, 16, '#63c162');
+        for (let n = 0; n < 10; n++) {
+          const x = Math.floor(hash(n, i, 61) * 15), y = 3 + Math.floor(hash(n, i, 62) * 12);
+          p.set(x, y, '#1c5a2a'); p.set(x + 1, y, '#1c5a2a'); p.set(x, y - 1, '#49a854');
         }
-        p.set(3, 1, '#4cb84c'); p.set(12, 9, '#4cb84c');
+        p.hline(0, 15, 16, '#17491f');
         return p;
       },
     },
@@ -1869,49 +1873,83 @@
         p.set(7, 6, '#ff8c2e'); p.set(8, 6, '#ff8c2e');
         return p.outlined('#2c3b5c');
       },
-      wallTop(i) { // small snowy pine trees on white snow
+      wallTop(i) { // snow falling out of a blue sky onto a line of little pines
         const p = new Pix(16, 16);
-        p.rect(0, 0, 16, 16, '#e8f4ff');
-        p.set(2 + i * 5, 2, '#ffffff'); p.set(13 - i * 3, 5, '#ffffff');
-        const t = new Pix(12, 14);
-        tri(t, 1, 0, 10, 12, '#2e7a4a'); tri(t, 3, 0, 6, 5, '#ffffff'); t.hline(2, 8, 8, '#1e5a36'); t.rect(5, 12, 2, 2, '#6d4a36');
-        p.blit(t.outlined('#000000'), 2, 0);
+        p.rect(0, 0, 16, 7, '#8fc8f2'); p.hline(0, 0, 16, '#a8dcff');
+        for (const [x, y] of [[2 + i * 5, 2], [9 - i * 3, 4], [13, 1]]) p.set(x, y, '#ffffff');
+        p.rect(0, 7, 16, 9, '#e8f4ff');
+        const t = new Pix(12, 12);
+        tri(t, 1, 0, 10, 10, '#2e7a4a'); tri(t, 3, 0, 6, 4, '#ffffff'); t.hline(2, 7, 8, '#1e5a36'); t.rect(5, 10, 2, 2, '#6d4a36');
+        p.blit(t.outlined('#000000'), 2, 3);
         p.rect(0, 14, 16, 2, '#b8d4f0');
         return p;
       },
-      wall(i) {
+      wall(i) { // packed snow bricks, icy where the light hits them
         const p = new Pix(16, 16);
-        p.rect(0, 0, 16, 16, '#7d8fb3');
-        p.rect(0, 0, 16, 5, '#ffffff'); p.hline(0, 5, 16, '#c9dcf5');
-        p.rect(2, 8, 5, 3, '#6a7ba0'); p.rect(9, 11, 5, 3, '#6a7ba0');
+        p.rect(0, 0, 16, 16, '#bcd9f2');
+        p.rect(0, 0, 16, 5, '#f2f8ff'); p.hline(0, 5, 16, '#8fb4d8');
+        p.rect(2, 8, 5, 3, '#a4c6e8'); p.rect(9, 11, 5, 3, '#a4c6e8');
+        p.hline(0, 15, 16, '#8fb4d8');
         return p;
       },
     },
     candy: {
       name: '糖果城', bg: '#4a1f3a',
-      floor(i) {
+      floor(i) { // sugar cubes, as in the original: white blocks with a soft seam and a sprinkle now and then
         const p = new Pix(16, 16);
-        p.rect(0, 0, 16, 16, i ? '#ffd3e4' : '#fff1f7');
+        p.rect(0, 0, 16, 16, i ? '#f0f0f6' : '#fafaff');
+        p.hline(0, 0, 16, '#ffffff'); p.vline(0, 0, 16, '#ffffff');
+        p.hline(0, 15, 16, '#d6d6e2'); p.vline(15, 0, 16, '#d6d6e2');
+        p.hline(1, 14, 14, '#e8e8f0');
         const sp = ['#ec3d5f', '#3d86f0', '#ffd23f', '#4cb84c'];
-        for (let n = 0; n < 3; n++) {
-          const x = Math.floor(hash(n, i, 41) * 14) + 1, y = Math.floor(hash(n, i, 42) * 14) + 1;
-          p.set(x, y, sp[n % 4]); p.set(x + 1, y, sp[n % 4]);
+        if (hash(i, 3, 41) > 0.45) {
+          const x = Math.floor(hash(1, i, 41) * 10) + 3, y = Math.floor(hash(2, i, 42) * 10) + 3;
+          p.set(x, y, sp[Math.floor(hash(3, i, 43) * 4)]); p.set(x + 1, y, sp[Math.floor(hash(4, i, 44) * 4)]);
         }
         return p;
       },
-      hard() { // chocolate block
+      hard() { // a candy-cane pillar: white bands round red, lit down its left side
         const p = new Pix(16, 20);
-        p.rect(0, 0, 16, 6, '#9c5f3a'); p.rect(0, 6, 16, 14, '#6a3c26');
-        p.hline(0, 3, 16, '#7e4a2e'); p.vline(8, 0, 6, '#7e4a2e');
-        p.rect(1, 7, 6, 5, '#7e4a2e'); p.rect(9, 7, 6, 5, '#7e4a2e'); p.rect(1, 13, 6, 5, '#7e4a2e'); p.rect(9, 13, 6, 5, '#7e4a2e');
-        p.hline(1, 7, 6, '#a8704c'); p.hline(9, 7, 6, '#a8704c'); p.hline(1, 13, 6, '#a8704c'); p.hline(9, 13, 6, '#a8704c');
+        for (let y = 0; y < 20; y++) {
+          const w = y < 3 ? 12 - (3 - y) * 2 : 12;
+          const x0 = 8 - (w >> 1);
+          for (let x = x0; x < x0 + w; x++) {
+            const white = (((y + 2) >> 2) % 2) === 1;
+            const t = (x - x0) / w;
+            p.set(x, y, white ? (t < 0.22 ? '#ffffff' : t < 0.68 ? '#f2f2fa' : '#c4c8d8') : (t < 0.22 ? '#ff8a8a' : t < 0.68 ? '#e8203c' : '#9c0c18'));
+          }
+        }
+        p.hline(4, 0, 8, '#ffc0c0');
         return p.outlined(K);
       },
-      soft(i) { // strawberry
+      hard2() { // a cupcake: a swirl of icing under a cherry, in a striped case
         const p = new Pix(16, 20);
-        ball(p, 1, 5, 14, 14, '#ff9aae', '#ec3d5f', '#a51f40', 0.15);
-        for (let n = 0; n < 7; n++) p.set(3 + Math.floor(hash(n, i, 43) * 10), 8 + Math.floor(hash(n, i, 44) * 9), '#ffe14d');
-        tri(p, 3, 2, 10, 5, '#4cb84c'); p.rect(7, 0, 2, 3, '#2c7a33');
+        for (let j = 0; j < 8; j++) {
+          const half = 7 - ((j / 3) | 0);
+          for (let x = 8 - half; x < 8 + half; x++) p.set(x, 12 + j, ((x + (j >> 2)) >> 1) % 2 ? '#eef1f8' : '#8fb4d8');
+        }
+        p.hline(1, 12, 14, '#ffffff'); p.hline(3, 19, 10, '#5f83a8');
+        ball(p, 2, 6, 12, 8, '#ffffff', '#f2f2fa', '#cfd4e4');
+        ball(p, 3, 3, 10, 7, '#ffffff', '#f6f6ff', '#d8dceb');
+        ball(p, 5, 1, 6, 5, '#ffffff', '#fafaff', '#dde1ee');
+        for (const [x, y] of [[4, 9], [11, 7], [6, 5]]) { p.set(x, y, '#d2d7e8'); p.set(x + 1, y + 1, '#eef0f8'); }
+        ball(p, 6, 0, 4, 4, '#ff8a9a', '#e8203c', '#9c1020');
+        p.set(9, 0, '#2c7a33');
+        return p.outlined(K);
+      },
+      soft(i) { // a plump strawberry: seeds in rows, a leafy crown, the light on its shoulder
+        const p = new Pix(16, 20);
+        for (let j = 0; j < 14; j++) {
+          const half = j < 3 ? 5 + j : j < 8 ? 7 : Math.max(2, 7 - (j - 7));
+          for (let x = 8 - half; x < 8 + half; x++) {
+            const t = (x - (8 - half)) / Math.max(1, half * 2 - 1);
+            p.set(x, 5 + j, t < 0.22 ? '#ff8a9a' : t < 0.6 ? '#e8384f' : '#a51f40');
+          }
+        }
+        p.set(5, 7, '#ffc2cb'); p.set(6, 7, '#ff8a9a'); p.set(5, 8, '#ff8a9a');
+        for (const [x, y] of [[6, 9], [10, 9], [8, 11], [5, 12], [11, 12], [7, 14], [10, 15]]) { p.set(x + (i % 2), y, '#ffe14d'); p.set(x + (i % 2), y + 1, '#c8960c'); }
+        stamp(p, ['g.g.g.g', 'gGgGgGg', '.gGGGg.', '..gGg..'], 4, 1, { g: '#4cb84c', G: '#2c7a33' });
+        p.rect(8, 0, 2, 3, '#2c7a33'); p.set(8, 0, '#6cd06a');
         return p.outlined(K);
       },
       wallTop(i) { // strawberries in white cups on a candy stripe
@@ -1925,20 +1963,26 @@
         p.blit(c.outlined('#000000'), 2, 0);
         return p;
       },
-      wall(i) {
+      wall(i) { // candy-cane stripes down the sides, as the original frames this stage
         const p = new Pix(16, 16);
-        p.rect(0, 0, 16, 16, '#e0a45a'); p.rect(1, 1, 14, 14, '#eab46e');
-        p.set(4, 4, '#b8763c'); p.set(11, 5, '#b8763c'); p.set(5, 11, '#b8763c'); p.set(11, 11, '#b8763c');
+        for (let y = 0; y < 16; y++)
+          for (let x = 0; x < 16; x++) {
+            const band = ((x + y + i * 4) >> 2) % 2;
+            p.set(x, y, band ? '#e8203c' : '#fff4f8');
+            if (band && (x + y + i * 4) % 4 === 0) p.set(x, y, '#ff6a80');
+            if (!band && (x + y + i * 4) % 4 === 3) p.set(x, y, '#ffd8e2');
+          }
         return p;
       },
     },
     lab: {
       name: '研究所', bg: '#171a26',
-      floor(i) {
+      floor(i) { // pale metal plate, speckled, riveted at the corners
         const p = new Pix(16, 16);
-        p.rect(0, 0, 16, 16, i ? '#a7adc2' : '#b3b9cc');
-        p.hline(0, 0, 16, '#c9cedd'); p.hline(0, 15, 16, '#878ca3'); p.vline(15, 0, 16, '#878ca3');
-        p.set(2, 2, '#878ca3'); p.set(13, 2, '#878ca3'); p.set(2, 13, '#878ca3'); p.set(13, 13, '#878ca3');
+        p.rect(0, 0, 16, 16, i ? '#e0e2ec' : '#eceef6');
+        p.hline(0, 0, 16, '#fbfcff'); p.hline(0, 15, 16, '#b4b8c8'); p.vline(15, 0, 16, '#b4b8c8');
+        for (let n = 0; n < 5; n++) p.set(Math.floor(hash(n, i, 51) * 12) + 2, Math.floor(hash(n, i, 52) * 12) + 2, '#cdd1de');
+        for (const [x, y] of [[2, 2], [13, 2], [2, 13], [13, 13]]) { p.set(x, y, '#9aa0b4'); p.set(x, y - 1, '#ffffff'); }
         return p;
       },
       hard() {
@@ -1950,11 +1994,30 @@
         p.hline(0, 19, 16, '#3a3e56');
         return p.outlined(K);
       },
-      soft(i) { // cardboard box
+      hard2() { // a lab terminal: a tower beside a monitor, the screen catching the light
         const p = new Pix(16, 20);
-        p.rect(1, 3, 14, 6, '#e0b47a'); p.rect(1, 9, 14, 10, '#c9955a');
-        p.rect(7, 3, 2, 6, '#f5e6c8'); p.rect(7, 9, 2, 4, '#f5e6c8');
-        p.hline(1, 9, 14, '#9c6e3c');
+        p.rect(0, 2, 5, 18, '#4a4f68'); p.rect(1, 3, 3, 16, '#6a7090');
+        p.hline(1, 3, 3, '#8e94b0');
+        p.rect(1, 5, 3, 1, '#2a2b40'); p.rect(1, 7, 3, 1, '#2a2b40');
+        p.set(2, 10, '#e8384f'); p.set(3, 12, '#4cb84c');
+        p.rect(5, 4, 11, 11, '#c9cedd'); p.hline(5, 4, 11, '#eef1f8'); p.hline(5, 14, 11, '#9aa0b4');
+        p.rect(6, 5, 9, 8, '#1c2c58');
+        for (let n = 0; n < 2; n++)
+          for (let j = 0; j < 8; j++) {
+            const x = 7 + n * 4 + Math.floor(j * 0.55);
+            if (x < 15) p.set(x, 5 + j, n ? '#4e86c8' : '#9ad8ff');
+          }
+        p.rect(8, 15, 5, 2, '#9aa0b4'); p.rect(6, 17, 9, 3, '#7a8098'); p.hline(6, 17, 9, '#b4bacd');
+        p.set(7, 18, '#e8384f'); p.set(9, 18, '#ffd23f'); p.set(11, 18, '#4cb84c');
+        return p.outlined(K);
+      },
+      soft(i) { // a hazard-striped crate, like the barriers the original's lab is stacked with
+        const p = new Pix(16, 20);
+        p.rect(0, 2, 16, 4, '#eeb04a'); p.hline(0, 2, 16, '#ffd898');
+        p.rect(0, 6, 16, 13, '#dc9a2e');
+        for (let y = 6; y < 19; y++)
+          for (let x = 0; x < 16; x++) if ((((x + y + i * 3) >> 2) % 2) === 0) p.set(x, y, '#6a4415');
+        p.hline(0, 6, 16, '#8c5a14'); p.hline(0, 18, 16, '#8c5a14');
         return p.outlined(K);
       },
       wallTop(i) { // warning signs over a red and blue hazard band
@@ -1999,25 +2062,28 @@
         ball(p, 2, 9, 12, 10, '#8d86a8', '#4a3d66', '#1c1526'); ball(p, 6, 12, 4, 4, null, '#ffd23f', null);
         return p.outlined(K);
       },
-      soft(i) { // toy crates with a star, a heart or a moon
+      soft(i) { // a frothy mug, the toy box's own prize, handle out to one side
         const p = new Pix(16, 20);
-        const [lt, mid, dk] = [['#c9ecff', '#6fb8f0', '#3d86f0'], ['#dcf9b8', '#8ad86a', '#3f9c44'], ['#fff3b0', '#ffd23f', '#d49a14']][i % 3];
-        p.rect(1, 3, 14, 5, lt); p.rect(1, 8, 14, 11, mid); p.hline(1, 8, 14, dk); p.vline(1, 8, 11, lt);
-        const motif = [['.w.', 'www', '.w.'], ['w.w', 'www', '.w.'], ['ww.', 'w..', 'ww.']][i % 3];
-        stamp(p, motif, 6, 11, { w: '#ffffff' });
+        p.rect(2, 6, 10, 13, '#ffc53a');
+        p.rect(3, 6, 8, 13, '#ffd76a'); p.vline(3, 7, 11, '#fff0b0');
+        for (let n = 0; n < 4; n++) p.set(5 + ((n * 3 + i) % 6), 10 + n * 2, '#ffe9a8');
+        p.rect(12, 9, 3, 6, '#f0b224'); p.rect(13, 10, 1, 4, '#ffe9a8');
+        p.rect(1, 3, 12, 4, '#ffffff');
+        ball(p, 1, 1, 6, 5, '#ffffff', '#f4f4fc', '#dcdce8');
+        ball(p, 6, 0, 7, 5, '#ffffff', '#f8f8ff', '#dcdce8');
+        p.hline(2, 18, 10, '#c88a00');
         return p.outlined(K);
       },
-      wallTop(i) { // a shelf of little toy cups
+      wallTop(i) { // a wall of amps, as the original stacks them behind its stage
         const p = new Pix(16, 16);
-        p.rect(0, 0, 16, 16, '#3a3a48');
-        p.rect(0, 12, 16, 4, '#8a8a9a'); p.hline(0, 12, 16, '#c8c8d8'); p.hline(0, 15, 16, '#000000');
-        const cup = (x, col, dark) => {
-          const c = new Pix(6, 9);
-          c.rect(0, 0, 6, 2, '#ffffff'); c.rect(1, 2, 4, 5, col); c.vline(4, 2, 5, dark); c.rect(2, 7, 2, 2, dark);
-          p.blit(c.outlined('#000000'), x, 3);
-        };
-        cup(1, i ? '#ff6a8a' : '#6ad04a', i ? '#c83a5a' : '#2e8a2a');
-        cup(8, i ? '#3a9df0' : '#ffd23f', i ? '#1a5ec4' : '#c88a00');
+        p.rect(0, 0, 16, 16, '#2e2e3c');
+        p.rect(1, 1, 14, 12, '#6e6e82'); p.hline(1, 1, 14, '#9d9db4'); p.vline(1, 1, 12, '#8b8ba2');
+        p.rect(3, 3, 10, 8, '#4a4a5c');
+        for (let y = 4; y < 11; y += 2) for (let x = 4; x < 12; x += 2) p.set(x + (i % 2), y, '#2a2a38');
+        ball(p, 5, 4, 6, 6, '#8d86a8', '#3a3a4c', '#1c1526');
+        p.set(7 + i, 6, '#ffd23f');
+        p.hline(1, 12, 14, '#22222e');
+        p.rect(0, 13, 16, 3, '#8a8a9a'); p.hline(0, 13, 16, '#c8c8d8'); p.hline(0, 15, 16, '#000000');
         return p;
       },
       wall(i) {
@@ -2029,27 +2095,67 @@
     },
     jewel: {
       name: '寶石宮殿', bg: '#2b1a12',
-      floor(i) { // gold tiles with inset gems
+      floor(i) { // a gold plate framed in filigree with a little gem set in the middle, as the palace's floor is laid
         const p = new Pix(16, 16);
-        p.rect(0, 0, 16, 16, i ? '#dcc08a' : '#e6cd98');
-        p.hline(0, 0, 16, '#f2e0b4'); p.hline(0, 15, 16, '#c2a064'); p.vline(15, 0, 16, '#c2a064');
-        if (!i) stamp(p, ['.y.', 'yoy', '.y.'], 6, 6, { y: '#f2e0b4', o: '#b0506a' });
+        p.rect(0, 0, 16, 16, i ? '#f0b81e' : '#f7c62c');
+        p.hline(0, 0, 16, '#ffe486'); p.vline(0, 0, 16, '#ffe486');
+        p.hline(0, 15, 16, '#a8760a'); p.vline(15, 0, 16, '#a8760a');
+        // the frame: a darker gold border with a corner flourish at each corner
+        p.rect(2, 2, 12, 12, '#d69a10');
+        p.rect(3, 3, 10, 10, i ? '#f6c227' : '#fdcf35');
+        p.hline(3, 3, 10, '#ffeaa8'); p.vline(3, 3, 10, '#ffeaa8');
+        for (const [x, y] of [[2, 2], [13, 2], [2, 13], [13, 13]]) { p.set(x, y, '#fff3c0'); }
+        for (const [x, y] of [[4, 2], [11, 2], [2, 4], [2, 11], [13, 4], [13, 11], [4, 13], [11, 13]]) p.set(x, y, '#a8760a');
+        // the gem, cut and set: colour rotates with the tile
+        const gem = [['#8ae07a', '#2c9a3a', '#165c22'], ['#ffb3c1', '#e8384f', '#9c1a30'], ['#a8d4ff', '#3a8fe0', '#12457e']][i % 3];
+        stamp(p, ['.ggg.', 'gGllG', 'gGGlG', '.gGg.'], 6, 6, { g: gem[2], G: gem[1], l: gem[0] });
+        p.set(7, 7, '#ffffff');
         return p;
       },
-      hard() { // blue orb on a gold pedestal
+      hard() { // a blue orb held in a gold cradle: arms up each side, a plate under it
         const p = new Pix(16, 20);
-        p.rect(3, 13, 10, 5, '#e0a014'); p.hline(3, 13, 10, '#ffe38a'); p.rect(2, 17, 12, 3, '#c98f24');
-        ball(p, 1, 0, 14, 14, '#e6fbff', '#5cb8f4', '#1f5fb0', 0.18);
+        // cradle arms
+        stamp(p, [
+          'y........y',
+          'yY......Yy',
+          '.yY....Yy.',
+          '..yY..Yy..',
+          '..yo..oy..',
+        ], 3, 11, { y: '#ffd23f', Y: '#e0a014', o: '#a8730c' });
+        // base plate, lit on top and deep underneath
+        p.rect(1, 16, 14, 3, '#e0a014'); p.hline(1, 16, 14, '#ffe38a'); p.hline(1, 18, 14, '#8c6410');
+        p.rect(3, 15, 10, 1, '#c8860c');
+        // the orb itself, lit from the top-left with a hard specular
+        ball(p, 2, 0, 12, 13, '#cfeaff', '#3a8fe0', '#0f3c70', 0.22);
+        p.set(5, 2, '#ffffff'); p.set(6, 2, '#eaf6ff'); p.set(5, 3, '#eaf6ff');
+        for (let x = 5; x < 11; x++) p.set(x, 11, '#0c3260');
+        p.set(4, 9, '#8fd0ff'); p.set(11, 5, '#1a5fa8');
         return p.outlined(K);
       },
-      hard2() { // crystal
+      hard2() { // a cut diamond: a flat table, a girdle, and facets running down to the point
         const p = new Pix(16, 20);
-        for (let j = 0; j < 19; j++) {
-          const half = j < 5 ? 2 + j : j < 14 ? 7 : Math.max(1, 7 - (j - 13) * 2);
-          for (let x = -half; x < half; x++) p.set(8 + x, j, x < -2 ? '#ffffff' : x < 2 ? '#cdeeff' : '#8fd3ff');
+        // crown: the table and the sloping facets round it
+        p.rect(4, 2, 8, 4, '#eef6ff');
+        p.hline(4, 2, 8, '#ffffff'); p.rect(5, 3, 3, 2, '#ffffff');
+        for (let j = 0; j < 2; j++) { const half = 6 + j; p.rect(8 - half, 6 + j, half * 2, 1, '#dfeaf8'); }
+        p.set(2, 6, '#ffffff'); p.set(13, 7, '#a8bcd6');
+        // the girdle
+        p.hline(1, 8, 14, '#b9c9e0'); p.hline(1, 9, 14, '#ffffff');
+        // pavilion: facets tapering to the point, light on the left, shade on the right
+        for (let j = 0; j < 10; j++) {
+          const half = Math.max(1, 7 - Math.round(j * 0.72));
+          for (let x = 8 - half; x < 8 + half; x++) {
+            const t = (x - (8 - half)) / Math.max(1, half * 2 - 1);
+            p.set(x, 10 + j, t < 0.22 ? '#ffffff' : t < 0.48 ? '#eef6ff' : t < 0.76 ? '#c6d6ec' : '#9fb4d0');
+          }
         }
-        p.vline(8, 1, 16, '#ffffff'); p.set(5, 7, '#ffffff'); p.set(11, 11, '#ffffff');
-        return p.outlined('#3a6a9a');
+        // the seams between facets
+        for (let j = 0; j < 9; j++) {
+          p.set(8 - Math.round(j * 0.6) - 1, 10 + j, '#93a8c6');
+          p.set(8 + Math.round(j * 0.5), 10 + j, '#8fa4c0');
+        }
+        p.set(6, 12, '#ffffff'); p.set(7, 13, '#ffffff');
+        return p.outlined('#3f5878');
       },
       soft(i) { // a treasure heap topped with a ruby, an emerald or an amethyst
         const p = new Pix(16, 20);
@@ -2178,6 +2284,26 @@
     });
   }
   const block = (pix) => softInk(bevel(inkOutline(pix)), 0.5);
+  // the frame round the field: give each wall tile a lit top-left and a shaded bottom-right so it has thickness
+  function wallDepth(p, amt) {
+    const a = amt == null ? 1 : amt;
+    for (let x = 0; x < p.w; x++) {
+      const t0 = p.get(x, 0), t1 = p.get(x, 1);
+      if (t0) p.set(x, 0, mix(t0, '#ffffff', 0.42 * a));
+      if (t1) p.set(x, 1, mix(t1, '#ffffff', 0.2 * a));
+      const b0 = p.get(x, p.h - 1), b1 = p.get(x, p.h - 2);
+      if (b0) p.set(x, p.h - 1, mix(b0, '#000000', 0.44 * a));
+      if (b1) p.set(x, p.h - 2, mix(b1, '#000000', 0.22 * a));
+    }
+    for (let y = 1; y < p.h - 1; y++) {
+      const l = p.get(0, y), l1 = p.get(1, y), r = p.get(p.w - 1, y), r1 = p.get(p.w - 2, y);
+      if (l) p.set(0, y, mix(l, '#ffffff', 0.3 * a));
+      if (l1) p.set(1, y, mix(l1, '#ffffff', 0.12 * a));
+      if (r) p.set(p.w - 1, y, mix(r, '#000000', 0.34 * a));
+      if (r1) p.set(p.w - 2, y, mix(r1, '#000000', 0.14 * a));
+    }
+    return p;
+  }
   // Little things lying about on each theme's floor, three per theme: a knot, a scratch and a dropped pencil in the
   // classroom; a daisy, a tuft and a clover in the garden; a glint, footprints and a drift in the snow; sprinkles, a
   // heart candy and crumbs on the candy floor; a rivet, a scratch and a vent in the lab; a star, a brick and a marble in
@@ -2233,8 +2359,8 @@
       hard: block(T.hard()),
       hard2: T.hard2 ? block(T.hard2()) : null,
       soft: [T.soft(0), T.soft(1), T.soft(2)].map(block),
-      wallTop: [T.wallTop(0), T.wallTop(1)],
-      wall: calm(T.wall(0), 0.3),
+      wallTop: [wallDepth(T.wallTop(0), 0.5), wallDepth(T.wallTop(1), 0.5)],
+      wall: wallDepth(calm(T.wall(0), 0.3)),
     };
   }
 
@@ -2271,6 +2397,34 @@
       p.rect(22, 58, 4, 4, '#b78a5a');
       return p.outlined(K);
     }
+    if (kind === 'well') { // the garden's wishing well: a wooden barrel under a red roof on two posts
+      p = new Pix(48, 62);
+      // the roof, overhanging, with its ridges
+      for (let j = 0; j < 12; j++) {
+        const half = 5 + j * 2;
+        for (let x = 24 - half; x < 24 + half; x++) p.set(x, 8 + j, x < 24 - half + 2 ? '#ff8a72' : x > 24 + half - 3 ? '#9c2418' : '#e8402a');
+      }
+      for (let x = 6; x < 42; x += 7) p.vline(x, 10, 9, '#c8301e');
+      p.hline(2, 20, 44, '#7a1a10');
+      p.rect(23, 2, 2, 7, '#8c5530'); p.rect(21, 0, 6, 3, '#ffd23f'); p.set(21, 0, '#fff3c0');
+      // the posts
+      p.rect(8, 20, 4, 21, '#a8683c'); p.rect(36, 20, 4, 21, '#a8683c');
+      p.vline(8, 20, 21, '#c98a5a'); p.vline(39, 20, 21, '#6b4527');
+      // the crank across them, with its rope
+      p.rect(10, 25, 28, 3, '#8c5530'); p.hline(10, 25, 28, '#c08a5a');
+      p.vline(24, 28, 5, '#e8e4d8');
+      p.rect(21, 33, 6, 4, '#a8683c'); p.hline(21, 33, 6, '#d9a05e');
+      // the barrel: staves round a dark mouth with water in it
+      ball(p, 6, 36, 36, 20, '#d9a05e', '#b0743c', '#7a4a20');
+      for (let x = 9; x < 40; x += 5) p.vline(x, 40, 14, '#8c5a2c');
+      p.rect(9, 38, 30, 4, '#c08a4a'); p.hline(9, 38, 30, '#e8b878');
+      ball(p, 12, 36, 24, 9, null, '#3a2a18', null);
+      ball(p, 14, 38, 20, 6, '#6aa8d8', '#2e6ea8', '#17436e');
+      p.set(20, 40, '#bfe4ff'); p.set(21, 41, '#8fc8ee');
+      // grass tucked round its foot
+      for (const [x, y] of [[4, 55], [42, 54], [12, 58], [34, 58]]) { p.set(x, y, '#4cb84c'); p.set(x + 1, y - 1, '#6cd06a'); }
+      return p.outlined(K);
+    }
     if (kind === 'igloo') {
       p = new Pix(48, 50);
       ball(p, 1, 6, 46, 50, '#ffffff', '#e8f2ff', '#aac3e6', 0.18);
@@ -2295,30 +2449,68 @@
       p.rect(22, 0, 1, 8, '#6d4a36'); p.rect(23, 0, 6, 4, '#ec3d5f'); p.hline(23, 0, 6, '#ff8aa0'); p.set(22, 2, '#8c6a50');
       return p.outlined('#2c3b5c');
     }
-    if (kind === 'castle') {
+    if (kind === 'castle') { // the candy house: a white keep under four red domes, a gold window full of sweets
       p = new Pix(48, 64);
-      p.rect(4, 28, 40, 34, '#ffc2d8');
-      // sugar bricks: a shaded course line with a lit edge under it, and the walls lighter to the left
-      for (let y = 30; y < 62; y += 6) { p.hline(4, y, 40, '#f085a6'); p.hline(4, y + 1, 40, '#ffd6e4'); }
-      for (let x = 8; x < 44; x += 8) p.vline(x, 28, 34, '#ffd6e4');
-      p.vline(4, 28, 34, '#fff1f7'); p.vline(5, 28, 34, '#ffe2ec');
-      p.vline(43, 28, 34, '#e0748f'); p.vline(42, 28, 34, '#f59ab4');
-      for (let x = 4; x < 44; x += 4) p.rect(x, 28, 2, 3 + ((x >> 2) % 2) * 2, '#ffffff');
-      ball(p, 18, 44, 12, 24, null, '#6a3c26', null);
-      for (let y = 62; y < 64; y++) for (let x = 0; x < 48; x++) p.clear(x, y);
-      const tower = (x, y, w, h) => {
-        p.rect(x, y, w, h, '#fff1f7'); p.vline(x + 2, y, h, '#ffd6e4');
-        const roof = new Pix(w + 2, 12);
-        tri(roof, 0, 0, w + 2, 12, '#ec3d5f');
-        for (let j = 2; j < 12; j += 4) for (let i = 0; i < w + 2; i++) if (roof.solid(i, j)) roof.set(i, j, '#ffffff');
-        p.blit(roof, x - 1, y - 12);
+      const brick = (x, y, w, h) => {
+        p.rect(x, y, w, h, '#e4e8f2');
+        for (let j = y + 3; j < y + h; j += 5) { p.hline(x, j, w, '#9aa2b8'); p.hline(j % 2 ? x : x + 3, j + 1, w - 3, '#fbfdff'); }
+        for (let i = x + 5; i < x + w; i += 7) p.vline(i, y, h, '#c6ccdc');
+        p.vline(x, y, h, '#ffffff'); p.vline(x + 1, y, h, '#f4f7fc');
+        p.vline(x + w - 1, y, h, '#8d95ab'); p.vline(x + w - 2, y, h, '#b8c0d2');
       };
-      tower(0, 22, 12, 26); tower(36, 22, 12, 26); tower(17, 14, 14, 20);
-      p.rect(23, 0, 1, 4, '#6d4a36'); stamp(p, ['r.r', 'rrr', '.r.'], 24, 0, { r: '#ec3d5f' });
-      for (const [x, y] of [[3, 30], [39, 30]]) {
-        p.rect(x, y, 6, 6, '#2a1b30'); p.rect(x + 1, y + 1, 4, 4, '#ffe38a');
-        p.set(x + 1, y + 1, '#fff6d0'); p.hline(x + 1, y + 4, 4, '#c8952c'); p.hline(x, y + 6, 6, '#f085a6');
+      // a fat red dome with a white collar under it
+      const dome = (cx, top, r) => {
+        for (let j = 0; j < r + 1; j++) {
+          const half = Math.round(Math.sqrt(Math.max(0, r * r - (r - j) * (r - j))));
+          for (let x = cx - half; x <= cx + half; x++) {
+            const t = (x - (cx - half)) / Math.max(1, half * 2);
+            p.set(x, top + j, t < 0.26 ? '#ff9a9a' : t < 0.58 ? '#e8202c' : '#9c0c18');
+          }
+        }
+        p.set(cx - Math.round(r * 0.45), top + 2, '#ffd8d8'); p.set(cx - Math.round(r * 0.45) + 1, top + 2, '#ff8a8a');
+        p.rect(cx - r - 1, top + r + 1, r * 2 + 3, 3, '#e4e8f2');
+        p.hline(cx - r - 1, top + r + 1, r * 2 + 3, '#ffffff'); p.hline(cx - r - 1, top + r + 3, r * 2 + 3, '#9aa2b8');
+      };
+      // the keep, its turrets, and the battlements across the top of the keep
+      brick(0, 16, 14, 46);
+      brick(34, 16, 14, 46);
+      brick(12, 10, 24, 52);
+      for (let x = 13; x < 35; x += 5) { p.rect(x, 6, 4, 5, '#e4e8f2'); p.hline(x, 6, 4, '#ffffff'); }
+      p.rect(12, 10, 24, 2, '#c6ccdc'); p.hline(12, 10, 24, '#ffffff');
+      // four domes: two over the turret tops, two lower down
+      dome(7, 4, 7); dome(41, 4, 7);
+      dome(7, 32, 6); dome(41, 32, 6);
+      // the gold window: a thick frame round a dark case of sweets
+      p.rect(15, 20, 18, 17, '#a8730c');
+      p.rect(16, 21, 16, 15, '#ffd23f'); p.hline(16, 21, 16, '#fff3c0');
+      p.rect(18, 23, 12, 11, '#6a2a1a');
+      stamp(p, [
+        '.rr.gg.y',
+        'rrrrgg.y',
+        '.rr.b.yy',
+        'y.bbbb..',
+        '.gg.bb.r',
+        'gg...rrr',
+      ], 19, 24, { r: '#e8384f', g: '#4cb84c', y: '#ffd23f', b: '#3d86f0' });
+      p.rect(15, 37, 18, 2, '#c8860c'); p.hline(15, 37, 18, '#ffe38a');
+      // candies set in a row along the foot of the walls
+      const sweets = ['#e8384f', '#4cb84c', '#ffd23f', '#3d86f0', '#ffffff'];
+      for (let x = 2; x < 46; x += 4) {
+        if (x > 17 && x < 31) continue;
+        const c = sweets[(x >> 2) % 5];
+        p.set(x, 45, c); p.set(x + 1, 45, c); p.set(x, 46, c); p.set(x + 1, 46, c);
+        p.set(x, 44, '#ffffff');
       }
+      // the arch, framed in stone
+      p.rect(18, 46, 12, 16, '#c6ccdc'); p.hline(18, 46, 12, '#ffffff');
+      ball(p, 20, 48, 8, 20, null, '#5a2c1a', null);
+      p.rect(20, 56, 8, 6, '#4a2414');
+      // a cane leaning by the gate
+      for (let y = 50; y < 62; y++) p.rect(11, y, 3, 1, (y >> 1) % 2 ? '#e8203c' : '#ffffff');
+      p.set(11, 49, '#ffffff'); p.set(12, 48, '#e8203c'); p.set(13, 49, '#ffffff');
+      // the plinth it all stands on
+      p.rect(0, 59, 48, 3, '#b8c0d2'); p.hline(0, 59, 48, '#e4e8f2'); p.hline(0, 61, 48, '#8d95ab');
+      for (let y = 62; y < 64; y++) for (let x = 0; x < 48; x++) p.clear(x, y);
       return p.outlined(K);
     }
     if (kind === 'podium') { // 3x2: blackboard on the wall, teacher's desk in front
@@ -2369,7 +2561,7 @@
       stamp(p, ['...y...', '..yyy..', 'yyyyyyy', '.yyyyy.', '.yy.yy.', 'y.....y'], 20, 2, { y: '#ffe14d' });
       return p.outlined(K);
     }
-    if (kind === 'egg') { // 3x3: the palace's giant jewelled egg
+    if (kind === 'eggOld') { // kept: the banded egg the palace used before
       p = new Pix(48, 62);
       ball(p, 7, 2, 34, 50, '#ffffff', '#f4eefc', '#c9bfe0', 0.2);
       // enamel: a long highlight down the left, a cool crescent on the right, and the light gathering at the foot
@@ -2388,6 +2580,59 @@
       p.rect(8, 50, 32, 9, '#e0a014'); p.hline(8, 50, 32, '#ffe38a'); p.hline(8, 57, 32, '#a8730c');
       p.rect(4, 58, 40, 4, '#c98f24'); p.hline(4, 58, 40, '#ffd23f'); p.hline(4, 61, 40, '#8c6410');
       for (const [x, y] of [[12, 53], [24, 53], [36, 53]]) stamp(p, ['.c.', 'cec', '.c.'], x - 1, y - 1, { c: '#ffe38a', e: '#fff6d0' });
+      return p.outlined(K);
+    }
+    if (kind === 'egg') { // 3x3: the palace's jewelled egg, as the close-up shows it
+      p = new Pix(48, 62);
+      // enamel: pale blue-white, lit from the top-left
+      ball(p, 7, 1, 34, 52, '#ffffff', '#dfeaf8', '#a8bcd6', 0.22);
+      for (let y = 4; y < 50; y++)
+        for (let x = 7; x < 41; x++) {
+          if (!p.solid(x, y)) continue;
+          if (!p.solid(x - 1, y)) { p.set(x, y, '#c2d2e8'); if (p.solid(x + 1, y)) p.set(x + 1, y, '#ffffff'); }
+          if (!p.solid(x + 1, y)) { p.set(x, y, '#8fa4c0'); if (p.solid(x - 1, y)) p.set(x - 1, y, '#b9c9e0'); }
+        }
+      stamp(p, ['.ww.', 'wwww', '.ww.'], 13, 8, { w: '#ffffff' });
+      // the gold crown of scrolls over the shoulder of the egg
+      const gold = '#ffd23f', goldL = '#fff3c0', goldD = '#c8860c';
+      for (const [x, y] of [[20, 5], [21, 4], [22, 4], [25, 4], [26, 4], [27, 5]]) { p.set(x, y, gold); p.set(x, y - 1, goldL); }
+      for (const [x, y, d] of [[17, 8, -1], [30, 8, 1]]) {
+        for (let n = 0; n < 5; n++) { p.set(x + d * n, 8 + (n > 2 ? 1 : 0), gold); p.set(x + d * n, 9 + (n > 2 ? 1 : 0), goldD); }
+        p.set(x + d * 5, 10, goldL); p.set(x + d * 5, 11, gold);
+      }
+      p.hline(18, 12, 12, gold); p.hline(18, 13, 12, goldD);
+      // the portrait window: a gold ring round warm cream, with a little figure in it
+      ball(p, 13, 17, 22, 20, goldL, gold, goldD, 0.2);
+      ball(p, 15, 19, 18, 16, '#fff0cc', '#ffd9a0', '#e0a86a', 0.2);
+      stamp(p, [
+        '..dddd..',
+        '.dddddd.',
+        'ddssssdd',
+        'dskssksd',
+        '.sssrss.',
+        '..wwww..',
+        '.wwrrww.',
+      ], 20, 21, { d: '#3a3350', s: '#ffe0c8', k: '#1c1830', w: '#ffffff', r: '#e8384f' });
+      p.set(22, 22, '#5a5270'); p.set(27, 26, '#f0c8ae');
+      // filigree under the window, and a pair of scrolls at the sides
+      for (const [x, d] of [[15, -1], [33, 1]]) {
+        for (let n = 0; n < 4; n++) p.set(x + d * n, 38 + n, gold);
+        p.set(x + d * 4, 41, goldL); p.set(x + d * 3, 43, goldD);
+      }
+      p.hline(19, 40, 10, gold); p.hline(19, 41, 10, goldD);
+      stamp(p, ['.g.', 'glg', '.g.'], 23, 43, { g: gold, l: goldL });
+      // two little white birds at its foot
+      const bird = (x, flip) => {
+        const b = new Pix(9, 9);
+        ball(b, 0, 3, 8, 6, '#ffffff', '#eef3fa', '#c2cede');
+        ball(b, 4, 0, 5, 5, '#ffffff', '#f4f8ff', '#c2cede');
+        b.set(7, 2, '#ff9a2e'); b.set(6, 1, '#2a1b30');
+        p.blit(b.outlined('#8fa4c0'), x, 48, flip);
+      };
+      bird(4, false); bird(35, true);
+      // the stand
+      p.rect(14, 53, 20, 5, '#c98f24'); p.hline(14, 53, 20, '#ffe38a'); p.hline(14, 57, 20, '#8c6410');
+      p.rect(10, 58, 28, 4, '#a8722c'); p.hline(10, 58, 28, '#ffd23f'); p.hline(10, 61, 28, '#6d4a12');
       return p.outlined(K);
     }
     return null;
@@ -3635,7 +3880,7 @@
     art.flame = {};
     for (let mask = 0; mask < 16; mask++) art.flame[mask] = [0, 1, 2, 3, 4, 5].map((s) => buildFlame(mask, s));
     art.decor = {};
-    for (const k of ['treehouse', 'igloo', 'castle', 'podium', 'cane', 'stage', 'egg']) art.decor[k] = volume(softInk(bevel(buildDecor(k))), 0.8);
+    for (const k of ['treehouse', 'well', 'igloo', 'castle', 'podium', 'cane', 'stage', 'egg']) art.decor[k] = volume(softInk(bevel(buildDecor(k))), 0.8);
     art.bgTile = buildBgTile();
     for (const k of ITEM_KEYS) art.items[k] = softInk(bevel(buildItem(k)));
     art.items.coin = [0, 1, 2, 3].map(buildCoin);

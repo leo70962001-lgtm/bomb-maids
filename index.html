@@ -123,6 +123,9 @@
     align-items: center;
     padding: 8px 18px calc(12px + env(safe-area-inset-bottom));
     gap: 12px;
+    /* over the picture layer (#art sits at z-index 1-2), so a portrait can never cover a key */
+    position: relative;
+    z-index: 4;
   }
   #dpad {
     --k: 44px; /* one key; the pad is three of them across */

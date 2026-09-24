@@ -90,7 +90,7 @@
       enemies: { dustcat: 3, piggy: 3 }, items: { bomb: 2, fire: 2, speed: 1, heart: 1, line: 1, skull: 1 }, soft: 0.62, dust: 4,
     },
     {
-      id: '2-1', theme: 'garden', title: '玫瑰花園除蟲', client: '花園伯爵夫人', reward: 300, time: 170, layout: 'plaza', decor: 'treehouse',
+      id: '2-1', theme: 'garden', title: '玫瑰花園除蟲', client: '花園伯爵夫人', reward: 300, time: 170, layout: 'plaza', decor: 'well',
       brief: ['暴走熊在玫瑰園裡橫衝直撞。', '別讓牠們弄壞樹屋！'],
       enemies: { piggy: 2, teddy: 3 }, items: { bomb: 2, fire: 2, clock: 1, heart: 1, pierce: 1 }, soft: 0.55, dust: 4,
     },
