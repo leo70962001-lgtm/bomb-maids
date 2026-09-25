@@ -3241,6 +3241,116 @@
     return p.outlined(K);
   }
 
+
+  // The café menu, drawn the way the gifts are: 16x16, lit from the upper left, black outline. These are what she is
+  // served at the sweets counter, and what stands in its display case.
+  function buildFood(id) {
+    const p = new Pix(16, 16);
+    switch (id) {
+      case 'cake': // a slice of strawberry cake: two sponge layers, cream between, a berry on top, on a plate
+        stamp(p, [
+          '.......g........',
+          '......rRr.......',
+          '.....rrRrr......',
+          '....wwwwwww.....',
+          '...wWWWWWWWw....',
+          '...sSSSSSSSs....',
+          '...wWWpppWWw....',
+          '...sSSSSSSSs....',
+          '...wWWWWWWWw....',
+          '..PPPPPPPPPPP...',
+          '...QQQQQQQQQ....',
+        ], 0, 3, { r: '#ec3d5f', R: '#ff8aa8', g: '#4cb84c', w: '#ffffff', W: '#fff4e4', s: '#f2c98a', S: '#e0a262', p: '#ffb6c9', P: '#eef2f8', Q: '#c9d2e0' });
+        break;
+      case 'pudding': // caramel custard, the sauce running down one side
+        stamp(p, [
+          '.....cccccc.....',
+          '....cCCCCCCc....',
+          '....yYYYYYYc....',
+          '...yYYYYYYYYc...',
+          '...yYYYYYYYYy...',
+          '..yYYYYYYYYYYy..',
+          '..yYYYYYYYYYYy..',
+          '..yyyyyyyyyyyy..',
+          '.PPPPPPPPPPPPPP.',
+          '..QQQQQQQQQQQQ..',
+        ], 0, 4, { c: '#a4571e', C: '#d98a3c', y: '#e8b84a', Y: '#ffe08a', P: '#eef2f8', Q: '#c9d2e0' });
+        break;
+      case 'latte': // an iced latte: milk under coffee in a tall glass, a pink straw
+        stamp(p, [
+          '...........s....',
+          '..........s.....',
+          '....ggggggg.....',
+          '....gbbbbbg.....',
+          '....gBbbbBg.....',
+          '....gwwwwwg.....',
+          '....gwWWwwg.....',
+          '....gwwwwwg.....',
+          '....gGwwwGg.....',
+          '.....ggggg......',
+        ], 0, 4, { s: '#ff8aa8', g: '#d8f0ff', G: '#9fd0ea', b: '#7a4a24', B: '#a9713c', w: '#fff6e8', W: '#ffffff' });
+        break;
+      case 'tea': // Earl Grey: a white cup on its saucer
+        stamp(p, [
+          '....wwwwwww.....',
+          '....wtttttw.....',
+          '....wTtttTwh....',
+          '....wwwwwwwh....',
+          '.....WWWWWh.....',
+          '...PPPPPPPPP....',
+          '....QQQQQQQ.....',
+        ], 0, 7, { w: '#ffffff', W: '#e4e8f2', t: '#6b3a1e', T: '#9a5c2c', h: '#e4e8f2', P: '#eef2f8', Q: '#c9d2e0' });
+        break;
+    }
+    return p.outlined(K);
+  }
+
+  // One piece of kit per counter, so you can tell at a glance whose shop you are standing in.
+  function buildShopProp(id) {
+    const p = new Pix(16, 16);
+    switch (id) {
+      case 'coffee': // the espresso machine behind the sweets counter
+        stamp(p, [
+          '..MMMMMMMMMMMM..',
+          '..MkkkkkkkkkkM..',
+          '..MkDDDDDDDDkM..',
+          '..MkkkkkkkkkkM..',
+          '..MkKkkkkkkKkM..',
+          '..MMMMMqqMMMMM..',
+          '.......qq.......',
+          '......wwww......',
+          '......wWWw......',
+          '.......ww.......',
+        ], 0, 3, { M: '#aeb8c8', k: '#e4eaf4', D: '#3a4a6a', K: '#ec3d5f', q: '#6c7a90', w: '#ffffff', W: '#7a4a24' });
+        break;
+      case 'gauge': // the jeweller's dial and its two lamps
+        stamp(p, [
+          '..PPPPPPPPPPPP..',
+          '..PddddddddddP..',
+          '..Pdwwwwwwd.gP..',
+          '..PdwwKwwwd.GP..',
+          '..PdwwwKwwd..P..',
+          '..Pdwwwwwwd.rP..',
+          '..PddddddddRdP..',
+          '..PPPPPPPPPPPP..',
+        ], 0, 4, { P: '#aeb8c8', d: '#5a6678', w: '#e8f2ff', K: '#ec3d5f', g: '#7fe08a', G: '#3aa84c', r: '#ffd23f', R: '#c9920e' });
+        break;
+      case 'gachamini': // the capsule machine the dust cat keeps behind her counter
+        stamp(p, [
+          '....GGGGGG......',
+          '...GyGpGyGG.....',
+          '...GpGyGpGG.....',
+          '...rrrrrrrr.....',
+          '...rRkkkkRr.....',
+          '...rRkKKkRr.....',
+          '...rrrrrrrr.....',
+          '....rrrrrr......',
+        ], 0, 4, { G: '#cfeaff', y: '#ffd23f', p: '#ff8aa8', r: '#ec3d5f', R: '#a51f40', k: '#5a2030', K: '#ffd23f' });
+        break;
+    }
+    return p.outlined(K);
+  }
+
   // ---------------------------------------------------------------- room: furniture (drawn with the bottom edge on the footprint)
   // ---------------------------------------------------------------- room furniture
   // Drawn in the style of the original's room and café props: seen from above at three-quarters (a lit top over a
@@ -4079,6 +4189,10 @@
     for (const k of ['bunny', 'stripe', 'strawberry', 'night', 'lace', 'shoji']) art.room.walls[k] = [buildWall(k, 0), buildWall(k, 1)];
     for (const k of ['wood', 'carpet', 'checker', 'tatami']) art.room.floors[k] = [buildFloor(k, 0), buildFloor(k, 1)];
     for (const k of ['daifuku', 'honeycake', 'icecream', 'matcha', 'drink', 'novel', 'charm', 'bouquet', 'ribbon']) art.room.gifts[k] = softInk(bevel(buildGift(k)));
+    art.room.food = {};
+    for (const k of ['cake', 'pudding', 'latte', 'tea']) art.room.food[k] = softInk(bevel(buildFood(k)));
+    art.shop = {};
+    for (const k of ['coffee', 'gauge', 'gachamini']) art.shop[k] = softInk(bevel(buildShopProp(k)));
     if (ROW_ERRORS.length) throw new Error('sprite rows:\n' + ROW_ERRORS.join('\n'));
     return art;
   }
@@ -4153,6 +4267,8 @@
       for (const k of Object.keys(art.room.emotes)) put(art.room.emotes[k]);
       put(art.room.broom); put(art.room.book); put(art.room.cup); put(art.room.mat); put(art.room.window);
       for (const k of Object.keys(art.room.gifts)) put(art.room.gifts[k]);
+      for (const k of Object.keys(art.room.food)) put(art.room.food[k]);
+      for (const k of Object.keys(art.shop)) put(art.shop[k]);
       nl();
       for (const k of Object.keys(art.room.furniture)) put(art.room.furniture[k]);
       const fp = art.room.furnParts;
