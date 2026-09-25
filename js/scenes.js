@@ -175,6 +175,21 @@
     return isLocked(key) ? silhouette(img) : img;
   }
   const maidName = (key) => (isLocked(key) ? '？？？' : G.MAID_DATA[key].name);
+  // Drawn big, she is the two-heads-tall chibi the sprite is meant to be: the head at full height and the body two
+  // rows shorter — the repeated middle rows of the dress — which puts her head at 64% of the figure, the proportion of
+  // the sprite sheets this was drawn from. The 16x24 the game plays with is untouched.
+  const BODY_SKIP = [17, 19];
+  const BIG_ROWS = 22;
+  function drawChibi(img, x, y, s) {
+    const ctx = E.ctx;
+    ctx.drawImage(img, 0, 0, 16, 14, x, y, 16 * s, 14 * s);
+    let by = y + 14 * s;
+    for (let sy = 14; sy < 24; sy++) {
+      if (BODY_SKIP.indexOf(sy) >= 0) continue;
+      ctx.drawImage(img, 0, sy, 16, 1, x, by, 16 * s, s);
+      by += s;
+    }
+  }
   // a standing maid at scale s with the signature prop from her design sheet:
   // Berry carries her giant vacuum cleaner, Honey's pet bunny peeks out from behind her
   function drawMaidFigure(key, x, y, s, f) {
@@ -183,9 +198,9 @@
     const ps = Math.max(1, s - 1);
     if (!locked && key === 'honey') {
       const bunny = E.spr.room.bunny[(E.frame >> 5) % 8 === 7 ? 1 : 0];
-      ctx.drawImage(bunny, Math.round(x + 7 * s), Math.round(y + 24 * s - bunny.height * s), bunny.width * s, bunny.height * s);
+      ctx.drawImage(bunny, Math.round(x + 7 * s), Math.round(y + BIG_ROWS * s - bunny.height * s), bunny.width * s, bunny.height * s);
     }
-    ctx.drawImage(maidImg(key, 'down', f), Math.round(x), Math.round(y), 16 * s, 24 * s);
+    drawChibi(maidImg(key, 'down', f), Math.round(x), Math.round(y), s);
     if (!locked && key === 'berry') ctx.drawImage(E.spr.room.vacuum, Math.round(x + 11 * s), Math.round(y + 7 * s), 12 * ps, 22 * ps);
   }
   // draw a sprite as large as fits a box, keeping its shape, standing on the box's bottom edge
@@ -1345,6 +1360,7 @@
   const DEAL_CUES = { eat: { 46: 'pop', 56: 'pop', 68: 'love' }, hug: { 40: 'gift', 62: 'love' }, ship: { 50: 'sweep', 70: 'door' }, power: { 52: 'levelup' }, show: { 38: 'pop', 50: 'love' } };
   const DEAL_END = { eat: 90, hug: 82, ship: 80, power: 78, show: 84 };
   const COUNTER_WALK = 28; // frames for the maid to walk on to a counter, or off it
+  const BIG_H = BIG_ROWS * 2; // how tall she stands at the counter, where s is 2
   SC.cafe = {
     enter(arg) {
       this.t = 0;
@@ -1731,7 +1747,7 @@
       }
       // every deal ends with a small bow
       if (deal) { const end = DEAL_END[deal.kind] || 70; if (deal.t > end - 18 && deal.t < end - 8) lift = 2; }
-      const my = Math.round(y + 68 - 24 * s) + lift;
+      const my = Math.round(y + 68 - BIG_H) + lift;
       // standing still she breathes, the way she does in her room, and she wears whatever she has on
       const MS = (E.spr.outfits[k] && E.spr.outfits[k][G.outfitOf(k)]) || E.spr.maids[k];
       const breath = (this.t + 23) % 96 >= 78;
@@ -1743,7 +1759,7 @@
       ctx.rect(x + 2, y + 2, 80, 66);
       ctx.clip();
       E.groundShadow(mx + 7, y + 66, 18, 4, 0.25);
-      ctx.drawImage(body, mx, my, 16 * s, 24 * s);
+      drawChibi(body, mx, my, s);
       // at this size her face is worth drawing twice over: the 16x8 version goes in, and what is hers — glasses, a
       // lock of hair over her cheek — goes back on top of it
       const big = face === 'down' && step < 0 && E.spr.faceBig[k];
