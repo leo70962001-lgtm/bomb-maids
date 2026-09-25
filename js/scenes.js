@@ -1338,10 +1338,12 @@
     { act: 'fidget', emote: 'question', expr: 'surprise', every: 120 }, // cards: she cannot wait
   ];
   // and what her face does with what she just bought
-  const DEAL_FACE = { eat: 'happy', hug: 'blush', ship: 'surprise', power: 'happy' };
+  const DEAL_FACE = { eat: 'happy', hug: 'blush', ship: 'surprise', power: 'happy', show: 'happy' };
+  // and what she makes of what he says
+  const SAY_REACT = { poor: { expr: 'tired', emote: 'sweat' }, again: { expr: 'surprise', emote: 'question' }, hello: { emote: 'exclaim' }, chat: { emote: 'dots' } };
   const DEAL_HOLD = 34; // the frame the goods are hers
-  const DEAL_CUES = { eat: { 46: 'pop', 56: 'pop', 68: 'love' }, hug: { 40: 'gift', 62: 'love' }, ship: { 50: 'sweep', 70: 'door' }, power: { 52: 'levelup' } };
-  const DEAL_END = { eat: 90, hug: 82, ship: 80, power: 78 };
+  const DEAL_CUES = { eat: { 46: 'pop', 56: 'pop', 68: 'love' }, hug: { 40: 'gift', 62: 'love' }, ship: { 50: 'sweep', 70: 'door' }, power: { 52: 'levelup' }, show: { 38: 'pop', 50: 'love' } };
+  const DEAL_END = { eat: 90, hug: 82, ship: 80, power: 78, show: 84 };
   const COUNTER_WALK = 28; // frames for the maid to walk on to a counter, or off it
   SC.cafe = {
     enter(arg) {
@@ -1368,6 +1370,34 @@
     },
     // the goods changing hands, after the coins have
     handOver(img, kind) { this.deal = { t: 0, img: img || null, kind }; },
+    // something to say while you make up your mind
+    keeperChat() {
+      const sh = this.shop();
+      if (!sh || !sh.chat || !sh.chat.length) return;
+      this.shopSay = { text: E.pick(sh.chat), t: 0, kind: 'chat' };
+    },
+    // whatever the cursor is on, so he can hold it up for you
+    rowIcon() {
+      const S = E.spr;
+      const list = this.listFor(this.tab);
+      const it = list && list[this.row];
+      if (!it) return null;
+      if (this.tab === 0) return S.room.food[it.id] || S.items[it.icon];
+      if (this.tab === 1) return S.room.gifts[it.id];
+      if (this.tab === 2) return S.room.furniture[it];
+      if (this.tab === 3) return S.items[it.icon];
+      return null;
+    },
+    // what she carried off from the capsule machine or a pack of cards
+    prizeIcon(p) {
+      const S = E.spr;
+      if (!p) return S.items.star;
+      if (p.gift) return S.room.gifts[p.gift.id];
+      if (p.food) return S.room.food[p.food.id] || S.items[p.food.icon];
+      if (p.furniture) return S.room.furniture[p.furniture];
+      if (p.card) return S.items.star;
+      return S.items.coin[0]; // the coin is an animated set, not one picture
+    },
     // the keeper's answer, in a bubble over the counter
     keeperSay(kind) {
       const sh = this.shop();
@@ -1400,6 +1430,7 @@
         if (cue && cue[deal.t]) A.sfx(cue[deal.t]);
         if (deal.t > (DEAL_END[deal.kind] || 70)) this.deal = null;
       }
+      if (!this.mw && !this.deal && !this.shopSay && this.t % 400 === 0) this.keeperChat();
       if (this.gacha) return this.updateGacha();
       if (this.pack) return this.updatePack();
       const d = E.menuDir();
@@ -1510,7 +1541,7 @@
       if (t === 150) { A.sfx(g.rare >= 3 ? 'rare' : 'pop'); if (g.rare >= 4) A.sfx('love'); }
       if (t === 162) A.sfx(g.rare >= 2 ? 'item' : 'coin');
       if (t < 150 && (E.menuPressed('a') || E.pointer.pressed)) g.t = 149; // straight to the opening
-      else if (t > 175 && (E.menuPressed('a') || E.menuPressed('b') || E.pointer.pressed)) { this.gacha = null; A.sfx('confirm'); }
+      else if (t > 175 && (E.menuPressed('a') || E.menuPressed('b') || E.pointer.pressed)) { const icon = this.prizeIcon(g.prize); this.gacha = null; A.sfx('confirm'); this.handOver(icon, 'show'); }
     },
     // ---------------- the card counter
     openPack(n) {
@@ -1553,7 +1584,7 @@
         if (r >= 4) { p.flash = 14; p.cut = { card: c.card, t: 0 }; }
         else if (r >= 3) p.flash = 6;
       }
-      if (all && p.t > p.nextAt + 10 && (press || E.menuPressed('b'))) { this.pack = null; A.sfx('confirm'); }
+      if (all && p.t > p.nextAt + 10 && (press || E.menuPressed('b'))) { this.pack = null; A.sfx('confirm'); this.handOver(E.spr.items.star, 'show'); }
     },
     draw() {
       const t = this.t;
@@ -1616,8 +1647,11 @@
       this.drawShopRoom(x, y, b);
       const keeper = sh && E.spr.monsters[sh.keeper];
       if (keeper) {
+        // he ducks below the counter to fetch what you asked for, and pops back up with it
+        const d0 = this.deal;
+        const dip = d0 && d0.t < 13 ? Math.round(7 * Math.sin((d0.t / 13) * Math.PI)) : 0;
         const img = keeper.frames[(say ? say.t >> 3 : this.t >> 5) % 2];
-        ctx.drawImage(img, x + 6, y + 36 - img.height + hop);
+        ctx.drawImage(img, x + 6, y + 36 - img.height + hop + dip);
       }
       ctx.restore();
       // the counter itself, built of whatever this shop is built of
@@ -1641,6 +1675,7 @@
       const idle = SHOP_IDLE[this.tab];
       const beat = idle ? this.t % idle.every : 0;
       let mx = spot, face = 'down', step = -1, lift = 0, expr = (idle && idle.expr) || 'normal';
+      let emote = idle && beat < 44 ? idle.emote : null;
       if (walk) {
         const p = Math.min(1, walk.t / COUNTER_WALK);
         const away = walk.dir === 'in' ? 1 - p : p; // 1 = off to the right, 0 = at the counter
@@ -1654,6 +1689,7 @@
         else if (show === 'hug') lift = -Math.round(1 + Math.sin(deal.t / 6));
         else if (show === 'power' && deal.t > 50 && deal.t < 64) lift = -2;
         if (show === 'ship' && deal.t > 62) expr = 'happy';
+        emote = null;
       } else if (idle) {
         // waiting at the counter, facing you — what changes with the shop is how she holds herself
         if (idle.act === 'sway') lift = -Math.round(1 + Math.sin(this.t / 14));
@@ -1661,7 +1697,12 @@
         else if (idle.act === 'shift') { if (beat < 16) step = 1; else if (beat < 30) step = 0; }
         else if (idle.act === 'bounce') lift = beat < 26 ? -Math.round(5 * Math.abs(Math.sin((beat / 13) * Math.PI))) : 0;
         else if (idle.act === 'fidget') { if (beat < 26) { step = (beat >> 3) % 2 ? 2 : 1; mx = spot + (beat >> 3) % 2; } }
+        // and she answers the keeper: a wince when the coins are short, a blink when she has it already
+        const r = say && say.t < 64 && SAY_REACT[say.kind];
+        if (r) { if (r.expr) expr = r.expr; if (r.emote) emote = r.emote; }
       }
+      // every deal ends with a small bow
+      if (deal) { const end = DEAL_END[deal.kind] || 70; if (deal.t > end - 18 && deal.t < end - 8) lift = 2; }
       const my = Math.round(y + 68 - 24 * s) + lift;
       // standing still she breathes, the way she does in her room, and she wears whatever she has on
       const MS = (E.spr.outfits[k] && E.spr.outfits[k][G.outfitOf(k)]) || E.spr.maids[k];
@@ -1682,11 +1723,16 @@
         E.rect(mx + 22, by2, 4, 2, '#ff6f91');
       }
       // what she came with, on the counter top
-      ctx.drawImage((E.spr.bombs[k] || E.spr.bomb)[(this.t >> 4) % 3], x + 30, y + 20);
+      ctx.drawImage((E.spr.bombs[k] || E.spr.bomb)[(this.t >> 4) % 3], x + 34, y + 20);
+      // and what he is holding up for you: whatever the cursor is on
+      if (this.focus === 'list' && !walk) {
+        const held = this.rowIcon();
+        if (held) ctx.drawImage(held, x + 12, y + 38 - held.height - ((this.t >> 3) % 2));
+      }
       // what she is thinking of at this counter
-      if (!walk && !deal && idle && beat < 44) {
-        const em = E.spr.room.emotes[idle.emote];
-        if (em) ctx.drawImage(em, mx + 14, my - 6 - (beat % 8 < 4 ? 1 : 0));
+      if (!walk && emote) {
+        const em = E.spr.room.emotes[emote];
+        if (em) ctx.drawImage(em, mx + 14, my - 6 - (this.t % 8 < 4 ? 1 : 0));
       }
       if (deal) this.drawDeal(deal, mx, my, x, y);
       ctx.restore();
@@ -1712,13 +1758,14 @@
     drawDeal(d, mx, my, x, y) {
       const ctx = E.ctx;
       const kx = x + 16;
-      if (d.t <= 16) {
+      if (d.t <= 16 && d.kind !== 'show') {
         const p = d.t / 16;
         ctx.drawImage(E.spr.ui.coin, Math.round(mx + 12 - (mx + 12 - kx) * p), Math.round(y + 40 - 10 * p - 12 * Math.sin(p * Math.PI)));
       }
-      const img = d.img;
+      const img = Array.isArray(d.img) ? d.img[0] : d.img; // some icons are animated sets
       if (!img || d.t <= 12) return;
-      const rest = d.kind === 'eat' ? { x: mx - 5, y: my + 10 }     // up beside her face
+      const rest = d.kind === 'show' ? { x: mx + 8, y: my - 13 }    // held up for you to see
+        : d.kind === 'eat' ? { x: mx - 5, y: my + 10 }                // up beside her face
         : d.kind === 'hug' ? { x: mx + 8, y: my + 25 }                // held to her
           : d.kind === 'ship' ? { x: x + 34, y: y + 20 }              // on the counter, waiting to be carted off
             : { x: mx + 8, y: my - 10 };                              // over her head, about to go in
@@ -1728,7 +1775,16 @@
       let cut = 0, alpha = 1;
       const s = d.t - DEAL_HOLD;
       if (s > 0) {
-        if (d.kind === 'eat') {
+        if (d.kind === 'show') {
+          // she holds it up: it bobs over her head while the stars go off around it
+          gy += Math.round(Math.sin(s / 7));
+          for (let i = 0; i < 4; i++) {
+            const a = (i * Math.PI) / 2 + s / 14;
+            const r = 8 + Math.min(12, s * 0.5);
+            ctx.drawImage(E.spr.fx.star[(s >> 3) % 2], Math.round(mx + 13 + Math.cos(a) * r), Math.round(my - 6 + Math.sin(a) * r * 0.6));
+          }
+          if (s > 30) alpha = Math.max(0, 1 - (s - 30) / 20);
+        } else if (d.kind === 'eat') {
           // she eats it where she stands: three bites out of the top, crumbs, and then she is very pleased
           cut = s > 30 ? img.height : s > 20 ? Math.round(img.height * 0.62) : s > 10 ? Math.round(img.height * 0.3) : 0;
           for (const at of [10, 20, 30]) if (s >= at && s < at + 8) ctx.drawImage(E.spr.fx.smoke[Math.min(3, (s - at) >> 1)], Math.round(gx + 2), Math.round(gy + 2));
