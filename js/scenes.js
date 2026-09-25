@@ -1317,6 +1317,7 @@
   };
 
   // ------------------------------------------------------------------ Café
+  const COUNTER_WALK = 28; // frames for the maid to walk on to a counter, or off it
   SC.cafe = {
     enter(arg) {
       this.t = 0;
@@ -1327,12 +1328,21 @@
       this.msg = '';
       this.gacha = null;
       this.pack = null;
+      this.deal = null;
       this.keeperSay('hello');
+      this.maidWalk('in');
       A.playMusic('cafe');
     },
     tabs: ['甜點補給', '禮物專櫃', '家具店', '女僕強化', '扭蛋機', '抽卡片', '女僕換班', '回房間'],
     shopKeys: ['food', 'gift', 'furniture', 'upgrade', 'gacha', 'card'],
     shop() { return G.SHOPS[this.shopKeys[this.tab]] || null; },
+    // she walks on to the counter ('in') or off it ('out'); 'out' holds the controls until she is gone
+    maidWalk(dir, then) {
+      this.mw = { dir, t: 0, then: then || null };
+      if (dir === 'out') this.keeperSay('bye');
+    },
+    // the goods changing hands, after the coins have
+    handOver(img) { this.deal = { t: 0, img: img || null }; },
     // the keeper's answer, in a bubble over the counter
     keeperSay(kind) {
       const sh = this.shop();
@@ -1349,23 +1359,38 @@
     },
     update() {
       this.t++;
+      // she is still on her way: on her way out, the counter has the controls until she is through the door
+      const walk = this.mw;
+      if (walk) {
+        walk.t++;
+        if (walk.t >= COUNTER_WALK) {
+          this.mw = null;
+          if (walk.then) { walk.then(); return; }
+        } else if (walk.dir === 'out') return;
+      }
       if (this.gacha) return this.updateGacha();
       if (this.pack) return this.updatePack();
       const d = E.menuDir();
       const n = this.tabs.length;
       if (this.focus === 'tabs') {
-        // stepping along the counters: the one you stop at greets you, and the last one's words go with it
-        if (d === 'up') { this.tab = (this.tab + n - 1) % n; A.sfx('select'); this.msg = ''; this.keeperSay('hello'); }
-        if (d === 'down') { this.tab = (this.tab + 1) % n; A.sfx('select'); this.msg = ''; this.keeperSay('hello'); }
+        // stepping along the counters: she walks to the next one, and it greets her as she arrives
+        if (d === 'up' || d === 'down') {
+          this.tab = (this.tab + n + (d === 'up' ? -1 : 1)) % n;
+          A.sfx('select');
+          this.msg = '';
+          this.deal = null;
+          this.keeperSay('hello');
+          this.maidWalk('in');
+        }
         if (E.menuPressed('a') || d === 'right') {
-          if (this.tab === 7) { A.sfx('door'); E.go(SC.room); return; }
-          if (this.tab === 6) { A.sfx('confirm'); E.go(SC.select, { mode: 'switch', back: 'cafe' }); return; }
+          if (this.tab === 7) { A.sfx('door'); this.maidWalk('out', () => E.go(SC.room)); return; }
+          if (this.tab === 6) { A.sfx('confirm'); this.maidWalk('out', () => E.go(SC.select, { mode: 'switch', back: 'cafe' })); return; }
           A.sfx('confirm');
           this.focus = 'list';
           this.row = 0;
           this.scroll = 0;
         }
-        if (E.menuPressed('b') || E.menuPressed('start')) { A.sfx('door'); E.go(SC.room); }
+        if (E.menuPressed('b') || E.menuPressed('start')) { A.sfx('door'); this.maidWalk('out', () => E.go(SC.room)); }
         return;
       }
       if (this.tab === 4) {
@@ -1402,11 +1427,11 @@
         const f = G.MENU_FOOD[this.row];
         if (SAVE.buffs[f.id]) { A.sfx('denied'); this.msg = G.t('已經點過囉，下個委託會送上。'); again = true; }
         else if (SAVE.coins < f.price) { A.sfx('denied'); this.msg = G.t('金幣不夠……'); }
-        else { SAVE.coins -= f.price; SAVE.buffs[f.id] = true; persist(); A.sfx('coin'); this.msg = G.t('{name} 點好了！{desc}', { name: f.name, desc: f.desc }); }
+        else { SAVE.coins -= f.price; SAVE.buffs[f.id] = true; persist(); A.sfx('coin'); this.msg = G.t('{name} 點好了！{desc}', { name: f.name, desc: f.desc }); this.handOver(E.spr.items[f.icon]); }
       } else if (this.tab === 1) {
         const g = G.GIFTS[this.row];
         if (SAVE.coins < g.price) { A.sfx('denied'); this.msg = G.t('金幣不夠……還差 {n}G', { n: g.price - SAVE.coins }); }
-        else { SAVE.coins -= g.price; SAVE.gifts[g.id] = (SAVE.gifts[g.id] || 0) + 1; persist(); A.sfx('buy'); this.msg = G.t('買了{name}！回房間送給女僕吧。', { name: g.name }); }
+        else { SAVE.coins -= g.price; SAVE.gifts[g.id] = (SAVE.gifts[g.id] || 0) + 1; persist(); A.sfx('buy'); this.msg = G.t('買了{name}！回房間送給女僕吧。', { name: g.name }); this.handOver(E.spr.room.gifts[g.id]); }
       } else if (this.tab === 2) {
         const id = G.FURNITURE_SHOP[this.row];
         const F = G.FURNITURE[id];
@@ -1420,6 +1445,7 @@
           G.guideStep('shop');
           persist();
           A.sfx('buy');
+          this.handOver(E.spr.room.furniture[id]);
           this.msg = G.t(placed ? '{name} 已經搬進房間了！' : '{name} 放進倉庫了（房間太擠）', { name: F.name });
         }
       } else {
@@ -1427,7 +1453,7 @@
         const lv = SAVE.upgrades[u.id];
         if (lv >= u.prices.length) { A.sfx('denied'); this.msg = G.t('已經強化到最高級了！'); again = true; }
         else if (SAVE.coins < u.prices[lv]) { A.sfx('denied'); this.msg = G.t('金幣不夠……還差 {n}G', { n: u.prices[lv] - SAVE.coins }); }
-        else { SAVE.coins -= u.prices[lv]; SAVE.upgrades[u.id]++; persist(); A.sfx('power'); this.msg = G.t('{name} 強化到 Lv.{lv}！', { name: u.name, lv: SAVE.upgrades[u.id] }); }
+        else { SAVE.coins -= u.prices[lv]; SAVE.upgrades[u.id]++; persist(); A.sfx('power'); this.msg = G.t('{name} 強化到 Lv.{lv}！', { name: u.name, lv: SAVE.upgrades[u.id] }); this.handOver(E.spr.items[u.icon]); }
       }
       this.keeperSay(SAVE.coins < coinsBefore ? 'buy' : again ? 'again' : 'poor');
     },
@@ -1570,13 +1596,51 @@
       E.rect(x + 3, y + 39, 78, 28, '#9c5f3a');
       for (let i = 0; i < 78; i += 6) E.rect(x + 4 + i, y + 43, 3, 22, '#8c5230');
       E.rect(x + 3, y + 39, 78, 1, '#c98a5a');
-      // the maid, in front of it, looking up at the keeper
-      const s = 1.4;
-      const mx = Math.round(x + 50), my = Math.round(y + 68 - 24 * s);
+      // the maid, in front of it: walking on from the right, standing with her back to you, or walking off again
+      const s = 1.4, spot = x + 50, gone = x + 92;
+      const walk = this.mw;
+      let mx = spot, face = 'up', frame = (this.t >> 4) % 2;
+      if (walk) {
+        const p = Math.min(1, walk.t / COUNTER_WALK);
+        const away = walk.dir === 'in' ? 1 - p : p; // 1 = off to the right, 0 = at the counter
+        mx = Math.round(spot + (gone - spot) * away);
+        if (p < 1) { face = walk.dir === 'in' ? 'left' : 'right'; frame = [1, 0, 2, 0][(walk.t >> 2) % 4]; }
+      }
+      const deal = this.deal;
+      const bob = deal && deal.t < 22 ? -Math.round(4 * Math.abs(Math.sin((deal.t / 11) * Math.PI))) : 0;
+      const my = Math.round(y + 68 - 24 * s) + bob;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x + 2, y + 2, 80, 66);
+      ctx.clip();
       E.groundShadow(mx + 3, y + 67, 14, 3, 0.25);
-      ctx.drawImage(maidImg(k, 'up', (this.t >> 4) % 2), mx, my, Math.round(16 * s), Math.round(24 * s));
+      ctx.drawImage(maidImg(k, face, frame), mx, my, Math.round(16 * s), Math.round(24 * s));
       // what she came with, on the counter top
       ctx.drawImage((E.spr.bombs[k] || E.spr.bomb)[(this.t >> 4) % 3], x + 30, y + 20);
+      // the coin goes over the counter, the goods come back, and she hugs them
+      if (deal) {
+        if (++deal.t > 54) this.deal = null;
+        else {
+          const kx = x + 16;
+          if (deal.t <= 16) {
+            const p = deal.t / 16;
+            ctx.drawImage(E.spr.ui.coin, Math.round(mx + 8 - (mx + 8 - kx) * p), Math.round(y + 38 - 8 * p - 12 * Math.sin(p * Math.PI)));
+          }
+          if (deal.img && deal.t > 12) {
+            const p = Math.min(1, (deal.t - 12) / 22);
+            const gx = kx + (mx + 3 - kx) * p, gy = y + 24 - 9 * p - 12 * Math.sin(p * Math.PI);
+            ctx.globalAlpha = deal.t > 40 ? Math.max(0, 1 - (deal.t - 40) / 14) : 1;
+            ctx.drawImage(deal.img, Math.round(gx), Math.round(gy) - (deal.img.height - 16));
+            ctx.globalAlpha = 1;
+          }
+          if (deal.t > 28) {
+            const p = (deal.t - 28) / 26;
+            ctx.drawImage(E.spr.fx.heart, Math.round(mx + 18), Math.round(my + 2 - 10 * p));
+            ctx.drawImage(E.spr.fx.sparkle[(deal.t >> 2) % 3], Math.round(mx - 3), Math.round(my + 6));
+          }
+        }
+      }
+      ctx.restore();
       // and what the keeper has to say
       if (say) {
         if (++say.t > 150) this.shopSay = null;
