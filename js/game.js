@@ -2261,7 +2261,7 @@
         ctx.globalAlpha = 0.55;
         ctx.drawImage(img, x, y - 9);
         ctx.restore();
-        ctx.drawImage(E.spr.fx.sparkle[(m.star >> 3) % 3], x + ((m.star * 7) % 14), y - 10 + ((m.star * 3) % 16));
+        ctx.drawImage(E.spr.fx.sparkle[(m.star >> 3) % 3], x + ((m.star * 7) % 14), y - 8 + ((m.star * 3) % 16));
       } else {
         ctx.drawImage(img, x + vx, y - 8 + vy);
         // the moment she casts she flashes white, and the light drains off her
@@ -2277,7 +2277,7 @@
         const t = this.frame * 0.15;
         for (let i = 0; i < 3; i++) {
           const a = t + (i * Math.PI * 2) / 3;
-          ctx.drawImage(E.spr.fx.star[(this.frame >> 3) % 2], Math.round(x + 6 + Math.cos(a) * 7), Math.round(y - 11 + Math.sin(a) * 2));
+          ctx.drawImage(E.spr.fx.star[(this.frame >> 3) % 2], Math.round(x + 6 + Math.cos(a) * 7), Math.round(y - 9 + Math.sin(a) * 2));
         }
       }
       if (m.slashT > 0) {

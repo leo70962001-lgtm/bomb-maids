@@ -434,6 +434,18 @@
       return c;
     });
   }
+  // The proportion of the sprite sheets this was drawn from: the head is 64% of the figure, not 58%. Her head goes
+  // in two rows lower and the two repeated middle rows of the dress come out, so the sprite is still 16x24 and her
+  // feet still stand on the bottom row.
+  const CHIBI_SKIP = [17, 19];
+  function chibi(pix) {
+    const out = new Pix(pix.w, pix.h);
+    const copy = (from, to) => { for (let x = 0; x < pix.w; x++) { const c = pix.get(x, from); if (c) out.set(x, to, c); } };
+    for (let y = 0; y < 14; y++) copy(y, y + 2);
+    let dy = 16;
+    for (let y = 14; y < 24; y++) { if (CHIBI_SKIP.indexOf(y) >= 0) continue; copy(y, dy); dy++; }
+    return out;
+  }
   // The light sits on top of her head and her fringe throws a shadow on her face: the top pixel of the hair in each
   // column is lifted towards white and the one under it half as much, and any lit skin directly under hair or its ink
   // drops to the shaded tone. Both follow the silhouette, so they work for every hairstyle and every view.
@@ -539,7 +551,7 @@
     const out = new Pix(8, 4);
     for (let y = 0; y < 4; y++) {
       for (let x = 0; x < 8; x++) {
-        const c = pix.get(4 + x, 9 + y);
+        const c = pix.get(4 + x, 11 + y);
         if (!c || mine.some((h) => near(c, h))) continue;
         out.set(x, y, c);
       }
@@ -570,7 +582,7 @@
       pix.blit(fromRows(pad(14, rows16(BODY[dir][f], 'body ' + dir + f)), P), 0, 0);
       pix.blit(fromRows(pad(0, rows16(headRows, name + ' head ' + dir)), P), 0, bob);
       if (over) pix.blit(swing(over), 0, bob);
-      return polishHead(shadeHair(inkHair(pix, P), P, bob), P, bob);
+      return chibi(polishHead(shadeHair(inkHair(pix, P), P, bob), P, bob));
     };
     const heads = {};
     for (const dir of ['down', 'up', 'side']) {

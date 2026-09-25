@@ -2493,7 +2493,7 @@
       const mhop = Math.round(this.maid.hop);
       // her hair is for patting, her face for a poke on the cheek, the rest opens her menu
       if (this.maid.state !== 'sleep' && x >= ms.x + 1 && x < ms.x + 15 && y >= ms.y - 8 - mhop && y < ms.y + 16) {
-        return { kind: 'maid', head: y < ms.y + 1 - mhop, face: y >= ms.y + 1 - mhop && y < ms.y + 6 - mhop };
+        return { kind: 'maid', head: y < ms.y + 3 - mhop, face: y >= ms.y + 3 - mhop && y < ms.y + 8 - mhop };
       }
       const room = B.getRoom();
       const objs = room.placed.slice().sort((a, b) => {
@@ -3016,7 +3016,7 @@
       else img = breath ? S.breath[look || m.dir] : S[look || m.dir][0];
       // Berry cleans with her vacuum cleaner instead of a broom; Honey's pet bunny hops around after her
       const broom = maidKey() === 'berry' ? E.spr.room.vacuum : E.spr.room.broom;
-      const by = maidKey() === 'berry' ? ms.y - 6 - hop : ms.y - 2 - hop + ((this.t >> 3) % 2);
+      const by = maidKey() === 'berry' ? ms.y - 4 - hop : ms.y - hop + ((this.t >> 3) % 2);
       if (maidKey() === 'honey' && m.state !== 'sleep') {
         const side = m.dir === 'left' ? 15 : -9;
         const air = Math.round(Math.abs(Math.sin(this.t * 0.1)) * 3);
@@ -3041,22 +3041,22 @@
       else ctx.drawImage(img, ms.x + sx, ms.y - 8 - hop);
       if (rope != null) {
         if (Math.sin(rope) <= 0) this.drawRope(ms, hop, rope); // in front of her
-        E.rect(ms.x, ms.y + 4 - hop, 2, 3, '#ffd23f');
-        E.rect(ms.x + 14, ms.y + 4 - hop, 2, 3, '#ffd23f');
+        E.rect(ms.x, ms.y + 6 - hop, 2, 3, '#ffd23f');
+        E.rect(ms.x + 14, ms.y + 6 - hop, 2, 3, '#ffd23f');
       }
       if (act && act.kind === 'highfive' && act.t >= 10 && act.t < 40) {
         // her hand up to meet the glove
-        E.rect(ms.x + 12 + sx, ms.y - 4 - hop, 3, 5, '#000000');
-        E.rect(ms.x + 13 + sx, ms.y - 3 - hop, 1, 3, '#ffe3ce');
+        E.rect(ms.x + 12 + sx, ms.y - 2 - hop, 3, 5, '#000000');
+        E.rect(ms.x + 13 + sx, ms.y - 1 - hop, 1, 3, '#ffe3ce');
       }
       if (m.prop === 'broom' && m.dir === 'right') ctx.drawImage(broom, ms.x - 6, by);
-      if (m.prop === 'book') ctx.drawImage(E.spr.room.book, ms.x + 3, ms.y + 2 - hop);
-      if (m.prop === 'cup') ctx.drawImage(E.spr.room.cup, ms.x + 9, ms.y + 3 - hop);
-      if ((face === 'blush' || m.face === 'blush') && close) { const by2 = ms.y - 6 - hop + close.dy + (breath ? 2 : 0); E.rect(ms.x - 2, by2, 4, 2, '#ff6f91'); E.rect(ms.x + 14, by2, 4, 2, '#ff6f91'); }
-      else if (face === 'blush' || m.face === 'blush') { const by2 = ms.y + 4 - hop + (breath ? 1 : 0); E.rect(ms.x + 3, by2, 2, 1, '#ff6f91'); E.rect(ms.x + 11, by2, 2, 1, '#ff6f91'); }
+      if (m.prop === 'book') ctx.drawImage(E.spr.room.book, ms.x + 3, ms.y + 4 - hop);
+      if (m.prop === 'cup') ctx.drawImage(E.spr.room.cup, ms.x + 9, ms.y + 5 - hop);
+      if ((face === 'blush' || m.face === 'blush') && close) { const by2 = ms.y - 2 - hop + close.dy + (breath ? 2 : 0); E.rect(ms.x - 2, by2, 4, 2, '#ff6f91'); E.rect(ms.x + 14, by2, 4, 2, '#ff6f91'); }
+      else if (face === 'blush' || m.face === 'blush') { const by2 = ms.y + 6 - hop + (breath ? 1 : 0); E.rect(ms.x + 3, by2, 2, 1, '#ff6f91'); E.rect(ms.x + 11, by2, 2, 1, '#ff6f91'); }
       const hv = this.hover && this.hover.kind === 'maid' && this.mode === 'free';
       if (hv && this.hover.head && this.glove.pat <= 0) {
-        ctx.drawImage(E.spr.fx.sparkle[(this.t >> 4) % 3], ms.x - 3, ms.y - 12 - hop);
+        ctx.drawImage(E.spr.fx.sparkle[(this.t >> 4) % 3], ms.x - 3, ms.y - 10 - hop);
       }
     },
     // during a hug she is drawn close up (drawMaid), bobbing a little as she snuggles in
@@ -3121,7 +3121,7 @@
       const ms = this.maidScreen();
       const hop = Math.round(m.hop);
       const close = this.hugClose();
-      let headY = close ? ms.y - 30 - hop + close.dy : ms.y - 8 - hop;
+      let headY = close ? ms.y - 26 - hop + close.dy : ms.y - 6 - hop;
       if (m.state === 'sleep' && m.bed) {
         const g = geom();
         const F = G.FURNITURE[m.bed.id];
