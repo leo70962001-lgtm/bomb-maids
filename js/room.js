@@ -174,7 +174,7 @@
     const b = bond(k);
     if (b.stamina < 20) return 'tired';
     if (b.mood >= 80) return 'happy';
-    if (b.mood < 30) return 'tired';
+    if (b.mood < 30) return 'gloom'; // worn out is one thing, sulking is another
     return 'normal';
   }
 

@@ -452,7 +452,7 @@
     return set[FEEL_FALLBACK[feel]] ? FEEL_FALLBACK[feel] : 'normal';
   }
   // the room sprite's faces as feelings
-  const FACE_FEEL = { happy: 'happy', blush: 'love', surprise: 'surprise', angry: 'angry', tired: 'tired' };
+  const FACE_FEEL = { happy: 'happy', blush: 'love', surprise: 'surprise', angry: 'angry', tired: 'tired', gloom: 'sad' };
   const STAND_SCALE = 0.36; // the standing picture's scale
   const STAND_TOP = 48; // where the top of the standing picture sits: under the tallest top bar (the room's status bar)
   const STAND_LEAN = 6; // how far she may reach into the game area; past it she fades out
@@ -1340,7 +1340,7 @@
   // and what her face does with what she just bought
   const DEAL_FACE = { eat: 'happy', hug: 'blush', ship: 'surprise', power: 'happy', show: 'happy' };
   // and what she makes of what he says
-  const SAY_REACT = { poor: { expr: 'tired', emote: 'sweat' }, again: { expr: 'surprise', emote: 'question' }, hello: { emote: 'exclaim' }, chat: { emote: 'dots' } };
+  const SAY_REACT = { poor: { expr: 'gloom', emote: 'sweat' }, again: { expr: 'surprise', emote: 'question' }, hello: { emote: 'exclaim' }, chat: { emote: 'dots' } };
   const DEAL_HOLD = 34; // the frame the goods are hers
   const DEAL_CUES = { eat: { 46: 'pop', 56: 'pop', 68: 'love' }, hug: { 40: 'gift', 62: 'love' }, ship: { 50: 'sweep', 70: 'door' }, power: { 52: 'levelup' }, show: { 38: 'pop', 50: 'love' } };
   const DEAL_END = { eat: 90, hug: 82, ship: 80, power: 78, show: 84 };
@@ -1724,7 +1724,7 @@
         if (this.peek) {
           emote = this.peek.emote;
           if (emote === 'heart') expr = 'happy';
-          else if (emote === 'sweat') expr = 'tired';
+          else if (emote === 'sweat') expr = 'gloom';
         }
         // and she answers the keeper: a wince when the coins are short, a blink when she has it already
         const r = say && say.t < 64 && SAY_REACT[say.kind];
@@ -1752,6 +1752,8 @@
         const fy = my + 22 + (breath ? 2 : 0);
         ctx.drawImage(big[expr] || big.normal, mx + 8, fy);
         if (MS.faceMask) ctx.drawImage(MS.faceMask, 0, 0, 8, 4, mx + 8, fy, 16, 8);
+        // sulking, she gets the little rain lines over her head, the way the reference draws it
+        if (expr === 'gloom' && E.spr.fx.gloom) ctx.drawImage(E.spr.fx.gloom, mx - 2, my - 3 + ((this.t >> 3) % 2)); // left of her head, clear of the emote
       } else if (expr === 'blush' && face === 'down' && step < 0) {
         const by2 = my + 8 + (breath ? 2 : 0);
         E.rect(mx + 6, by2, 4, 2, '#ff6f91');

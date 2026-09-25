@@ -493,8 +493,8 @@
       'ssskksssssskksss',
       'ssssssssssssssss',
       'sskkkksssskkkkss',
-      'sswEEksssskEEwss',
-      'ssweeksssskeewss',
+      'sswwEksssskEwwss',
+      'sseEEksssskEEess',
       'sssvvssssssvvsss',
       '..ppsssssssspp..',
       '..sssssmmsssss..',
@@ -506,15 +506,15 @@
       'ssskksssssskksss',
       'ssksskssssksskss',
       'ssssssssssssssss',
-      '..ppsssssssspp..',
+      '..ppsssmmssspp..',
       '..sssssmmsssss..',
     ],
     blush: [
       'ssskksssssskksss',
       'ssssssssssssssss',
       'sskkkksssskkkkss',
-      'sswEEksssskEEwss',
-      'ssweeksssskeewss',
+      'sswwEksssskEwwss',
+      'sseEEksssskEEess',
       'sssvvssssssvvsss',
       '..ppppsssspppp..',
       '..sssssmmsssss..',
@@ -523,9 +523,9 @@
       'ssskksssssskksss',
       'ssssssssssssssss',
       'sskkkksssskkkkss',
-      'sswwEwsssswEwwss',
-      'sswEEwsssswEEwss',
-      'ssswwsssssswwsss',
+      'sswwwwsssswwwwss',
+      'sswwwwsssswwwwss',
+      'sskkkksssskkkkss',
       '..ssssssssssss..',
       '..sssssmmsssss..',
     ],
@@ -539,10 +539,20 @@
       '..ppsssssssspp..',
       '..sssssmmsssss..',
     ],
+    gloom: [
+      'ssskksssssskksss',
+      'ssssssssssssssss',
+      'ssbbbbssssbbbbss',
+      'ssbEEbssssbEEbss',
+      'ssbbbbssssbbbbss',
+      'ssssssssssssssss',
+      '..ssssssssssss..',
+      '..sssssmmsssss..',
+    ],
   };
   function bigFace(name, key) {
     const P = pal(name);
-    return fromRows(BIG_FACES[key], { k: P.lash, E: P.E, e: P.e, v: P.v, w: '#ffffff', s: P.s, t: P.t, p: P.p, m: P.m }, 16);
+    return fromRows(BIG_FACES[key], { k: P.lash, b: mix(P.t, P.lash, 0.55), E: P.E, e: P.e, v: P.v, w: '#ffffff', s: P.s, t: P.t, p: P.p, m: P.m }, 16);
   }
   // Everything inside that block that is not her face — glasses, a rose, a lock of hair — so it can go back on top.
   function faceFeatures(pix, P) {
@@ -568,6 +578,7 @@
     P.A = st.longSleeves ? P.d : P.t;
     P.j = st.stockings ? P.w : P.s;
     P.o = mix(P.r, '#ffffff', 0.45);
+    P.z = mix(P.t, P.lash, 0.55); // the shadow that falls over her eyes when she sulks
     const parts = MAID_PARTS[name];
     const layer = (rows, label) => (rows ? fromRows(rows16(rows, label), P) : null);
     const out = { down: [], up: [], left: [], right: [] };
@@ -622,6 +633,8 @@
     angry: ['kksttskk', 'skEssEks', 'swessews', '?tskkst?'],
     tired: ['tssttsst', 'skksskks', 'sEessEes', '?tsssst?'],
     sleep: ['tssttsst', 'ssssssss', 'skksskks', '?tsssst?'],
+    // sulking: the shadow band the reference sheet draws over a chibi's eyes
+    gloom: ['zzzzzzzz', 'zEzzzzEz', 'szzzzzzs', '?tsssst?'],
     surprise: ['tkkttkkt', 'kwEssEwk', 'swessews', '?tsmmst?'],
   };
 
