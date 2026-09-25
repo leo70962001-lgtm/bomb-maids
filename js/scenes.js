@@ -1330,13 +1330,15 @@
   ];
   // and how she waits at each of them
   const SHOP_IDLE = [
-    { act: 'sway', emote: 'note', every: 150 },       // sweets: she hums and eyes the case
-    { act: 'rock', emote: 'heart', every: 130 },      // gifts: she cannot keep still
-    { act: 'look', emote: 'dots', every: 170 },       // furniture: she sizes the pieces up
-    { act: 'stand', emote: 'exclaim', every: 190 },   // upgrades: she stands to attention
-    { act: 'bounce', emote: 'sparkle', every: 96 },   // capsules: she bounces on the spot
-    { act: 'fidget', emote: 'question', every: 120 }, // cards: she fidgets
+    { act: 'sway', emote: 'note', expr: 'happy', every: 150 },       // sweets: she hums over the cake case
+    { act: 'rock', emote: 'heart', expr: 'blush', every: 130 },      // gifts: she cannot keep still
+    { act: 'shift', emote: 'dots', expr: 'normal', every: 170 },     // furniture: she sizes the pieces up
+    { act: 'stand', emote: 'exclaim', expr: 'normal', every: 190 },  // upgrades: she stands to attention
+    { act: 'bounce', emote: 'sparkle', expr: 'happy', every: 96 },   // capsules: she bounces on the spot
+    { act: 'fidget', emote: 'question', expr: 'surprise', every: 120 }, // cards: she cannot wait
   ];
+  // and what her face does with what she just bought
+  const DEAL_FACE = { eat: 'happy', hug: 'blush', ship: 'surprise', power: 'happy' };
   const DEAL_HOLD = 34; // the frame the goods are hers
   const DEAL_CUES = { eat: { 46: 'pop', 56: 'pop', 68: 'love' }, hug: { 40: 'gift', 62: 'love' }, ship: { 50: 'sweep', 70: 'door' }, power: { 52: 'levelup' } };
   const DEAL_END = { eat: 90, hug: 82, ship: 80, power: 78 };
@@ -1632,45 +1634,59 @@
       }
       E.rect(x + 3, y + 39, 78, 1, b.lip);
       // the maid, in front of it: walking on, waiting the way this shop makes her wait, or walking off again
-      const s = 1.4, spot = x + 50, gone = x + 92;
+      const s = 2, spot = x + 52, gone = x + 94;
       const walk = this.mw;
       const deal = this.deal;
       const show = deal && deal.t > DEAL_HOLD ? deal.kind : null;
       const idle = SHOP_IDLE[this.tab];
       const beat = idle ? this.t % idle.every : 0;
-      let mx = spot, face = 'up', frame = (this.t >> 4) % 2, lift = 0;
+      let mx = spot, face = 'down', step = -1, lift = 0, expr = (idle && idle.expr) || 'normal';
       if (walk) {
         const p = Math.min(1, walk.t / COUNTER_WALK);
         const away = walk.dir === 'in' ? 1 - p : p; // 1 = off to the right, 0 = at the counter
         mx = Math.round(spot + (gone - spot) * away);
-        if (p < 1) { face = walk.dir === 'in' ? 'left' : 'right'; frame = [1, 0, 2, 0][(walk.t >> 2) % 4]; }
+        if (p < 1) { face = walk.dir === 'in' ? 'left' : 'right'; step = [1, 0, 2, 0][(walk.t >> 2) % 4]; }
       } else if (deal) {
+        // she plays it all to the front: you see what she thinks of it
+        expr = DEAL_FACE[deal.kind] || 'happy';
         if (deal.t < 22) lift = -Math.round(4 * Math.abs(Math.sin((deal.t / 11) * Math.PI)));
-        if (show === 'eat' || show === 'hug') face = 'down';
         if (show === 'eat' && deal.t > 44 && deal.t < 80) lift = (deal.t - 44) % 10 < 3 ? -2 : 0;
         else if (show === 'hug') lift = -Math.round(1 + Math.sin(deal.t / 6));
         else if (show === 'power' && deal.t > 50 && deal.t < 64) lift = -2;
+        if (show === 'ship' && deal.t > 62) expr = 'happy';
       } else if (idle) {
-        if (idle.act === 'sway') { lift = -Math.round(1 + Math.sin(this.t / 14)); if (beat < 34) face = 'left'; }
+        // waiting at the counter, facing you — what changes with the shop is how she holds herself
+        if (idle.act === 'sway') lift = -Math.round(1 + Math.sin(this.t / 14));
         else if (idle.act === 'rock') { mx = spot + (Math.sin(this.t / 11) > 0 ? 1 : -1); lift = -Math.round(Math.abs(Math.sin(this.t / 11))); }
-        else if (idle.act === 'look') { face = beat < 30 ? 'left' : beat < 60 ? 'right' : 'up'; }
-        else if (idle.act === 'stand') frame = 0;
+        else if (idle.act === 'shift') { if (beat < 16) step = 1; else if (beat < 30) step = 0; }
         else if (idle.act === 'bounce') lift = beat < 26 ? -Math.round(5 * Math.abs(Math.sin((beat / 13) * Math.PI))) : 0;
-        else if (idle.act === 'fidget') { face = beat < 12 ? 'left' : beat < 24 ? 'right' : 'up'; frame = beat < 24 ? 1 : frame; }
+        else if (idle.act === 'fidget') { if (beat < 26) { step = (beat >> 3) % 2 ? 2 : 1; mx = spot + (beat >> 3) % 2; } }
       }
       const my = Math.round(y + 68 - 24 * s) + lift;
+      // standing still she breathes, the way she does in her room, and she wears whatever she has on
+      const MS = (E.spr.outfits[k] && E.spr.outfits[k][G.outfitOf(k)]) || E.spr.maids[k];
+      const breath = (this.t + 23) % 96 >= 78;
+      const body = step >= 0 ? MS[face][step]
+        : face !== 'down' ? (breath ? MS.breath[face] : MS[face][0])
+          : (breath ? MS.facesBreath : MS.faces)[expr] || (breath ? MS.breath.down : MS.down[0]);
       ctx.save();
       ctx.beginPath();
       ctx.rect(x + 2, y + 2, 80, 66);
       ctx.clip();
-      E.groundShadow(mx + 3, y + 67, 14, 3, 0.25);
-      ctx.drawImage(maidImg(k, face, frame), mx, my, Math.round(16 * s), Math.round(24 * s));
+      E.groundShadow(mx + 7, y + 66, 18, 4, 0.25);
+      ctx.drawImage(body, mx, my, 16 * s, 24 * s);
+      // a blush sits on top of her face, as it does in her room
+      if (expr === 'blush' && face === 'down' && step < 0) {
+        const by2 = my + 8 + (breath ? 2 : 0);
+        E.rect(mx + 6, by2, 4, 2, '#ff6f91');
+        E.rect(mx + 22, by2, 4, 2, '#ff6f91');
+      }
       // what she came with, on the counter top
       ctx.drawImage((E.spr.bombs[k] || E.spr.bomb)[(this.t >> 4) % 3], x + 30, y + 20);
       // what she is thinking of at this counter
       if (!walk && !deal && idle && beat < 44) {
         const em = E.spr.room.emotes[idle.emote];
-        if (em) ctx.drawImage(em, x + 66, my - 8 - (beat % 8 < 4 ? 1 : 0));
+        if (em) ctx.drawImage(em, mx + 14, my - 6 - (beat % 8 < 4 ? 1 : 0));
       }
       if (deal) this.drawDeal(deal, mx, my, x, y);
       ctx.restore();
@@ -1698,14 +1714,14 @@
       const kx = x + 16;
       if (d.t <= 16) {
         const p = d.t / 16;
-        ctx.drawImage(E.spr.ui.coin, Math.round(mx + 8 - (mx + 8 - kx) * p), Math.round(y + 38 - 8 * p - 12 * Math.sin(p * Math.PI)));
+        ctx.drawImage(E.spr.ui.coin, Math.round(mx + 12 - (mx + 12 - kx) * p), Math.round(y + 40 - 10 * p - 12 * Math.sin(p * Math.PI)));
       }
       const img = d.img;
       if (!img || d.t <= 12) return;
-      const rest = d.kind === 'eat' ? { x: mx - 13, y: my + 1 }
-        : d.kind === 'hug' ? { x: mx + 3, y: my + 11 }
-          : d.kind === 'ship' ? { x: x + 38, y: y + 20 }
-            : { x: mx + 3, y: y + 15 };
+      const rest = d.kind === 'eat' ? { x: mx - 5, y: my + 10 }     // up beside her face
+        : d.kind === 'hug' ? { x: mx + 8, y: my + 25 }                // held to her
+          : d.kind === 'ship' ? { x: x + 34, y: y + 20 }              // on the counter, waiting to be carted off
+            : { x: mx + 8, y: my - 10 };                              // over her head, about to go in
       const p = Math.min(1, (d.t - 12) / 22);
       let gx = kx + (rest.x - kx) * p;
       let gy = y + 24 + (rest.y - (y + 24)) * p - 12 * Math.sin(p * Math.PI);
@@ -1716,12 +1732,12 @@
           // she eats it where she stands: three bites out of the top, crumbs, and then she is very pleased
           cut = s > 30 ? img.height : s > 20 ? Math.round(img.height * 0.62) : s > 10 ? Math.round(img.height * 0.3) : 0;
           for (const at of [10, 20, 30]) if (s >= at && s < at + 8) ctx.drawImage(E.spr.fx.smoke[Math.min(3, (s - at) >> 1)], Math.round(gx + 2), Math.round(gy + 2));
-          if (s > 30) { const q = Math.min(1, (s - 30) / 24); ctx.drawImage(E.spr.fx.heart, Math.round(mx + 17), Math.round(my - 2 - 12 * q)); }
+          if (s > 30) { const q = Math.min(1, (s - 30) / 24); ctx.drawImage(E.spr.fx.heart, Math.round(mx + 26), Math.round(my + 2 - 12 * q)); }
         } else if (d.kind === 'hug') {
           gy -= Math.round(1 + Math.sin(d.t / 6));
           const q = (s % 30) / 30;
-          ctx.drawImage(E.spr.fx.heart, Math.round(mx - 4), Math.round(my + 8 - 16 * q));
-          ctx.drawImage(E.spr.fx.heart, Math.round(mx + 19), Math.round(my + 4 - 16 * ((q + 0.5) % 1)));
+          ctx.drawImage(E.spr.fx.heart, Math.round(mx - 4), Math.round(my + 18 - 18 * q));
+          ctx.drawImage(E.spr.fx.heart, Math.round(mx + 28), Math.round(my + 14 - 18 * ((q + 0.5) % 1)));
         } else if (d.kind === 'ship') {
           // the carpenter carts it off to her room
           if (s > 12) { const q = Math.min(1, (s - 12) / 26); gx += (x + 98 - rest.x) * q; alpha = q > 0.75 ? 1 - (q - 0.75) / 0.25 : 1; }
@@ -1731,12 +1747,12 @@
           const q = Math.min(1, Math.max(0, (s - 16) / 16));
           gy += 12 * q;
           alpha = 1 - q;
-          const r = 11 - 7 * q;
+          const r = 17 - 10 * q;
           for (let i = 0; i < 4; i++) {
             const a = this.t / 8 + (i * Math.PI) / 2;
-            ctx.drawImage(E.spr.fx.sparkle[(d.t >> 2) % 3], Math.round(mx + 8 + Math.cos(a) * r), Math.round(my + 12 + Math.sin(a) * r * 0.55));
+            ctx.drawImage(E.spr.fx.sparkle[(d.t >> 2) % 3], Math.round(mx + 13 + Math.cos(a) * r), Math.round(my + 22 + Math.sin(a) * r * 0.55));
           }
-          if (s > 28) ctx.drawImage(E.spr.fx.glint[(s >> 2) % 2], Math.round(mx + 5), Math.round(my + 8));
+          if (s > 28) ctx.drawImage(E.spr.fx.glint[(s >> 2) % 2], Math.round(mx + 12), Math.round(my + 16));
         }
       }
       if (cut >= img.height) return;
@@ -1749,8 +1765,8 @@
       const ctx = E.ctx;
       const S = E.spr;
       const tab = this.tab;
-      const plank = (by) => { E.rect(x + 24, by, 58, 2, b.lip); E.rect(x + 24, by + 2, 58, 1, b.dark); };
-      const on = (imgs, by) => imgs.forEach((im, i) => { if (im) ctx.drawImage(im, x + 26 + i * 18, by - im.height); });
+      const plank = (by) => { E.rect(x + 22, by, 42, 2, b.lip); E.rect(x + 22, by + 2, 42, 1, b.dark); };
+      const on = (imgs, by) => imgs.forEach((im, i) => { if (im) ctx.drawImage(im, x + 24 + i * 20, by - im.height); });
       E.rect(x + 3, y + 3, 78, 33, b.wall);
       if (tab === 0) {
         // a little restaurant: panelled walls over a pink wainscot, the day's cakes out, the machine on the end
@@ -1758,8 +1774,8 @@
         E.rect(x + 3, y + 24, 78, 12, '#f6d3dd');
         E.rect(x + 3, y + 23, 78, 1, b.lip);
         plank(y + 22);
-        on([S.room.food.cake, S.room.food.pudding], y + 22);
-        ctx.drawImage(S.shop.coffee, x + 62, y + 8);
+        ctx.drawImage(S.shop.coffee, x + 24, y + 8);
+        on([null, S.room.food.cake], y + 22);
       } else if (tab === 1) {
         // the gift counter: striped paper and a string of bunting
         for (let i = 0; i < 78; i += 9) E.rect(x + 3 + i, y + 3, 4, 33, '#ece0ff');
@@ -1769,39 +1785,39 @@
         }
         E.rect(x + 3, y + 3, 78, 1, '#c98a5a');
         plank(y + 22);
-        on([S.room.gifts.bouquet, S.room.gifts.ribbon], y + 22);
-        if (S.fx.giftbox.closed) ctx.drawImage(S.fx.giftbox.closed, x + 62, y + 22 - S.fx.giftbox.closed.height);
+        if (S.fx.giftbox.closed) ctx.drawImage(S.fx.giftbox.closed, x + 24, y + 22 - S.fx.giftbox.closed.height);
+        on([null, S.room.gifts.bouquet], y + 22);
       } else if (tab === 2) {
         // the carpenter's shed: sawn planks, and his pieces standing on the floor
         for (let j = 0; j < 34; j += 8) E.rect(x + 3, y + 3 + j, 78, 1, '#c09660');
         for (let j = 0; j < 34; j += 8) for (let i = (j % 16 ? 4 : 14); i < 78; i += 22) E.rect(x + 3 + i, y + 4 + j, 1, 7, '#c09660');
-        on([S.room.furniture.lamp, S.room.furniture.plant, S.room.furniture.plush], y + 35);
+        on([S.room.furniture.lamp, S.room.furniture.plant], y + 35);
       } else if (tab === 3) {
         // the jeweller's bench: a steel wall with a riveted rail and his gauge
         E.rect(x + 3, y + 3, 78, 5, '#dbe4f2');
         E.rect(x + 3, y + 8, 78, 1, '#aebdd2');
         for (let i = 0; i < 78; i += 12) E.rect(x + 8 + i, y + 5, 2, 2, '#aebdd2');
         plank(y + 22);
-        on([S.items.bomb, S.items.fire], y + 22);
-        ctx.drawImage(S.shop.gauge, x + 62, y + 8);
+        ctx.drawImage(S.shop.gauge, x + 24, y + 8);
+        on([null, S.items.fire], y + 22);
       } else if (tab === 4) {
         // the capsule stand: an awning, confetti and her own machine
         for (let i = 0; i < 78; i += 12) E.rect(x + 3 + i, y + 3, 6, 5, '#ec3d5f');
         E.rect(x + 3, y + 8, 78, 1, '#c9920e');
         for (const [dx, dy, col] of [[10, 14, '#ffd23f'], [30, 12, '#7fe08a'], [50, 16, '#ff8aa8'], [68, 26, '#8ac8ff'], [20, 26, '#ff8aa8']]) E.rect(x + dx, y + dy, 2, 2, col);
         plank(y + 22);
-        for (let i = 0; i < 2; i++) drawCapsule(x + 33 + i * 16, y + 16, 5, i + 1, this.t + i * 9, 0);
-        ctx.drawImage(S.shop.gachamini, x + 62, y + 8);
+        ctx.drawImage(S.shop.gachamini, x + 24, y + 8);
+        for (let i = 0; i < 2; i++) drawCapsule(x + 47 + i * 12, y + 16, 5, i + 1, this.t + i * 9, 0);
       } else if (tab === 5) {
         // the card counter: a dark scalloped curtain and a night sky
         for (let i = 0; i < 78; i += 10) { E.rect(x + 3 + i, y + 3, 10, 4, '#5a3d7a'); E.rect(x + 6 + i, y + 7, 4, 2, '#5a3d7a'); }
         for (const [dx, dy] of [[14, 14], [36, 11], [60, 16], [72, 12]]) ctx.drawImage(S.fx.star[(this.t >> 4) % 2], x + dx, y + dy);
         plank(y + 22);
-        for (let i = 0; i < 3; i++) drawCardBack(x + 29 + i * 18, y + 8, 11, 14, this.t);
+        for (let i = 0; i < 3; i++) drawCardBack(x + 24 + i * 14, y + 8, 11, 14, this.t + i * 12);
       } else {
         // the rest of the café
         plank(y + 22);
-        on([S.room.gifts.daifuku, S.room.gifts.novel, S.room.gifts.drink], y + 22);
+        on([S.room.gifts.daifuku, S.room.gifts.novel], y + 22);
       }
     },
     drawGifts() {
