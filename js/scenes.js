@@ -1327,9 +1327,19 @@
       this.msg = '';
       this.gacha = null;
       this.pack = null;
+      this.keeperSay('hello');
       A.playMusic('cafe');
     },
     tabs: ['甜點補給', '禮物專櫃', '家具店', '女僕強化', '扭蛋機', '抽卡片', '女僕換班', '回房間'],
+    shopKeys: ['food', 'gift', 'furniture', 'upgrade', 'gacha', 'card'],
+    shop() { return G.SHOPS[this.shopKeys[this.tab]] || null; },
+    // the keeper's answer, in a bubble over the counter
+    keeperSay(kind) {
+      const sh = this.shop();
+      const text = sh && (sh[kind] || (kind === 'again' && sh.poor));
+      if (!text) { this.shopSay = null; return; }
+      this.shopSay = { text, t: 0, kind };
+    },
     listFor(tab) {
       if (tab === 0) return G.MENU_FOOD;
       if (tab === 1) return G.GIFTS;
@@ -1344,8 +1354,9 @@
       const d = E.menuDir();
       const n = this.tabs.length;
       if (this.focus === 'tabs') {
-        if (d === 'up') { this.tab = (this.tab + n - 1) % n; A.sfx('select'); this.msg = ''; }
-        if (d === 'down') { this.tab = (this.tab + 1) % n; A.sfx('select'); this.msg = ''; }
+        // stepping along the counters: the one you stop at greets you, and the last one's words go with it
+        if (d === 'up') { this.tab = (this.tab + n - 1) % n; A.sfx('select'); this.msg = ''; this.keeperSay('hello'); }
+        if (d === 'down') { this.tab = (this.tab + 1) % n; A.sfx('select'); this.msg = ''; this.keeperSay('hello'); }
         if (E.menuPressed('a') || d === 'right') {
           if (this.tab === 7) { A.sfx('door'); E.go(SC.room); return; }
           if (this.tab === 6) { A.sfx('confirm'); E.go(SC.select, { mode: 'switch', back: 'cafe' }); return; }
@@ -1385,9 +1396,11 @@
       if (E.menuPressed('a')) this.buy(list);
     },
     buy(list) {
+      const coinsBefore = SAVE.coins;
+      let again = false; // she asked for something she already has: the keeper says so, instead of talking about money
       if (this.tab === 0) {
         const f = G.MENU_FOOD[this.row];
-        if (SAVE.buffs[f.id]) { A.sfx('denied'); this.msg = G.t('已經點過囉，下個委託會送上。'); }
+        if (SAVE.buffs[f.id]) { A.sfx('denied'); this.msg = G.t('已經點過囉，下個委託會送上。'); again = true; }
         else if (SAVE.coins < f.price) { A.sfx('denied'); this.msg = G.t('金幣不夠……'); }
         else { SAVE.coins -= f.price; SAVE.buffs[f.id] = true; persist(); A.sfx('coin'); this.msg = G.t('{name} 點好了！{desc}', { name: f.name, desc: f.desc }); }
       } else if (this.tab === 1) {
@@ -1398,7 +1411,7 @@
         const id = G.FURNITURE_SHOP[this.row];
         const F = G.FURNITURE[id];
         const room = getRoom();
-        if (F.unique && room.owned[id]) { A.sfx('denied'); this.msg = G.t('房間裡已經有{name}了。', { name: F.name }); }
+        if (F.unique && room.owned[id]) { A.sfx('denied'); this.msg = G.t('房間裡已經有{name}了。', { name: F.name }); again = true; }
         else if (SAVE.coins < F.price) { A.sfx('denied'); this.msg = G.t('金幣不夠……還差 {n}G', { n: F.price - SAVE.coins }); }
         else {
           SAVE.coins -= F.price;
@@ -1412,13 +1425,15 @@
       } else {
         const u = G.UPGRADES[this.row];
         const lv = SAVE.upgrades[u.id];
-        if (lv >= u.prices.length) { A.sfx('denied'); this.msg = G.t('已經強化到最高級了！'); }
+        if (lv >= u.prices.length) { A.sfx('denied'); this.msg = G.t('已經強化到最高級了！'); again = true; }
         else if (SAVE.coins < u.prices[lv]) { A.sfx('denied'); this.msg = G.t('金幣不夠……還差 {n}G', { n: u.prices[lv] - SAVE.coins }); }
         else { SAVE.coins -= u.prices[lv]; SAVE.upgrades[u.id]++; persist(); A.sfx('power'); this.msg = G.t('{name} 強化到 Lv.{lv}！', { name: u.name, lv: SAVE.upgrades[u.id] }); }
       }
+      this.keeperSay(SAVE.coins < coinsBefore ? 'buy' : again ? 'again' : 'poor');
     },
     spin() {
-      if (SAVE.coins < G.GACHA_PRICE) { A.sfx('denied'); this.msg = G.t('需要 {n}G 才能轉扭蛋。', { n: G.GACHA_PRICE }); return; }
+      if (SAVE.coins < G.GACHA_PRICE) { A.sfx('denied'); this.msg = G.t('需要 {n}G 才能轉扭蛋。', { n: G.GACHA_PRICE }); this.keeperSay('poor'); return; }
+      this.keeperSay('buy');
       SAVE.coins -= G.GACHA_PRICE;
       const prize = rollCapsule();
       persist();
@@ -1442,7 +1457,8 @@
     // ---------------- the card counter
     openPack(n) {
       const price = n === 1 ? G.CARD_PRICE : G.CARD_PRICE5;
-      if (SAVE.coins < price) { A.sfx('denied'); this.msg = G.t('需要 {n}G 才能抽卡片。', { n: price }); return; }
+      if (SAVE.coins < price) { A.sfx('denied'); this.msg = G.t('需要 {n}G 才能抽卡片。', { n: price }); this.keeperSay('poor'); return; }
+      this.keeperSay('buy');
       SAVE.coins -= price;
       const cards = [];
       for (let i = 0; i < n; i++) cards.push(pickCard(1));
@@ -1524,23 +1540,74 @@
       if (this.gacha) this.drawGachaReveal();
       if (this.pack) this.drawPack();
     },
+    // the counter as it should be: the shop's keeper behind it, the maid on duty in front of it as the customer,
+    // and what is on the shelf changes with the counter you are at
     drawCounter(x, y) {
       const ctx = E.ctx;
       const k = SAVE.maid || 'berry';
+      const sh = this.shop();
+      const back = ['#ffe9f0', '#f4ecff', '#f6efe2', '#e9eff8', '#fff2df', '#ffecf4'][this.tab] || '#ffe9f0';
       E.panel(x, y, 84, 70, '#ffd6e4', C.pink, { shine: C.white });
-      E.rect(x + 3, y + 3, 78, 24, '#ffe9f0');
-      E.rect(x + 8, y + 13, 68, 2, '#c98a5a');
-      ctx.drawImage(E.spr.room.gifts.daifuku, x + 6, y - 2);
-      ctx.drawImage(E.spr.room.gifts.honeycake, x + 24, y - 2);
-      const peng = E.spr.monsters.penguin.frames[(this.t >> 5) % 2];
-      ctx.drawImage(peng, x + 8, y + 38 - peng.height);
-      // the maid on duty: her CG portrait stands behind the counter, cut off at the counter top
-      E.panel(x + 46, y + 2, 34, 36, '#ffe0ea', G.MAID_DATA[k].color, {});
-      E.art('cafe-maid', CG_ART, x + 48, y + 4, 30, 32, CG_CROP.bust[k]);
-      E.rect(x + 3, y + 36, 78, 31, '#9c5f3a');
-      E.rect(x + 3, y + 36, 78, 4, '#c98a5a');
-      for (let i = 0; i < 78; i += 6) E.rect(x + 4 + i, y + 42, 3, 23, '#8c5230');
-      ctx.drawImage((E.spr.bombs[k] || E.spr.bomb)[(this.t >> 4) % 3], x + 27, y + 24);
+      // the room behind the counter — the wall, his wares, and him; all of it clipped to the wall, so a tall piece
+      // is cut off by the counter's frame instead of spilling over the tabs
+      const say = this.shopSay;
+      const hop = say && say.t < 26 ? -Math.round(3 * Math.abs(Math.sin((say.t / 13) * Math.PI))) : 0;
+      E.rect(x + 3, y + 3, 78, 33, back);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x + 3, y + 3, 78, 33);
+      ctx.clip();
+      this.drawShelf(x, y);
+      const keeper = sh && E.spr.monsters[sh.keeper];
+      if (keeper) {
+        const img = keeper.frames[(say ? say.t >> 3 : this.t >> 5) % 2];
+        ctx.drawImage(img, x + 6, y + 36 - img.height + hop);
+      }
+      ctx.restore();
+      // the counter: its top, then its front
+      E.rect(x + 3, y + 34, 78, 5, '#c98a5a');
+      E.rect(x + 3, y + 36, 78, 3, '#e0b47a');
+      E.rect(x + 3, y + 39, 78, 28, '#9c5f3a');
+      for (let i = 0; i < 78; i += 6) E.rect(x + 4 + i, y + 43, 3, 22, '#8c5230');
+      E.rect(x + 3, y + 39, 78, 1, '#c98a5a');
+      // the maid, in front of it, looking up at the keeper
+      const s = 1.4;
+      const mx = Math.round(x + 50), my = Math.round(y + 68 - 24 * s);
+      E.groundShadow(mx + 3, y + 67, 14, 3, 0.25);
+      ctx.drawImage(maidImg(k, 'up', (this.t >> 4) % 2), mx, my, Math.round(16 * s), Math.round(24 * s));
+      // what she came with, on the counter top
+      ctx.drawImage((E.spr.bombs[k] || E.spr.bomb)[(this.t >> 4) % 3], x + 30, y + 20);
+      // and what the keeper has to say
+      if (say) {
+        if (++say.t > 150) this.shopSay = null;
+        else {
+          const txt = say.text;
+          const o = { size: 10, fit: 72 };
+          const w = Math.min(80, E.textWidth(txt, o) + 8);
+          const bx = x + 2, by = y - 4;
+          E.panel(bx, by, w, 16, C.white, C.plum, {});
+          E.rect(bx + 6, by + 15, 5, 2, C.plum);
+          E.rect(bx + 6, by + 15, 4, 1, C.white);
+          E.rect(bx + 6, by + 17, 3, 2, C.plum);
+          E.rect(bx + 6, by + 17, 2, 1, C.white);
+          E.text(txt, bx + 4, by + 3, { color: C.plum, size: 10, fit: w - 8 });
+        }
+      }
+    },
+    // what each counter keeps behind it: small wares on a plank beside the keeper, furniture standing on his floor
+    drawShelf(x, y) {
+      const ctx = E.ctx;
+      const S = E.spr;
+      const plank = () => { E.rect(x + 24, y + 22, 58, 2, '#c98a5a'); E.rect(x + 24, y + 24, 58, 1, '#8c5230'); };
+      const on = (imgs, by) => imgs.forEach((im, i) => { if (im) ctx.drawImage(im, x + 26 + i * 18, by - im.height); });
+      if (this.tab === 2) { on([S.room.furniture.lamp, S.room.furniture.plant, S.room.furniture.plush], y + 35); return; }
+      plank();
+      if (this.tab === 0) on([S.room.gifts.daifuku, S.room.gifts.honeycake, S.room.gifts.icecream], y + 22);
+      else if (this.tab === 1) on([S.room.gifts.bouquet, S.room.gifts.ribbon, S.room.gifts.charm], y + 22);
+      else if (this.tab === 3) on([S.items.bomb, S.items.fire, S.items.speed], y + 22);
+      else if (this.tab === 4) { for (let i = 0; i < 3; i++) drawCapsule(x + 34 + i * 18, y + 16, 5, i + 1, this.t + i * 9, 0); }
+      else if (this.tab === 5) { for (let i = 0; i < 3; i++) drawCardBack(x + 29 + i * 18, y + 8, 11, 14, this.t); }
+      else on([S.room.gifts.daifuku, S.room.gifts.novel, S.room.gifts.drink], y + 22);
     },
     drawGifts() {
       E.text(G.t('禮物專櫃'), 106, 30, { color: C.red, size: 14 });

@@ -441,6 +441,16 @@
   // who: only that maid's shop carries it, and it only ever stands in her room
   G.FURNITURE_SHOP = ['plant', 'lamp', 'rug', 'plush', 'fishbowl', 'teatable', 'dresser', 'bookshelf', 'sofa', 'gramophone', 'piano', 'princess', 'sandbag', 'toybox', 'vase', 'screen'];
   // every maid keeps her own room: her paper, her floor, and the piece that suits her
+  // the café's counters: each has its own keeper, its own backdrop, and its own word for you (kept short: it is a
+  // little speech bubble over the counter). hello when you step up, buy when the coins change hands, poor when they do not.
+  G.SHOPS = {
+    food: { keeper: 'penguin', name: '企鵝老闆', hello: '歡迎光臨～', buy: '謝謝惠顧！', poor: '金幣不夠喔', again: '那道已經備好' },
+    gift: { keeper: 'snowkid', name: '雪寶寶店員', hello: '挑個禮物吧', buy: '她會開心的', poor: '差一點呢…' },
+    furniture: { keeper: 'teddy', name: '熊木匠', hello: '都是我做的', buy: '幫你搬過去', poor: '錢還不夠喔', again: '那件你有啦' },
+    upgrade: { keeper: 'gemknight', name: '寶石技師', hello: '要強化嗎？', buy: '調整完成。', poor: '預算不足。', again: '已到極限了。' },
+    gacha: { keeper: 'dustcat', name: '塵塵貓', hello: '轉一次嘛～', buy: '喵！好運！', poor: '喵…不夠喔' },
+    card: { keeper: 'dragon', name: '糖果龍', hello: '來抽卡吧！', buy: '下張說不定', poor: '金幣不夠…' },
+  };
   G.ROOM_STYLE = {
     berry: { wall: 'bunny', floor: 'wood' },
     honey: { wall: 'strawberry', floor: 'carpet' },

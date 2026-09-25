@@ -48,7 +48,7 @@
       } else if (v && typeof v === 'object') localise(v);
     }
   }
-  const DATA_ROOTS = ['OUTFITS', 'MAID_DATA', 'ENEMY_DATA', 'STAGES', 'MENU_FOOD', 'UPGRADES', 'CARDS', 'ROOM_SIZES', 'WALLPAPERS', 'FLOORS', 'FURNITURE', 'GIFTS', 'AFF_LEVELS', 'TRAININGS', 'INTRO_LINES', 'GUIDE', 'MORNING_EVENTS', 'LINES'];
+  const DATA_ROOTS = ['OUTFITS', 'MAID_DATA', 'ENEMY_DATA', 'STAGES', 'MENU_FOOD', 'UPGRADES', 'CARDS', 'ROOM_SIZES', 'WALLPAPERS', 'FLOORS', 'FURNITURE', 'GIFTS', 'AFF_LEVELS', 'TRAININGS', 'INTRO_LINES', 'GUIDE', 'MORNING_EVENTS', 'LINES', 'SHOPS'];
 
   const listeners = [];
   G.onLang = (fn) => listeners.push(fn);
