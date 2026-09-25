@@ -3247,59 +3247,61 @@
   function buildFood(id) {
     const p = new Pix(16, 16);
     switch (id) {
-      case 'cake': // a slice of strawberry cake: two sponge layers, cream between, a berry on top, on a plate
+      case 'cake': // a slice of strawberry shortcake: cream, two sponge layers with jam, a berry, on a plate
         stamp(p, [
-          '.......g........',
-          '......rRr.......',
-          '.....rrRrr......',
-          '....wwwwwww.....',
-          '...wWWWWWWWw....',
-          '...sSSSSSSSs....',
-          '...wWWpppWWw....',
-          '...sSSSSSSSs....',
-          '...wWWWWWWWw....',
-          '..PPPPPPPPPPP...',
-          '...QQQQQQQQQ....',
-        ], 0, 3, { r: '#ec3d5f', R: '#ff8aa8', g: '#4cb84c', w: '#ffffff', W: '#fff4e4', s: '#f2c98a', S: '#e0a262', p: '#ffb6c9', P: '#eef2f8', Q: '#c9d2e0' });
+          '.......G........',
+          '......rRh.......',
+          '.....rrrR.......',
+          '.....rrrr.......',
+          '...wwwwwwww.....',
+          '..wWWWWWWWWw....',
+          '..wWhwwwwwWw....',
+          '..sSSSSSSSSs....',
+          '..wWppppppWw....',
+          '..sSSSSSSSSs....',
+          '..dDDDDDDDDd....',
+          '.PPPPPPPPPPPP...',
+          '..QQQQQQQQQQ....',
+        ], 0, 1, { G: '#4cb84c', r: '#ec3d5f', R: '#ff8aa8', h: '#ffffff', w: '#f4e6d2', W: '#fffaf0', s: '#e0a262', S: '#ffdca8', d: '#c98a5a', D: '#f2c98a', p: '#ff9fbb', P: '#f4f8fe', Q: '#c2ccdc' });
         break;
-      case 'pudding': // caramel custard, the sauce running down one side
+      case 'pudding': // caramel custard, the sauce running down one side, on a plate
         stamp(p, [
           '.....cccccc.....',
           '....cCCCCCCc....',
-          '....yYYYYYYc....',
+          '...cCChCCCCCc...',
           '...yYYYYYYYYc...',
-          '...yYYYYYYYYy...',
+          '..yYhYYYYYYYYy..',
           '..yYYYYYYYYYYy..',
           '..yYYYYYYYYYYy..',
           '..yyyyyyyyyyyy..',
           '.PPPPPPPPPPPPPP.',
           '..QQQQQQQQQQQQ..',
-        ], 0, 4, { c: '#a4571e', C: '#d98a3c', y: '#e8b84a', Y: '#ffe08a', P: '#eef2f8', Q: '#c9d2e0' });
+        ], 0, 3, { c: '#8f4a18', C: '#d98a3c', h: '#ffd9a0', y: '#e0a83c', Y: '#ffe6a0', P: '#f4f8fe', Q: '#c2ccdc' });
         break;
-      case 'latte': // an iced latte: milk under coffee in a tall glass, a pink straw
+      case 'latte': // an iced latte: milk under coffee, ice in the glass, a pink straw
         stamp(p, [
-          '...........s....',
           '..........s.....',
+          '.........S......',
           '....ggggggg.....',
-          '....gbbbbbg.....',
-          '....gBbbbBg.....',
+          '....gbibbbg.....',
+          '....gbbbibg.....',
           '....gwwwwwg.....',
-          '....gwWWwwg.....',
+          '....ghwwwwg.....',
           '....gwwwwwg.....',
           '....gGwwwGg.....',
-          '.....ggggg......',
-        ], 0, 4, { s: '#ff8aa8', g: '#d8f0ff', G: '#9fd0ea', b: '#7a4a24', B: '#a9713c', w: '#fff6e8', W: '#ffffff' });
+          '.....GGGGG......',
+        ], 0, 4, { s: '#ff8aa8', S: '#ec6f91', g: '#d8f0ff', G: '#8fc6e4', b: '#6b3a1e', i: '#a9713c', w: '#fff6e8', h: '#ffffff' });
         break;
-      case 'tea': // Earl Grey: a white cup on its saucer
+      case 'tea': // Earl Grey: a white cup on its saucer, a shine on the surface
         stamp(p, [
-          '....wwwwwww.....',
-          '....wtttttw.....',
-          '....wTtttTwh....',
-          '....wwwwwwwh....',
-          '.....WWWWWh.....',
-          '...PPPPPPPPP....',
-          '....QQQQQQQ.....',
-        ], 0, 7, { w: '#ffffff', W: '#e4e8f2', t: '#6b3a1e', T: '#9a5c2c', h: '#e4e8f2', P: '#eef2f8', Q: '#c9d2e0' });
+          '....wwwwwwww....',
+          '....wthhtttw....',
+          '....wttttttwh...',
+          '....wWWWWWWwh...',
+          '.....wwwwww.....',
+          '...PPPPPPPPPP...',
+          '....QQQQQQQQ....',
+        ], 0, 6, { w: '#ffffff', W: '#dfe4f0', t: '#6b3a1e', h: '#a9713c', P: '#f4f8fe', Q: '#c2ccdc' });
         break;
     }
     return p.outlined(K);
@@ -3309,11 +3311,12 @@
   function buildShopProp(id) {
     const p = new Pix(16, 16);
     switch (id) {
-      case 'coffee': // the espresso machine behind the sweets counter
+      case 'coffee': // the espresso machine behind the sweets counter, cup under the spout
         stamp(p, [
           '..MMMMMMMMMMMM..',
           '..MkkkkkkkkkkM..',
           '..MkDDDDDDDDkM..',
+          '..MkDhDDDDDDkM..',
           '..MkkkkkkkkkkM..',
           '..MkKkkkkkkKkM..',
           '..MMMMMqqMMMMM..',
@@ -3321,31 +3324,44 @@
           '......wwww......',
           '......wWWw......',
           '.......ww.......',
-        ], 0, 3, { M: '#aeb8c8', k: '#e4eaf4', D: '#3a4a6a', K: '#ec3d5f', q: '#6c7a90', w: '#ffffff', W: '#7a4a24' });
+        ], 0, 2, { M: '#9aa6b8', k: '#e8eef8', D: '#2f3c58', h: '#8ab4e0', K: '#ec3d5f', q: '#6c7a90', w: '#ffffff', W: '#7a4a24' });
         break;
-      case 'gauge': // the jeweller's dial and its two lamps
+      case 'gauge': // the jeweller's dial, its needle and two lamps
         stamp(p, [
           '..PPPPPPPPPPPP..',
           '..PddddddddddP..',
-          '..Pdwwwwwwd.gP..',
-          '..PdwwKwwwd.GP..',
-          '..PdwwwKwwd..P..',
-          '..Pdwwwwwwd.rP..',
+          '..PdwwwwwwwwdP..',
+          '..PdwKhwwwwgdP..',
+          '..PdwwKwwwwGdP..',
+          '..PdwwwwwwwrdP..',
           '..PddddddddRdP..',
           '..PPPPPPPPPPPP..',
-        ], 0, 4, { P: '#aeb8c8', d: '#5a6678', w: '#e8f2ff', K: '#ec3d5f', g: '#7fe08a', G: '#3aa84c', r: '#ffd23f', R: '#c9920e' });
+        ], 0, 4, { P: '#9aa6b8', d: '#4e5a70', w: '#eef4ff', h: '#ffffff', K: '#ec3d5f', g: '#8af09a', G: '#3aa84c', r: '#ffd23f', R: '#c9920e' });
         break;
       case 'gachamini': // the capsule machine the dust cat keeps behind her counter
         stamp(p, [
           '....GGGGGG......',
-          '...GyGpGyGG.....',
+          '...GhyGpGyG.....',
           '...GpGyGpGG.....',
           '...rrrrrrrr.....',
           '...rRkkkkRr.....',
           '...rRkKKkRr.....',
-          '...rrrrrrrr.....',
+          '...rrnrrrrr.....',
           '....rrrrrr......',
-        ], 0, 4, { G: '#cfeaff', y: '#ffd23f', p: '#ff8aa8', r: '#ec3d5f', R: '#a51f40', k: '#5a2030', K: '#ffd23f' });
+        ], 0, 4, { G: '#cfeaff', h: '#ffffff', y: '#ffd23f', p: '#ff8aa8', r: '#ec3d5f', R: '#a51f40', k: '#4a1828', K: '#ffd23f', n: '#ffd23f' });
+        break;
+      case 'hammer': // the carpenter's, for tapping a joint home
+        stamp(p, [
+          '...HHHHHHH......',
+          '..HhHHHHHHH.....',
+          '..HHHHHHHHH.....',
+          '...HHHHHHH......',
+          '......bb........',
+          '......bb........',
+          '......bB........',
+          '......bB........',
+          '......bB........',
+        ], 0, 2, { H: '#9aa6b8', h: '#eef4ff', b: '#a4571e', B: '#d08a44' });
         break;
     }
     return p.outlined(K);
@@ -4192,7 +4208,7 @@
     art.room.food = {};
     for (const k of ['cake', 'pudding', 'latte', 'tea']) art.room.food[k] = softInk(bevel(buildFood(k)));
     art.shop = {};
-    for (const k of ['coffee', 'gauge', 'gachamini']) art.shop[k] = softInk(bevel(buildShopProp(k)));
+    for (const k of ['coffee', 'gauge', 'gachamini', 'hammer']) art.shop[k] = softInk(bevel(buildShopProp(k)));
     if (ROW_ERRORS.length) throw new Error('sprite rows:\n' + ROW_ERRORS.join('\n'));
     return art;
   }

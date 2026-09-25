@@ -1356,6 +1356,8 @@
       this.gacha = null;
       this.pack = null;
       this.deal = null;
+      this.peek = null;
+      this.lastRow = -1;
       this.keeperSay('hello');
       this.maidWalk('in');
       A.playMusic('cafe');
@@ -1369,12 +1371,22 @@
       if (dir === 'out') this.keeperSay('bye');
     },
     // the goods changing hands, after the coins have
-    handOver(img, kind) { this.deal = { t: 0, img: img || null, kind }; },
+    handOver(img, kind, big) { this.deal = { t: 0, img: img || null, kind, big: !!big }; },
     // something to say while you make up your mind
     keeperChat() {
       const sh = this.shop();
       if (!sh || !sh.chat || !sh.chat.length) return;
       this.shopSay = { text: E.pick(sh.chat), t: 0, kind: 'chat' };
+    },
+    // what she makes of the thing your cursor is on
+    rowMood() {
+      const list = this.listFor(this.tab);
+      const it = list && list[this.row];
+      if (!it) return 'dots';
+      const price = this.tab === 3 ? it.prices && it.prices[SAVE.upgrades[it.id] || 0] : this.tab === 2 ? (G.FURNITURE[it] || {}).price : it.price;
+      if (price != null && price > SAVE.coins) return 'sweat'; // what she cannot have comes first
+      if (this.tab === 1 && (it.fav === SAVE.maid || it.fav === 'all')) return 'heart';
+      return 'sparkle';
     },
     // whatever the cursor is on, so he can hold it up for you
     rowIcon() {
@@ -1431,6 +1443,11 @@
         if (deal.t > (DEAL_END[deal.kind] || 70)) this.deal = null;
       }
       if (!this.mw && !this.deal && !this.shopSay && this.t % 400 === 0) this.keeperChat();
+      // moving the cursor is an interaction too: she looks at what you are looking at
+      if (this.focus === 'list' && this.tab < 4) {
+        if (this.lastRow !== this.row) { this.lastRow = this.row; this.peek = { t: 0, emote: this.rowMood() }; }
+      } else this.lastRow = -1;
+      if (this.peek && ++this.peek.t > 44) this.peek = null;
       if (this.gacha) return this.updateGacha();
       if (this.pack) return this.updatePack();
       const d = E.menuDir();
@@ -1494,7 +1511,7 @@
       } else if (this.tab === 1) {
         const g = G.GIFTS[this.row];
         if (SAVE.coins < g.price) { A.sfx('denied'); this.msg = G.t('金幣不夠……還差 {n}G', { n: g.price - SAVE.coins }); }
-        else { SAVE.coins -= g.price; SAVE.gifts[g.id] = (SAVE.gifts[g.id] || 0) + 1; persist(); A.sfx('buy'); this.msg = G.t('買了{name}！回房間送給女僕吧。', { name: g.name }); this.handOver(E.spr.room.gifts[g.id], 'hug'); }
+        else { SAVE.coins -= g.price; SAVE.gifts[g.id] = (SAVE.gifts[g.id] || 0) + 1; persist(); A.sfx('buy'); this.msg = G.t('買了{name}！回房間送給女僕吧。', { name: g.name }); this.handOver(E.spr.room.gifts[g.id], 'hug', g.fav === SAVE.maid || g.fav === 'all'); }
       } else if (this.tab === 2) {
         const id = G.FURNITURE_SHOP[this.row];
         const F = G.FURNITURE[id];
@@ -1653,11 +1670,16 @@
         const img = keeper.frames[(say ? say.t >> 3 : this.t >> 5) % 2];
         ctx.drawImage(img, x + 6, y + 36 - img.height + hop + dip);
       }
+      this.drawShopBusy(x, y);
       ctx.restore();
-      // the counter itself, built of whatever this shop is built of
+      // the counter itself, built of whatever this shop is built of: a lit top, a shadow under the lip, and the
+      // front going darker towards the floor
       E.rect(x + 3, y + 34, 78, 5, b.lip);
+      E.rect(x + 3, y + 34, 78, 1, b.top);
       E.rect(x + 3, y + 36, 78, 3, b.top);
       E.rect(x + 3, y + 39, 78, 28, b.front);
+      E.rect(x + 3, y + 39, 78, 2, b.dark);
+      E.rect(x + 3, y + 62, 78, 5, b.dark);
       if (b.grain === 'rivet') {
         E.rect(x + 3, y + 52, 78, 1, b.dark);
         for (let i = 0; i < 78; i += 12) { E.rect(x + 8 + i, y + 44, 2, 2, b.dark); E.rect(x + 8 + i, y + 60, 2, 2, b.dark); }
@@ -1666,7 +1688,7 @@
       } else {
         for (let i = 0; i < 78; i += 6) E.rect(x + 4 + i, y + 43, 3, 22, b.dark);
       }
-      E.rect(x + 3, y + 39, 78, 1, b.lip);
+      E.rect(x + 3, y + 41, 78, 1, b.lip);
       // the maid, in front of it: walking on, waiting the way this shop makes her wait, or walking off again
       const s = 2, spot = x + 52, gone = x + 94;
       const walk = this.mw;
@@ -1697,6 +1719,12 @@
         else if (idle.act === 'shift') { if (beat < 16) step = 1; else if (beat < 30) step = 0; }
         else if (idle.act === 'bounce') lift = beat < 26 ? -Math.round(5 * Math.abs(Math.sin((beat / 13) * Math.PI))) : 0;
         else if (idle.act === 'fidget') { if (beat < 26) { step = (beat >> 3) % 2 ? 2 : 1; mx = spot + (beat >> 3) % 2; } }
+        // she looks at what your cursor is on
+        if (this.peek) {
+          emote = this.peek.emote;
+          if (emote === 'heart') expr = 'happy';
+          else if (emote === 'sweat') expr = 'tired';
+        }
         // and she answers the keeper: a wince when the coins are short, a blink when she has it already
         const r = say && say.t < 64 && SAY_REACT[say.kind];
         if (r) { if (r.expr) expr = r.expr; if (r.emote) emote = r.emote; }
@@ -1794,6 +1822,15 @@
           const q = (s % 30) / 30;
           ctx.drawImage(E.spr.fx.heart, Math.round(mx - 4), Math.round(my + 18 - 18 * q));
           ctx.drawImage(E.spr.fx.heart, Math.round(mx + 28), Math.round(my + 14 - 18 * ((q + 0.5) % 1)));
+          // one she loves is worth a bigger one
+          const big = d.big && E.spr.fx.bigHeart.love;
+          if (big && s > 6) {
+            const r2 = Math.min(1, (s - 6) / 10);
+            const w2 = Math.round(big.width * r2), h2 = Math.round(big.height * r2);
+            ctx.globalAlpha = s > 34 ? Math.max(0, 1 - (s - 34) / 16) : 1;
+            ctx.drawImage(big, Math.round(mx + 16 - w2 / 2), Math.round(my - 4 - h2 / 2 - s * 0.15), w2, h2);
+            ctx.globalAlpha = 1;
+          }
         } else if (d.kind === 'ship') {
           // the carpenter carts it off to her room
           if (s > 12) { const q = Math.min(1, (s - 12) / 26); gx += (x + 98 - rest.x) * q; alpha = q > 0.75 ? 1 - (q - 0.75) / 0.25 : 1; }
@@ -1816,6 +1853,54 @@
       ctx.drawImage(img, 0, cut, img.width, img.height - cut, Math.round(gx), Math.round(gy) - (img.height - 16) + cut, img.width, img.height - cut);
       ctx.globalAlpha = 1;
     },
+    // what the keeper is doing with himself while you browse: each trade has its own small business
+    drawShopBusy(x, y) {
+      const ctx = E.ctx;
+      const S = E.spr;
+      const t = this.t;
+      if (this.tab === 0) {
+        // steam off the machine
+        for (let i = 0; i < 2; i++) {
+          const q = ((t + i * 45) % 90) / 90;
+          ctx.globalAlpha = 0.6 * (1 - q);
+          ctx.drawImage(S.fx.smoke[Math.min(3, (q * 4) | 0)], Math.round(x + 27 + Math.sin(q * 5 + i) * 2), Math.round(y + 6 - q * 9));
+        }
+        ctx.globalAlpha = 1;
+      } else if (this.tab === 1) {
+        // he is wrapping: the lid comes off the box and settles back on
+        const c = t % 150;
+        const box = S.fx.giftbox;
+        const by = y + 22 - box.closed.height;
+        if (c < 40) ctx.drawImage(box.open, x + 24, by);
+        else if (c < 58) {
+          ctx.drawImage(box.closed, x + 24, by - (c < 48 ? 2 : 0));
+          if (c < 52) ctx.drawImage(S.fx.sparkle[(c >> 1) % 3], x + 36, by + 1);
+        }
+      } else if (this.tab === 2) {
+        // he taps a joint home
+        const c = t % 110;
+        if (c < 46) {
+          const down = c % 22 >= 11;
+          ctx.drawImage(S.shop.hammer, x + 42, y + (down ? 5 : 0));
+          if (down && c % 22 < 16) ctx.drawImage(S.fx.star[(c >> 1) % 2], x + 47, y + 20);
+        }
+      } else if (this.tab === 3) {
+        // the dial catches the light
+        const c = t % 130;
+        if (c < 18) ctx.drawImage(S.fx.glint[(c >> 3) % 2], x + 28, y + 9);
+      } else if (this.tab === 4) {
+        // a capsule drops into the chute
+        const c = t % 120;
+        if (c < 24) ctx.drawImage(S.ui.coin, x + 31, y + 18 + Math.round(c * 0.3));
+      } else if (this.tab === 5) {
+        // he turns a card over and over
+        const c = t % 130;
+        if (c < 44) {
+          const w = Math.max(1, Math.round(Math.abs(Math.cos((c / 44) * Math.PI * 2)) * 11));
+          drawCardBack(Math.round(x + 57 - w / 2), y + 6, w, 14, t);
+        }
+      }
+    },
     // the room behind each counter: 78x31 of its own shop
     drawShopRoom(x, y, b) {
       const ctx = E.ctx;
@@ -1824,6 +1909,8 @@
       const plank = (by) => { E.rect(x + 22, by, 42, 2, b.lip); E.rect(x + 22, by + 2, 42, 1, b.dark); };
       const on = (imgs, by) => imgs.forEach((im, i) => { if (im) ctx.drawImage(im, x + 24 + i * 20, by - im.height); });
       E.rect(x + 3, y + 3, 78, 33, b.wall);
+      E.rect(x + 3, y + 32, 78, 4, b.dark);
+      E.rect(x + 3, y + 32, 78, 1, b.lip);
       if (tab === 0) {
         // a little restaurant: panelled walls over a pink wainscot, the day's cakes out, the machine on the end
         for (let i = 0; i < 78; i += 9) E.rect(x + 3 + i, y + 3, 1, 21, '#ffe4cd');
@@ -1869,7 +1956,7 @@
         for (let i = 0; i < 78; i += 10) { E.rect(x + 3 + i, y + 3, 10, 4, '#5a3d7a'); E.rect(x + 6 + i, y + 7, 4, 2, '#5a3d7a'); }
         for (const [dx, dy] of [[14, 14], [36, 11], [60, 16], [72, 12]]) ctx.drawImage(S.fx.star[(this.t >> 4) % 2], x + dx, y + dy);
         plank(y + 22);
-        for (let i = 0; i < 3; i++) drawCardBack(x + 24 + i * 14, y + 8, 11, 14, this.t + i * 12);
+        for (let i = 0; i < 2; i++) drawCardBack(x + 24 + i * 14, y + 8, 11, 14, this.t + i * 12);
       } else {
         // the rest of the café
         plank(y + 22);
