@@ -1744,8 +1744,14 @@
       ctx.clip();
       E.groundShadow(mx + 7, y + 66, 18, 4, 0.25);
       ctx.drawImage(body, mx, my, 16 * s, 24 * s);
-      // a blush sits on top of her face, as it does in her room
-      if (expr === 'blush' && face === 'down' && step < 0) {
+      // at this size her face is worth drawing twice over: the 16x8 version goes in, and what is hers — glasses, a
+      // lock of hair over her cheek — goes back on top of it
+      const big = face === 'down' && step < 0 && E.spr.faceBig[k];
+      if (big) {
+        const fy = my + 18 + (breath ? 2 : 0);
+        ctx.drawImage(big[expr] || big.normal, mx + 8, fy);
+        if (MS.faceMask) ctx.drawImage(MS.faceMask, 0, 0, 8, 4, mx + 8, fy, 16, 8);
+      } else if (expr === 'blush' && face === 'down' && step < 0) {
         const by2 = my + 8 + (breath ? 2 : 0);
         E.rect(mx + 6, by2, 4, 2, '#ff6f91');
         E.rect(mx + 22, by2, 4, 2, '#ff6f91');

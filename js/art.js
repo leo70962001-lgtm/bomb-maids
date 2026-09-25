@@ -1,7 +1,7 @@
 /* 炸彈女僕 BOMB MAIDS — original pixel art, authored as strings + procedural painters */
 (function (G) {
   'use strict';
-  const { Pix, fromRows, mix, hash } = G.PX;
+  const { Pix, fromRows, mix, hash, rgba } = G.PX;
 
   // ---------------------------------------------------------------- palettes
   const BASE = {
@@ -434,6 +434,32 @@
       return c;
     });
   }
+  // The light sits on top of her head and her fringe throws a shadow on her face: the top pixel of the hair in each
+  // column is lifted towards white and the one under it half as much, and any lit skin directly under hair or its ink
+  // drops to the shaded tone. Both follow the silhouette, so they work for every hairstyle and every view.
+  function polishHead(pix, P, bob) {
+    const hex = (c) => '#' + [c[0], c[1], c[2]].map((v) => v.toString(16).padStart(2, '0')).join('');
+    const hair = new Set(['H', 'h', 'l', 'L'].map((k) => (P[k] || '').toLowerCase()));
+    const skin = new Set(['s', 'p'].map((k) => (P[k] || '').toLowerCase()));
+    const ink = (P.hairInk || '').toLowerCase();
+    const solid = (q) => q && (q[0] || q[1] || q[2]);
+    const overhead = (q) => !solid(q) || hex(q) === ink;
+    return pix.map((c, x, y) => {
+      if (!solid(c)) return c;
+      const col = hex(c);
+      const r = y - bob;
+      if (skin.has(col)) {
+        const up = pix.get(x, y - 1);
+        if (solid(up)) { const uc = hex(up); if (hair.has(uc) || uc === ink) return mix(col, P.t, 0.6); }
+        return c;
+      }
+      if (hair.has(col) && r >= 1 && r <= 8) {
+        if (overhead(pix.get(x, y - 1))) return mix(col, '#ffffff', 0.26);
+        if (overhead(pix.get(x, y - 2))) return mix(col, '#ffffff', 0.13);
+      }
+      return c;
+    });
+  }
   // hair below the shoulders (layer rows from `from` down) moved a pixel sideways: the follow-through of a step
   function swayRows(pix, from, dx) {
     const out = new Pix(pix.w, pix.h);
@@ -445,6 +471,82 @@
     }
     return out;
   }
+  // ---------------------------------------------------------------- her face at twice the detail
+  // The four rows of her face (sprite rows 9-12, columns 4-11) drawn again for 16x8, for where she is shown at 2x.
+  // Same structure as the sprites this was learned from: brows, a lash line, an iris in two tones with a catchlight on
+  // the outer top, a lit lower lid, blush and a small mouth. The outer columns of the last two rows are left clear,
+  // where a lock of hair frames her face.
+  const BIG_FACES = {
+    normal: [
+      'ssskksssssskksss',
+      'ssssssssssssssss',
+      'sskkkksssskkkkss',
+      'sswEEksssskEEwss',
+      'ssweeksssskeewss',
+      'sssvvssssssvvsss',
+      '..ppsssssssspp..',
+      '..sssssmmsssss..',
+    ],
+    happy: [
+      'ssskksssssskksss',
+      'ssssssssssssssss',
+      'ssssssssssssssss',
+      'ssskksssssskksss',
+      'ssksskssssksskss',
+      'ssssssssssssssss',
+      '..ppsssssssspp..',
+      '..sssssmmsssss..',
+    ],
+    blush: [
+      'ssskksssssskksss',
+      'ssssssssssssssss',
+      'sskkkksssskkkkss',
+      'sswEEksssskEEwss',
+      'ssweeksssskeewss',
+      'sssvvssssssvvsss',
+      '..ppppsssspppp..',
+      '..sssssmmsssss..',
+    ],
+    surprise: [
+      'ssskksssssskksss',
+      'ssssssssssssssss',
+      'sskkkksssskkkkss',
+      'sswwEwsssswEwwss',
+      'sswEEwsssswEEwss',
+      'ssswwsssssswwsss',
+      '..ssssssssssss..',
+      '..sssssmmsssss..',
+    ],
+    tired: [
+      'ssskksssssskksss',
+      'ssssssssssssssss',
+      'ssssssssssssssss',
+      'sskkkksssskkkkss',
+      'sskeeksssskeekss',
+      'ssssssssssssssss',
+      '..ppsssssssspp..',
+      '..sssssmmsssss..',
+    ],
+  };
+  function bigFace(name, key) {
+    const P = pal(name);
+    return fromRows(BIG_FACES[key], { k: P.lash, E: P.E, e: P.e, v: P.v, w: '#ffffff', s: P.s, t: P.t, p: P.p, m: P.m }, 16);
+  }
+  // Everything inside that block that is not her face — glasses, a rose, a lock of hair — so it can go back on top.
+  function faceFeatures(pix, P) {
+    const near = (c, hex) => { const q = rgba(hex); return Math.abs(c[0] - q[0]) + Math.abs(c[1] - q[1]) + Math.abs(c[2] - q[2]) < 56; };
+    const mine = [P.s, P.t, P.p, P.m, P.w, P.c, P.E, P.e, P.v, P.lash, P.skinInk].filter(Boolean);
+    const out = new Pix(8, 4);
+    for (let y = 0; y < 4; y++) {
+      for (let x = 0; x < 8; x++) {
+        const c = pix.get(4 + x, 9 + y);
+        if (!c || mine.some((h) => near(c, h))) continue;
+        out.set(x, y, c);
+      }
+    }
+    return out;
+  }
+
   function buildMaid(name, outfit) {
     outfit = outfit || 'maid';
     const P = Object.assign(pal(name), OUTFIT_STYLE[outfit].pal(name));
@@ -468,7 +570,7 @@
       pix.blit(fromRows(pad(14, rows16(BODY[dir][f], 'body ' + dir + f)), P), 0, 0);
       pix.blit(fromRows(pad(0, rows16(headRows, name + ' head ' + dir)), P), 0, bob);
       if (over) pix.blit(swing(over), 0, bob);
-      return shadeHair(inkHair(pix, P), P, bob);
+      return polishHead(shadeHair(inkHair(pix, P), P, bob), P, bob);
     };
     const heads = {};
     for (const dir of ['down', 'up', 'side']) {
@@ -484,6 +586,8 @@
     // breathing in: the standing pose with head and hair a pixel lower, shown now and then while she stands still
     out.breath = { down: compose('down', heads.down, 0, 1), up: compose('up', heads.up, 0, 1), left: compose('side', heads.side, 0, 1) };
     out.breath.right = out.breath.left.flipped();
+    // what is hers inside the face block, for the big face at the café counter
+    out.faceMask = faceFeatures(out.down[0], P);
     // facial expressions (front view, standing) for the room, the title screen and dialogue
     out.faces = { normal: out.down[0] };
     out.facesBreath = { normal: out.breath.down };
@@ -4207,6 +4311,9 @@
     for (const k of ['daifuku', 'honeycake', 'icecream', 'matcha', 'drink', 'novel', 'charm', 'bouquet', 'ribbon']) art.room.gifts[k] = softInk(bevel(buildGift(k)));
     art.room.food = {};
     for (const k of ['cake', 'pudding', 'latte', 'tea']) art.room.food[k] = softInk(bevel(buildFood(k)));
+    // her face for where she is shown big
+    art.faceBig = {};
+    for (const m of Object.keys(MAIDS)) { art.faceBig[m] = {}; for (const key of Object.keys(BIG_FACES)) art.faceBig[m][key] = bigFace(m, key); }
     art.shop = {};
     for (const k of ['coffee', 'gauge', 'gachamini', 'hammer']) art.shop[k] = softInk(bevel(buildShopProp(k)));
     if (ROW_ERRORS.length) throw new Error('sprite rows:\n' + ROW_ERRORS.join('\n'));
