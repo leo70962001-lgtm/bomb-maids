@@ -1744,10 +1744,13 @@
       ctx.rect(x + 2, y + 2, 80, 66);
       ctx.clip();
       E.groundShadow(mx + 7, y + 66, 18, 4, 0.25);
-      ctx.drawImage(body, mx, my, 16 * s, 24 * s);
+      // standing in her maid outfit she is drawn from the 32x44 sheet, which has the counter's own pixel density
+      const bigSprite = face === 'down' && step < 0 && G.outfitOf(k) === 'maid' && E.spr.bigMaids && E.spr.bigMaids[k];
+      if (bigSprite) ctx.drawImage(bigSprite, mx, y + 68 - 44 + lift);
+      else ctx.drawImage(body, mx, my, 16 * s, 24 * s);
       // at this size her face is worth drawing twice over: the 16x8 version goes in, and what is hers — glasses, a
       // lock of hair over her cheek — goes back on top of it
-      const big = face === 'down' && step < 0 && E.spr.faceBig[k];
+      const big = !bigSprite && face === 'down' && step < 0 && E.spr.faceBig[k];
       if (big) {
         const fy = my + 22 + (breath ? 2 : 0);
         ctx.drawImage(big[expr] || big.normal, mx + 8, fy);
