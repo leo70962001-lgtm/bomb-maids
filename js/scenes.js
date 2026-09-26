@@ -1746,7 +1746,7 @@
       E.groundShadow(mx + 7, y + 66, 18, 4, 0.25);
       // standing in her maid outfit she is drawn from the 32x44 sheet, which has the counter's own pixel density
       const bigSprite = face === 'down' && step < 0 && G.outfitOf(k) === 'maid' && E.spr.bigMaids && E.spr.bigMaids[k];
-      if (bigSprite) ctx.drawImage(bigSprite, mx, y + 68 - 44 + lift);
+      if (bigSprite) ctx.drawImage(bigSprite, mx - 10, y + 68 - 44 + lift);
       else ctx.drawImage(body, mx, my, 16 * s, 24 * s);
       // at this size her face is worth drawing twice over: the 16x8 version goes in, and what is hers — glasses, a
       // lock of hair over her cheek — goes back on top of it
