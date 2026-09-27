@@ -147,6 +147,9 @@
     E.ctx.drawImage(E.spr.ui.coin, dx, y);
     E.text(s, dx + 9, y, { color: C.gold, outline: '#000000' });
   }
+  // a secret maid is not on the roster at all until she is found — no silhouette, no slot, no number in the count
+  const isSecret = (k) => !!G.HIDDEN_MAID && k === G.HIDDEN_MAID.maid && !(SAVE && SAVE.hired[k]);
+  const roster = () => G.MAID_ORDER.filter((k) => !isSecret(k));
   // maids who have not joined yet are only shown as silhouettes (a new save starts with the first maid in MAID_ORDER)
   function isLocked(key) {
     return !!SAVE && !SAVE.hired[key] && !(key === G.MAID_ORDER[0] && !Object.keys(SAVE.hired).length);
@@ -333,7 +336,7 @@
   G.outfitOf = (k) => (SAVE && SAVE.outfits && SAVE.outfits[k]) || 'maid';
   G.persist = persist;
   G.BOND = { getBond, affLevel, trainLevel, perks, maidStats, getRoom, roomHas, unlockPlan, syncUnlocks };
-  G.UI = { C, CG_ART, CG_CROP, portraitFace, goldBar, edgeBar, bg, lace, heartCursor, hint, header, coinLabel, maidImg, drawHead, isLocked, silhouette, maidName, rankColor, paper, darkPanel, statPips, wrapLines, marquee };
+  G.UI = { C, CG_ART, CG_CROP, portraitFace, isSecret, roster, goldBar, edgeBar, bg, lace, heartCursor, hint, header, coinLabel, maidImg, drawHead, isLocked, silhouette, maidName, rankColor, paper, darkPanel, statPips, wrapLines, marquee };
 
   // ------------------------------------------------------------------ Portrait panel (16:9 screen, left of the game)
   // The maid who matters on this screen stands beside the game with no frame and no caption: cut out of the
@@ -514,7 +517,7 @@
   function portraitFor(sc) {
     const hired = G.MAID_ORDER.filter((k) => SAVE && SAVE.hired[k]);
     const home = (SAVE && SAVE.maid) || hired[0] || 'berry';
-    if (sc === SC.select && sc.sel != null) { const k = G.MAID_ORDER[sc.sel]; return isLocked(k) ? { key: k, locked: true, emo: 'normal' } : { key: k, emo: feelPic(k, 'happy') }; }
+    if (sc === SC.select && sc.sel != null) { const k = roster()[sc.sel] || G.MAID_ORDER[0]; return isLocked(k) ? { key: k, locked: true, emo: 'normal' } : { key: k, emo: feelPic(k, 'happy') }; }
     if ((sc === SC.play || sc === SC.battle) && sc.world && sc.world.maids[0]) {
       const w = sc.world, m = w.maids[0];
       const key = m.maidKey;
@@ -1110,7 +1113,7 @@
     enter(arg) {
       this.mode = (arg && arg.mode) || 'first';
       this.back = (arg && arg.back) || 'room';
-      this.sel = Math.max(0, G.MAID_ORDER.indexOf(SAVE.maid || 'berry'));
+      this.sel = Math.max(0, roster().indexOf(SAVE.maid || 'berry'));
       this.t = 0;
       this.msg = null;
       A.playMusic('cafe');
@@ -1118,9 +1121,10 @@
     update() {
       this.t++;
       const d = E.menuDir();
-      if (d === 'left') { this.sel = (this.sel + 3) % 4; A.sfx('select'); this.msg = null; }
-      if (d === 'right') { this.sel = (this.sel + 1) % 4; A.sfx('select'); this.msg = null; }
-      const key = G.MAID_ORDER[this.sel];
+      const list = roster();
+      if (d === 'left') { this.sel = (this.sel + list.length - 1) % list.length; A.sfx('select'); this.msg = null; }
+      if (d === 'right') { this.sel = (this.sel + 1) % list.length; A.sfx('select'); this.msg = null; }
+      const key = list[this.sel] || list[0];
       const D = G.MAID_DATA[key];
       if (E.menuPressed('a')) {
         if (this.mode === 'first' && key !== G.MAID_ORDER[0]) {
@@ -1155,9 +1159,10 @@
     },
     draw() {
       bg(this.t);
-      const hiredCount = G.MAID_ORDER.filter((k) => SAVE.hired[k]).length;
-      header(G.t(this.mode === 'first' ? '第一位女僕' : '女僕換班'), this.mode === 'first' ? G.t('每打倒一個 BOSS，就有一位女僕加入') : G.t('夥伴 {n}/{total}', { n: hiredCount, total: G.MAID_ORDER.length }));
-      G.MAID_ORDER.forEach((k, i) => {
+      const list = roster();
+      const hiredCount = list.filter((k) => SAVE.hired[k]).length;
+      header(G.t(this.mode === 'first' ? '第一位女僕' : '女僕換班'), this.mode === 'first' ? G.t('每打倒一個 BOSS，就有一位女僕加入') : G.t('夥伴 {n}/{total}', { n: hiredCount, total: list.length }));
+      list.forEach((k, i) => {
         const D = G.MAID_DATA[k];
         const on = i === this.sel;
         const x = 10 + i * 76, y = on ? 22 : 26;
@@ -1179,7 +1184,7 @@
           statPips(x + 6, y + 118, 'speed', st.speed, 6, '#3d86f0');
         }
       });
-      const key = G.MAID_ORDER[this.sel];
+      const key = list[this.sel] || list[0];
       const D = G.MAID_DATA[key];
       darkPanel(8, 156, 304, 66);
       if (isLocked(key)) {
@@ -1635,11 +1640,11 @@
         wrapLines([G.t('每打倒一個 BOSS，就有新的女僕加入。在這裡可以讓她們換班。'), '',
           rumour ? G.t('傳聞：把寶石關卡打掃到 100%，會遇見一位黑髮女僕。') : G.t('按 Z 前往更衣室')], 112, 66, C.ink, 16, 190);
         const plan = unlockPlan();
-        G.MAID_ORDER.forEach((k, i) => {
-          drawMaidFigure(k, 124 + i * 44, 150, 2, 0);
-          if (SAVE.hired[k]) return;
-          if (plan[k]) E.text(plan[k], 140 + i * 44, 140, { color: C.red, align: 'center' });
-          else if (H && k === H.maid) E.text('？？？', 140 + i * 44, 140, { color: C.plum, align: 'center' });
+        const list = roster();
+        const left = 124 + (4 - list.length) * 22;
+        list.forEach((k, i) => {
+          drawMaidFigure(k, left + i * 44, 150, 2, 0);
+          if (!SAVE.hired[k] && plan[k]) E.text(plan[k], left + 16 + i * 44, 140, { color: C.red, align: 'center' });
         });
       } else {
         E.text(G.t('回到自己的房間'), 205, 110, { color: C.ink, align: 'center' });
@@ -3063,7 +3068,7 @@
       E.ctx.restore();
       E.rect(0, 186, E.W, 54, C.plum);
       lace(0, 183, E.W, C.plum);
-      G.MAID_ORDER.forEach((k, i) => {
+      roster().forEach((k, i) => {
         const x = 20 + i * 76;
         const hop = Math.abs(Math.sin(this.t * 0.1 + i)) * 8;
         E.ctx.drawImage(maidImg(k, 'down', [1, 2][((this.t >> 4) + i) % 2]), x + 14, 190 - hop, 32, 48);
