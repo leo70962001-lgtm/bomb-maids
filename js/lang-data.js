@@ -952,5 +952,9 @@
     '再一次嘛喵': ['もう一回にゃ', 'One more~'],
     '稀有卡看運氣': ['レアは運次第', 'Rares? Luck.'],
     '收集起來吧': ['集めようよ', 'Collect them'],
+    '傳聞：一塵不染的宮殿裡，有人在等。': ['噂：塵ひとつない宮殿には、誰かが待つとか。', 'Rumour: someone waits in a spotless palace.'],
+    '傳聞：打掃到一塵不染，就會遇見她。': ['噂：塵ひとつ残さず掃除すれば、彼女に会えるとか。', 'Rumour: sweep every speck and you will meet her.'],
+    '隱藏女僕 {name} 出現了！': ['隠しメイド {name} が現れた！', 'Hidden maid {name} appeared!'],
+    '傳聞：把寶石關卡打掃到 100%，會遇見一位黑髮女僕。': ['噂：ジュエルの依頼を掃除度100%で終えると、黒髪のメイドに会えるらしい。', 'Rumour: finish a jewel job at 100% cleaning and a black-haired maid appears.'],
   });
 })(window);

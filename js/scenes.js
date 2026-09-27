@@ -307,8 +307,9 @@
   // maids join through the jobs: the ones not picked first arrive with G.MAID_UNLOCK_STAGES, in order
   function unlockPlan() {
     const first = SAVE.first || G.MAID_ORDER.find((k) => SAVE.hired[k]) || 'berry';
+    const hidden = G.HIDDEN_MAID && G.HIDDEN_MAID.maid;
     const plan = {};
-    G.MAID_ORDER.filter((k) => k !== first).forEach((k, i) => { plan[k] = G.MAID_UNLOCK_STAGES[i]; });
+    G.MAID_ORDER.filter((k) => k !== first && k !== hidden).forEach((k, i) => { plan[k] = G.MAID_UNLOCK_STAGES[i]; });
     return plan;
   }
   // hire every maid whose job is cleared; returns the ones who just joined
@@ -1629,11 +1630,16 @@
       else if (this.tab === 5) this.drawCardPanel();
       else if (this.tab === 6) {
         E.text(G.t('女僕換班'), 205, 40, { color: C.red, align: 'center', size: 14 });
-        wrapLines([G.t('每打倒一個 BOSS，就有新的女僕加入。在這裡可以讓她們換班。'), '', G.t('按 Z 前往更衣室')], 112, 66, C.ink, 16, 190);
+        const H = G.HIDDEN_MAID;
+        const rumour = H && !SAVE.hired[H.maid] && (SAVE.cleared['5-2'] || H.stages.some((id) => SAVE.cleared[id]));
+        wrapLines([G.t('每打倒一個 BOSS，就有新的女僕加入。在這裡可以讓她們換班。'), '',
+          rumour ? G.t('傳聞：把寶石關卡打掃到 100%，會遇見一位黑髮女僕。') : G.t('按 Z 前往更衣室')], 112, 66, C.ink, 16, 190);
         const plan = unlockPlan();
         G.MAID_ORDER.forEach((k, i) => {
           drawMaidFigure(k, 124 + i * 44, 150, 2, 0);
-          if (!SAVE.hired[k] && plan[k]) E.text(plan[k], 140 + i * 44, 140, { color: C.red, align: 'center' });
+          if (SAVE.hired[k]) return;
+          if (plan[k]) E.text(plan[k], 140 + i * 44, 140, { color: C.red, align: 'center' });
+          else if (H && k === H.maid) E.text('？？？', 140 + i * 44, 140, { color: C.plum, align: 'center' });
         });
       } else {
         E.text(G.t('回到自己的房間'), 205, 110, { color: C.ink, align: 'center' });
@@ -2892,6 +2898,14 @@
       const order = ['C', 'B', 'A', 'S'];
       if (!SAVE.cleared[def.id] || order.indexOf(this.rank) > order.indexOf(SAVE.cleared[def.id])) SAVE.cleared[def.id] = this.rank;
       this.newMaid = syncUnlocks()[0] || null;
+      // the hidden maid: not a boss, a job in the jewel stages left without a speck of dust
+      const H = G.HIDDEN_MAID;
+      if (H && !SAVE.hired[H.maid] && H.stages.indexOf(def.id) >= 0 && clean >= H.clean) {
+        SAVE.hired[H.maid] = true;
+        getBond(H.maid);
+        this.newMaid = H.maid;
+        this.secret = true;
+      }
       if (this.newMaid) SAVE.lastJob.newMaid = this.newMaid;
       SAVE.coins += this.total;
       SAVE.plays++;
@@ -2955,10 +2969,15 @@
         const k = this.newMaid;
         const pop = Math.min(1, (this.t - 130) / 12);
         const rise = Math.round((1 - pop) * 6);
-        E.rect(20, 197, 188, 17, C.red);
+        E.rect(20, 197, 188, 17, this.secret ? C.plum : C.red);
         E.panel(24, 194 + rise, 22, 22, '#ffe0ea', G.MAID_DATA[k].color, {});
         E.art('result-newcomer', CG_ART, 26, 196 + rise, 18, 18, CG_CROP.head[k]);
-        E.text(G.t('新夥伴 {name} 加入了！', { name: G.MAID_DATA[k].name }), 126, 199, { color: C.white, align: 'center', fit: 156 });
+        E.text(G.t(this.secret ? '隱藏女僕 {name} 出現了！' : '新夥伴 {name} 加入了！', { name: G.MAID_DATA[k].name }), 126, 199, { color: C.white, align: 'center', fit: 156 });
+        // she does not walk in: she is simply there, and the air sparkles around her
+        if (this.secret) for (let i = 0; i < 4; i++) {
+          const a = this.t * 0.12 + (i * Math.PI) / 2;
+          E.ctx.drawImage(E.spr.fx.sparkle[(this.t >> 2) % 3], Math.round(35 + Math.cos(a) * 14), Math.round(205 + rise + Math.sin(a) * 9));
+        }
       }
       if (this.t > 60) hint(G.t(this.ending ? 'Z 繼續' : 'Z 回房間'));
     },

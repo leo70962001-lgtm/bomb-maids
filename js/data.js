@@ -54,6 +54,9 @@
   // Berry starts in your room; each boss defeated brings the next maid
   G.MAID_ORDER = ['berry', 'honey', 'yukino', 'yoru'];
   G.MAID_UNLOCK_STAGES = ['BOSS1', 'BOSS2', 'BOSS3'];
+  // 夜子 is not on the roster at all: she is somewhere in the jewel stages, and only a job left without a speck of
+  // dust brings her out. The stage briefs are the only hint until you have been there.
+  G.HIDDEN_MAID = { maid: 'yoru', stages: ['6-1', '6-2'], clean: 1 };
 
   // ------------------------------------------------------------------ outfits (bought once, any maid can wear them)
   G.OUTFITS = [
@@ -141,12 +144,12 @@
     },
     {
       id: '6-1', theme: 'jewel', title: '寶石宮殿', client: '寶石公主', reward: 850, time: 220, layout: 'jewelEgg',
-      brief: ['宮殿中央的巨大寶石蛋被盯上了！', '寶石騎士很硬，要炸兩次。'],
+      brief: ['宮殿中央的巨大寶石蛋被盯上了！', '寶石騎士很硬，要炸兩次。', '傳聞：一塵不染的宮殿裡，有人在等。'],
       enemies: { gemknight: 4, dragon: 2, cupcake: 1 }, items: { bomb: 2, fire: 3, speed: 1, heart: 1, tea: 1, fullfire: 1, skull: 1, glove: 1 }, soft: 0.58, dust: 6,
     },
     {
       id: '6-2', theme: 'jewel', title: '閃耀迴廊', client: '寶石公主', reward: 950, time: 220, layout: 'jewelRing',
-      brief: ['水晶柱排成菱形的迴廊。', '從四個缺口鑽進中央吧！'],
+      brief: ['水晶柱排成菱形的迴廊。', '從四個缺口鑽進中央吧！', '傳聞：打掃到一塵不染，就會遇見她。'],
       enemies: { gemknight: 5, dragon: 2, penguin: 2 }, items: { bomb: 3, fire: 3, star: 1, heart: 2, clock: 1, kick: 1, line: 1, glove: 1 }, soft: 0.6, dust: 7,
     },
     {
