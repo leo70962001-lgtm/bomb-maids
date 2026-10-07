@@ -10,7 +10,7 @@
   const SC = (G.SCENES = {});
   // the character illustration: the four maids in a 2x2 grid (Berry TL, Yoru TR, Honey BL, Yukino BR;
   // gutters at x 461-466 and y 573-578 of the 928x1152 image)
-  const CG_ART = 'img/maids-cg3.jpg'; // rebuilt from the Gemini/FLUX.2 Klein set (D:/ai/gemini/group.py): same eyes, same crops
+  const CG_ART = 'img/maids-cg2.jpg';
   // crops of it as [sx, sy, sw, sh, imageWidth, imageHeight] (see E.art), one set per frame shape.
   // The illustration shows each maid's personality: Berry pumping her fists, Yoru carrying tea, Honey flustered with
   // a wobbling cake, Yukino adjusting her glasses with a broom.
@@ -347,10 +347,6 @@
   // Pictures are placed by her eyes — [centre x, centre y, distance between them] in source pixels — so her face keeps
   // its size and height from one picture to the next; right is the right-most column of her figure (not counting the
   // sparkles and notes around her).
-  // Every picture of hers is from Gemini, one style throughout (js/cg-data.js, img/cg/<maid>-<key>.webp): normal;
-  // joy / anger / sorrow / fun; her own expressions (the cards' keys); love, sleepy and battle; her outfits
-  // (outfit-cat, outfit-yukata, outfit-princess); and hurt1-3, her clothes a little more torn by each blast.
-  // the hand-cut pictures from before, kept for whatever Gemini has not redrawn yet (img/stand-, emo-, ex-)
   const STAND = {
     berry: {
       normal: { w: 369, h: 560, eye: [186, 154, 58.5], right: 368 },
@@ -442,27 +438,13 @@
     },
   };
   for (const k in EXPR) for (const e in EXPR[k]) STAND[k][e] = Object.assign({ src: 'img/ex-' + k + '-' + e + '.webp' }, EXPR[k][e]);
-  for (const k in STAND) for (const e in STAND[k]) if (!STAND[k][e].src) STAND[k][e].src = e === 'normal' ? 'img/stand-' + k + '.webp' : 'img/emo-' + k + '-' + e + '.webp';
-  // Gemini's pictures (js/cg-data.js, img/cg/<maid>-<key>.webp, one style throughout) replace a maid's set as a whole,
-  // once it has every picture her old set had: mixing the two would put two styles side by side, and the cards need
-  // each key. Besides the old keys a new set has love, sleepy and battle, her outfits (outfit-cat, outfit-yukata,
-  // outfit-princess) and hurt1-3, her clothes a little more torn by each blast.
-  const GEMINI = {};
-  for (const k in G.CG) {
-    // (?cgpreview in the address shows a set before it is complete, to check the pictures as they come in)
-    const preview = typeof location !== 'undefined' && /cgpreview/.test(location.search);
-    if (!preview && STAND[k] && Object.keys(STAND[k]).some((e) => !G.CG[k][e])) continue;
-    GEMINI[k] = true;
-    STAND[k] = {};
-    for (const e in G.CG[k]) STAND[k][e] = Object.assign({ src: 'img/cg/' + k + '-' + e + '.webp' }, G.CG[k][e]);
-  }
   // What a feeling looks like on each maid: the game asks for a feeling and her own picture answers it. A feeling can
   // also be a picture's own key (joy, cheer, pout...). What a maid has no picture for falls back on FEEL_FALLBACK.
   const FEEL = {
-    berry: { happy: 'cheer', love: 'tender', shy: 'giggle', surprise: 'wonder', angry: 'rage', sad: 'cry', excited: 'excited', proud: 'proud', tired: 'sleepy', panic: 'panic', confused: 'panic', tease: 'smug', calm: 'smug', skill: 'battle', win: 'overjoy', photo: 'peace', photoHigh: 'peace', gift: 'excited', meh: 'panic', ask: 'excited', miss: 'panic', locked: 'giggle', hug: 'tender', whisper: 'tender', tea: 'tender' },
-    yoru: { happy: 'tender', love: 'tender', shy: 'shy', surprise: 'surprise', angry: 'disgust', sad: 'cry', excited: 'wonder', proud: 'calm', tired: 'sleepy', panic: 'surprise', confused: 'sweat', tease: 'content', calm: 'calm', skill: 'battle', win: 'content', photo: 'disgust', photoHigh: 'tender', gift: 'wonder', meh: 'pout', ask: 'calm', miss: 'pout', locked: 'disgust', hug: 'shy', whisper: 'shy', tea: 'serve' },
-    honey: { happy: 'cheer', love: 'content', shy: 'shy', surprise: 'wonder', angry: 'pout', sad: 'nervous', excited: 'gift', proud: 'cheer', tired: 'sleepy', panic: 'panic', confused: 'confused', tease: 'dreamy', calm: 'dreamy', skill: 'battle', win: 'cheer', photo: 'wonder', photoHigh: 'content', gift: 'gift', meh: 'worry', ask: 'dreamy', miss: 'pout', locked: 'shy', hug: 'content', whisper: 'shy', tea: 'content' },
-    yukino: { happy: 'tender', love: 'tender', shy: 'shy', surprise: 'surprise', angry: 'angry', sad: 'sad', excited: 'excited', proud: 'arrogant', tired: 'sleepy', panic: 'surprise', confused: 'surprise', tease: 'tease', calm: 'serious', skill: 'battle', win: 'confident', photo: 'confident', photoHigh: 'seduce', gift: 'excited', meh: 'tired', ask: 'tender', miss: 'tease', locked: 'tease', hug: 'tender', whisper: 'shy', tea: 'tender' },
+    berry: { happy: 'cheer', love: 'tender', shy: 'giggle', surprise: 'wonder', angry: 'rage', sad: 'cry', excited: 'excited', proud: 'proud', tired: 'panic', panic: 'panic', confused: 'panic', tease: 'smug', calm: 'smug', skill: 'rage', win: 'overjoy', photo: 'peace', photoHigh: 'peace', gift: 'excited', meh: 'panic', ask: 'excited', miss: 'panic', locked: 'giggle', hug: 'tender', whisper: 'tender', tea: 'tender' },
+    yoru: { happy: 'tender', love: 'tender', shy: 'shy', surprise: 'surprise', angry: 'disgust', sad: 'cry', excited: 'wonder', proud: 'calm', tired: 'sweat', panic: 'surprise', confused: 'sweat', tease: 'content', calm: 'calm', skill: 'rage', win: 'content', photo: 'disgust', photoHigh: 'tender', gift: 'wonder', meh: 'pout', ask: 'calm', miss: 'pout', locked: 'disgust', hug: 'shy', whisper: 'shy', tea: 'serve' },
+    honey: { happy: 'cheer', love: 'content', shy: 'shy', surprise: 'wonder', angry: 'pout', sad: 'nervous', excited: 'gift', proud: 'cheer', tired: 'worry', panic: 'panic', confused: 'confused', tease: 'dreamy', calm: 'dreamy', skill: 'cheer', win: 'cheer', photo: 'wonder', photoHigh: 'content', gift: 'gift', meh: 'worry', ask: 'dreamy', miss: 'pout', locked: 'shy', hug: 'content', whisper: 'shy', tea: 'content' },
+    yukino: { happy: 'tender', love: 'tender', shy: 'shy', surprise: 'surprise', angry: 'angry', sad: 'sad', excited: 'excited', proud: 'arrogant', tired: 'tired', panic: 'surprise', confused: 'surprise', tease: 'tease', calm: 'serious', skill: 'confident', win: 'confident', photo: 'confident', photoHigh: 'seduce', gift: 'excited', meh: 'tired', ask: 'tender', miss: 'tease', locked: 'tease', hug: 'tender', whisper: 'shy', tea: 'tender' },
   };
   const FEEL_FALLBACK = { happy: 'joy', love: 'joy', shy: 'joy', surprise: 'fun', angry: 'anger', sad: 'sorrow', excited: 'fun', proud: 'fun', tired: 'sorrow', panic: 'fun', confused: 'fun', tease: 'joy', skill: 'anger', win: 'fun', gift: 'fun', meh: 'sorrow' };
   function feelPic(k, feel) {
@@ -475,17 +457,17 @@
   }
   // the room sprite's faces as feelings
   const FACE_FEEL = { happy: 'happy', blush: 'love', surprise: 'surprise', angry: 'angry', tired: 'tired', gloom: 'sad' };
-  const STAND_SCALE = 0.36; // the standing picture's scale (Gemini's sets are drawn bigger: 0.29 puts their eyes 18.5 px apart)
+  const STAND_SCALE = 0.36; // the standing picture's scale
   const STAND_TOP = 48; // where the top of the standing picture sits: under the tallest top bar (the room's status bar)
   const STAND_LEAN = 6; // how far she may reach into the game area; past it she fades out
   for (const k in STAND) {
     const base = STAND[k].normal;
-    const sc = GEMINI[k] ? 0.29 : STAND_SCALE;
-    Object.assign(base, { s: sc, drop: 0 });
-    const eyeD = base.eye[2] * sc, eyeY = STAND_TOP + base.eye[1] * sc;
+    Object.assign(base, { src: 'img/stand-' + k + '.webp', s: STAND_SCALE, drop: 0 });
+    const eyeD = base.eye[2] * STAND_SCALE, eyeY = STAND_TOP + base.eye[1] * STAND_SCALE;
     for (const e in STAND[k]) {
       if (e === 'normal') continue;
       const S = STAND[k][e];
+      if (!S.src) S.src = 'img/emo-' + k + '-' + e + '.webp';
       // the expression pictures are closer shots: her face keeps its size, then leans in a little (up to 1.25x and 16px
       // lower) so the picture reaches the bottom of the screen; its faded lower edge covers any gap that is left
       const head = eyeD / S.eye[2];
@@ -541,13 +523,9 @@
       const key = m.maidKey;
       if (w.state === 'clear') return { key, emo: feelPic(key, 'win') };
       if (w.state === 'end') return { key, emo: feelPic(key, w.winner === m ? 'win' : 'sad') };
-      // each heart she loses tears her clothes a little more (hurt1-3); a heart won back mends one step
-      const torn = !m.alive || w.state === 'fail' ? 3 : Math.min(3, m.maxHearts - m.hearts);
-      const hurt = torn > 0 && STAND[key] && STAND[key]['hurt' + torn] ? 'hurt' + torn : null;
-      if (w.state === 'fail' || !m.alive) return { key, emo: hurt || feelPic(key, 'sad'), ko: true };
-      if (m.burnT > 0) return { key, emo: hurt || feelPic(key, 'panic') };
-      const r = reaction(w, m);
-      return { key, emo: r === 'normal' && hurt ? hurt : r };
+      if (w.state === 'fail' || !m.alive) return { key, emo: feelPic(key, 'sad'), ko: true };
+      if (m.burnT > 0) return { key, emo: feelPic(key, 'panic') };
+      return { key, emo: reaction(w, m) };
     }
     if (sc === SC.result && sc.rank) return { key: home, emo: sc.t > 100 ? feelPic(home, RANK_FEEL[sc.rank]) : 'normal' };
     if (sc === SC.gameover) return { key: home, emo: feelPic(home, 'sad') };
@@ -577,9 +555,7 @@
     if (!SAVE || PW <= 0) return;
     const p = portraitFor(E.scene);
     const k = STAND[p.key] ? p.key : 'berry';
-    let emo = STAND[k][p.emo] ? p.emo : 'normal';
-    // at rest she shows the outfit she is wearing
-    if (emo === 'normal' && !p.locked && STAND[k]['outfit-' + G.outfitOf(k)]) emo = 'outfit-' + G.outfitOf(k);
+    const emo = STAND[k][p.emo] ? p.emo : 'normal';
     // the wallpaper, lined up with the scene's (same scroll, same tint); scenes without one get it dimmed
     const drew = lastBg.frame === E.draws;
     const off = drew ? lastBg.off : Math.floor(E.frame * 0.25) % 32;
@@ -617,7 +593,7 @@
     const rise = Math.max(0, 1 - (E.frame - shown.since) / 16);
     const [mx, my] = p.locked ? [0, 0] : (MOTION[k] || MOTION.yoru)(E.frame);
     const filter = p.locked ? 'brightness(0) opacity(0.6)' : p.ko ? 'grayscale(0.7) brightness(0.8)' : null;
-    const eyeY = STAND_TOP + STAND[k].normal.eye[1] * STAND[k].normal.s;
+    const eyeY = STAND_TOP + STAND[k].normal.eye[1] * STAND_SCALE;
     const edge = PW + STAND_LEAN;
     const figure = (id, e, opacity, pop) => {
       const S = STAND[k][e];
