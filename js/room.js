@@ -186,6 +186,14 @@
   // hiring poster with the first maid popping in. Lines type out and move on by themselves; Z or a tap moves on
   // sooner, START or the skip button jumps to the end.
   const OP_FADE = 24; // frames of cross-fade between shots
+  // the four shots as painted CGs (Gemini, from docs/opening-cg-prompts.md), and where each one's camera drifts to:
+  // along the street to the rooftops, up to the lit window, down to the coins, across to Berry
+  const OP_CG = { w: 1376, h: 768, drift: [[0.2, 0.55], [0.75, 0.45], [0.7, 0.75], [0.7, 0.4]] };
+  const opPics = [];
+  function opPic(i) {
+    if (!opPics[i]) { const im = new Image(); im.src = 'img/op-' + (i + 1) + '.webp'; opPics[i] = im; }
+    return opPics[i];
+  }
   const opHash = (n) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
   function opSky(L, FW, bands) {
     const h = Math.ceil((E.H - 10) / bands.length);
@@ -259,6 +267,7 @@
       this.shotT = 0;
       this.prev = null; // the shot fading out: { i, t, at }
       this.leaving = false;
+      for (let k = 0; k < G.INTRO_LINES.length; k++) opPic(k);
       A.playMusic('room');
     },
     // the band the opening draws in: the whole screen beside the portrait panel, else the game's width
@@ -325,6 +334,20 @@
       E.text(G.t('跳過 ▶▶'), r.x + r.w, 3, { color: C.gray, align: 'right' });
     },
     shot(i, t, L, FW, alpha) {
+      const pic = opPic(i);
+      if (pic.complete && pic.naturalWidth) {
+        // the band between the letterbox bars, filled with the picture; a slow push-in (1.04 to 1.12 over six seconds)
+        // drifting towards the part of the picture the line is about
+        const top = 18, h = E.H - 18 - 43;
+        const k = E.ease.inOutSine ? E.ease.inOutSine(Math.min(1, t / 360)) : Math.min(1, t / 360);
+        const zoom = 1.04 + 0.08 * k;
+        const cw = OP_CG.w / zoom, ch = cw * (h / FW);
+        const d = OP_CG.drift[i] || [0.5, 0.5];
+        const cx = (OP_CG.w - cw) * (0.5 + (d[0] - 0.5) * k), cy = (OP_CG.h - ch) * (0.5 + (d[1] - 0.5) * k);
+        E.rect(L, top, FW, h, '#000000');
+        E.art('op-' + (i % 2), pic.src, L, top, FW, h, [cx, cy, cw, ch, OP_CG.w, OP_CG.h], null, { opacity: alpha });
+        return;
+      }
       if (i === 0) this.shotTown(t, L, FW);
       else if (i === 1) this.shotMansion(t, L, FW);
       else if (i === 2) this.shotRoom(t, L, FW);
