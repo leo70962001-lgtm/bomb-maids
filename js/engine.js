@@ -54,6 +54,20 @@
   // The canvas is 320x240 pixel art, so full-resolution illustrations are shown as DOM elements laid over it.
   // A scene calls E.art() from draw() every frame it wants a picture; pictures not drawn in a frame are hidden.
   const artLayer = { el: null, items: new Map(), used: new Map() };
+  // Animated pictures: a picture with a looping clip in js/anim-data.js (img/anim/<name>.webm, VP9 with alpha, made in
+  // ComfyUI from the picture itself) plays the clip in its place. The still stays underneath until the clip is playing,
+  // so nothing blinks while it loads. Browsers that cannot show VP9 alpha (Safari) keep the stills.
+  const canAlphaVideo = (() => {
+    if (typeof document === 'undefined' || typeof navigator === 'undefined') return false;
+    if (/^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent)) return false;
+    const v = document.createElement('video');
+    return !!(v.canPlayType && v.canPlayType('video/webm; codecs="vp9"'));
+  })();
+  function clipFor(src) {
+    const m = /(?:^|\/)img\/([^/]+)\.webp$/.exec(src);
+    const a = m && canAlphaVideo && E.animOn !== false && window.ANIM && window.ANIM[m[1]];
+    return a ? { src: 'img/anim/' + m[1] + '.webm', vw: a.vw, vh: a.vh } : null;
+  }
   // crop: [sx, sy, sw, sh, imageWidth, imageHeight] in source pixels; x/y/w/h in screen pixels.
   // Pictures are never stretched: a crop shaped differently from its box is trimmed to fit
   // (evenly from the sides, or more from the bottom than the top so faces stay in frame).
@@ -68,9 +82,11 @@
     if (!it) {
       it = document.createElement('div');
       it.className = 'art';
+      it.style.overflow = 'hidden';
       artLayer.el.appendChild(it);
       artLayer.items.set(id, it);
     }
+    const clip = clipFor(src);
     artLayer.used.set(id, { filter: filter || 'none', shade: 1, screen, opacity: o.opacity == null ? 1 : o.opacity });
     let [sx, sy, sw, sh] = crop;
     const iw = crop[4], ih = crop[5];
@@ -78,13 +94,14 @@
     else if (sw / sh < w / h) { const nh = (sw * h) / w; sy += (sh - nh) / 3; sh = nh; }
     const css = {
       left: ((x + (screen ? 0 : E.sideW)) / E.SW) * 100 + '%', top: (y / H) * 100 + '%', width: (w / E.SW) * 100 + '%', height: (h / H) * 100 + '%',
-      backgroundImage: 'url("' + src + '")',
+      backgroundImage: clip && it._clipReady === clip.src ? 'none' : 'url("' + src + '")',
       zIndex: screen ? '2' : '1',
       backgroundSize: (iw / sw) * 100 + '% ' + (ih / sh) * 100 + '%',
       backgroundPosition: (iw > sw ? (sx / (iw - sw)) * 100 : 0) + '% ' + (ih > sh ? (sy / (ih - sh)) * 100 : 0) + '%',
     };
     for (const k of Object.keys(css)) if (it.style[k] !== css[k]) it.style[k] = css[k];
-    const grad = (dir, f) => 'linear-gradient(to ' + dir + ', #000 ' + (f[0] * 100).toFixed(1) + '%, transparent ' + (f[1] * 100).toFixed(1) + '%)';
+    artClip(it, clip, sx, sy, sw, sh);
+    const grad =(dir, f) => 'linear-gradient(to ' + dir + ', #000 ' + (f[0] * 100).toFixed(1) + '%, transparent ' + (f[1] * 100).toFixed(1) + '%)';
     const masks = [o.fadeRight && grad('right', o.fadeRight), o.fadeBottom && grad('bottom', o.fadeBottom)].filter(Boolean);
     const mask = masks.length ? masks.join(', ') : 'none';
     if (it._mask !== mask) {
@@ -96,6 +113,32 @@
       it.style.maskComposite = masks.length > 1 ? 'intersect' : '';
     }
   };
+  // the clip of a picture element: it covers (0, 0)-(vw, vh) of the picture, placed by the same crop as the still
+  function artClip(it, clip, sx, sy, sw, sh) {
+    let v = it._video;
+    if (!clip) {
+      if (v && v.style.display !== 'none') { v.pause(); v.style.display = 'none'; it._clipReady = null; }
+      return;
+    }
+    if (!v) {
+      v = it._video = document.createElement('video');
+      v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true; v.preload = 'auto';
+      v.setAttribute('muted', ''); v.setAttribute('playsinline', '');
+      Object.assign(v.style, { position: 'absolute', pointerEvents: 'none', opacity: '0', transition: 'opacity 0.15s' });
+      v.addEventListener('playing', () => { it._clipReady = v._src; v.style.opacity = '1'; });
+      it.appendChild(v);
+    }
+    if (v._src !== clip.src) {
+      v._src = clip.src; it._clipReady = null; v.style.opacity = '0';
+      v.src = clip.src;
+      const p = v.play(); if (p && p.catch) p.catch(() => {});
+    }
+    if (v.style.display === 'none') { v.style.display = ''; const p = v.play(); if (p && p.catch) p.catch(() => {}); }
+    // browsers hold back autoplay in a hidden tab and on some first loads: ask again now and then while it is shown
+    else if (v.paused && (!v._try || E.frame - v._try > 60)) { v._try = E.frame; const p = v.play(); if (p && p.catch) p.catch(() => {}); }
+    const css = { left: (-sx / sw) * 100 + '%', top: (-sy / sh) * 100 + '%', width: (clip.vw / sw) * 100 + '%', height: (clip.vh / sh) * 100 + '%' };
+    for (const k in css) if (v.style[k] !== css[k]) v.style[k] = css[k];
+  }
   // Overlays drawn on the canvas (pause menus, pop-ups) cannot cover the pictures, so an overlay shades the pictures
   // already drawn this frame: 1 leaves them as they are, 0.4 darkens them like a 60% dim, 0 hides them.
   // Pictures drawn after the call (a card shown on the pop-up itself) are not affected.
@@ -107,7 +150,12 @@
     for (const [id, it] of artLayer.items) {
       const u = artLayer.used.get(id);
       const display = u && u.shade > 0 ? 'block' : 'none';
-      if (it.style.display !== display) it.style.display = display;
+      if (it.style.display !== display) {
+        it.style.display = display;
+        // a hidden picture's clip stops (no decoding off screen) and carries on when it is shown again
+        const v = it._video;
+        if (v && v.style.display !== 'none') { if (display === 'none') v.pause(); else { const p = v.play(); if (p && p.catch) p.catch(() => {}); } }
+      }
       if (display === 'none') continue;
       const filter = u.shade < 1 ? (u.filter === 'none' ? '' : u.filter + ' ') + 'brightness(' + u.shade + ')' : u.filter;
       if (it.style.filter !== filter) it.style.filter = filter;
