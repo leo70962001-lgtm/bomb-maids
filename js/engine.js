@@ -54,19 +54,48 @@
   // The canvas is 320x240 pixel art, so full-resolution illustrations are shown as DOM elements laid over it.
   // A scene calls E.art() from draw() every frame it wants a picture; pictures not drawn in a frame are hidden.
   const artLayer = { el: null, items: new Map(), used: new Map() };
-  // Animated pictures: a picture with a looping clip in js/anim-data.js (img/anim/<name>.webm, VP9 with alpha, made in
-  // ComfyUI from the picture itself) plays the clip in its place. The still stays underneath until the clip is playing,
-  // so nothing blinks while it loads. Browsers that cannot show VP9 alpha (Safari) keep the stills.
-  const canAlphaVideo = (() => {
-    if (typeof document === 'undefined' || typeof navigator === 'undefined') return false;
-    if (/^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent)) return false;
+  // Animated pictures: a picture with a looping clip in js/anim-data.js (made in ComfyUI from the picture itself) shows
+  // the clip in its place. Two forms: img/anim/<name>.webm (VP9 with alpha, 24 fps) where this browser really draws VP9
+  // alpha, and img/anim/<name>.anim.webp (animated WebP with alpha, 12 fps) everywhere else — iPhone and Safari, in-app
+  // browsers, and some that play VP9 but paint its transparent parts white. The still stays until the clip is ready, so
+  // nothing blinks while it loads.
+  let alphaVideo = null; // null while the test runs, then true / false
+  (function testAlphaVideo() {
+    if (typeof document === 'undefined') { alphaVideo = false; return; }
+    // ?anim=webp in the address shows the animated-WebP path (what iPhones get) on any browser, for testing
+    if (typeof location !== 'undefined' && /anim=webp/.test(location.search)) { alphaVideo = false; return; }
     const v = document.createElement('video');
-    return !!(v.canPlayType && v.canPlayType('video/webm; codecs="vp9"'));
+    if (!(v.canPlayType && v.canPlayType('video/webm; codecs="vp9"'))) { alphaVideo = false; return; }
+    // a 16x16 clip that is fully transparent: drawn onto a canvas, its middle pixel must come out transparent
+    const done = (ok) => { if (alphaVideo === null) alphaVideo = ok; v.removeAttribute('src'); };
+    v.muted = true; v.playsInline = true; v.setAttribute('playsinline', '');
+    v.addEventListener('loadeddata', () => {
+      try {
+        const c = document.createElement('canvas'); c.width = c.height = 16;
+        const g = c.getContext('2d'); g.drawImage(v, 0, 0, 16, 16);
+        done(g.getImageData(8, 8, 1, 1).data[3] < 40);
+      } catch (e) { done(false); }
+    });
+    v.addEventListener('error', () => done(false));
+    setTimeout(() => done(false), 4000);
+    v.src = 'data:video/webm;base64,GkXfo59ChoEBQveBAULygQRC84EIQoKEd2VibUKHgQJChYECGFOAZwEAAAAAAAHlEU2bdLpNu4tTq4QVSalmU6yBoU27i1OrhBZUrmtTrIHYTbuMU6uEElTDZ1OsggEfTbuMU6uEHFO7a1OsggHP7AEAAAAAAABZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVSalmsirXsYMPQkBNgI1MYXZmNjIuMTIuMTAyV0GNTGF2ZjYyLjEyLjEwMkSJiECPQAAAAAAAFlSua8KuAQAAAAAAADnXgQFzxYgLI7Qh7p8bCpyBACK1nIN1bmSIgQCGhVZfVlA5g4EBI+ODhDuaygDgirCBELqBEFPAgQESVMNn2HNzoGPAgGfImkWjh0VOQ09ERVJEh41MYXZmNjIuMTIuMTAyc3OyY8CLY8WICyO0Ie6fGwpnyKFFo4hEVVJBVElPTkSHkzAwOjAwOjAxLjAwMDAwMDAwMAAfQ7Z1zueBAKDJoaCBAAAAgkmDQgAA8AD2ADgkHBhKAAAwYAAAEL///UiMAHWhpKai7oEBpZ2CSYNCAADwAPYAOCQcGEoAADBgAAAQv//9pcwAABxTu2uRu4+zgQC3iveBAfGCAXzwgQM=';
+    const p = v.play && v.play(); if (p && p.catch) p.catch(() => {});
   })();
+  E.animMode = () => (alphaVideo ? 'video' : alphaVideo === false ? 'webp' : 'testing');
+  const animReady = new Map(); // animated WebP src -> true once loaded
   function clipFor(src) {
     const m = /(?:^|\/)img\/([^/]+)\.webp$/.exec(src);
-    const a = m && canAlphaVideo && E.animOn !== false && window.ANIM && window.ANIM[m[1]];
-    return a ? { src: 'img/anim/' + m[1] + '.webm', vw: a.vw, vh: a.vh } : null;
+    const a = m && E.animOn !== false && window.ANIM && window.ANIM[m[1]];
+    if (!a) return null;
+    if (alphaVideo) return { video: true, src: 'img/anim/' + m[1] + '.webm', vw: a.vw, vh: a.vh };
+    const w = 'img/anim/' + m[1] + '.anim.webp';
+    if (!animReady.has(w)) {
+      animReady.set(w, false);
+      const im = new Image();
+      im.onload = () => animReady.set(w, true);
+      im.src = w;
+    }
+    return { video: false, src: w, vw: a.vw, vh: a.vh, ready: animReady.get(w) };
   }
   // crop: [sx, sy, sw, sh, imageWidth, imageHeight] in source pixels; x/y/w/h in screen pixels.
   // Pictures are never stretched: a crop shaped differently from its box is trimmed to fit
@@ -92,15 +121,18 @@
     const iw = crop[4], ih = crop[5];
     if (sw / sh > w / h) { const nw = (sh * w) / h; sx += (sw - nw) / 2; sw = nw; }
     else if (sw / sh < w / h) { const nh = (sw * h) / w; sy += (sh - nh) / 3; sh = nh; }
+    const anim = clip && !clip.video && clip.ready;
+    const bw = anim ? clip.vw : iw, bh = anim ? clip.vh : ih;
     const css = {
       left: ((x + (screen ? 0 : E.sideW)) / E.SW) * 100 + '%', top: (y / H) * 100 + '%', width: (w / E.SW) * 100 + '%', height: (h / H) * 100 + '%',
-      backgroundImage: clip && it._clipReady === clip.src ? 'none' : 'url("' + src + '")',
+      backgroundImage: clip && clip.video && it._clipReady === clip.src ? 'none' : 'url("' + (anim ? clip.src : src) + '")',
       zIndex: screen ? '2' : '1',
-      backgroundSize: (iw / sw) * 100 + '% ' + (ih / sh) * 100 + '%',
-      backgroundPosition: (iw > sw ? (sx / (iw - sw)) * 100 : 0) + '% ' + (ih > sh ? (sy / (ih - sh)) * 100 : 0) + '%',
+      // an animated WebP covers (0, 0)-(vw, vh) of the picture instead of (0, 0)-(iw, ih)
+      backgroundSize: (bw / sw) * 100 + '% ' + (bh / sh) * 100 + '%',
+      backgroundPosition: (bw > sw ? (sx / (bw - sw)) * 100 : 0) + '% ' + (bh > sh ? (sy / (bh - sh)) * 100 : 0) + '%',
     };
     for (const k of Object.keys(css)) if (it.style[k] !== css[k]) it.style[k] = css[k];
-    artClip(it, clip, sx, sy, sw, sh);
+    artClip(it, clip && clip.video ? clip : null, sx, sy, sw, sh);
     const grad =(dir, f) => 'linear-gradient(to ' + dir + ', #000 ' + (f[0] * 100).toFixed(1) + '%, transparent ' + (f[1] * 100).toFixed(1) + '%)';
     const masks = [o.fadeRight && grad('right', o.fadeRight), o.fadeBottom && grad('bottom', o.fadeBottom)].filter(Boolean);
     const mask = masks.length ? masks.join(', ') : 'none';
