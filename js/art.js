@@ -1155,18 +1155,24 @@
       '.soyYyYyos.',
       '..smwWwms..',
     ], 10, 7));
-    else layer((L) => put(L, [
-      '.....W.....',
-      '....wWs....',
-      '....yYo....',
-      '....oyd....',
-      spin ? '....w.m....' : '...m.W.s...',
-      spin ? '...wWwms...' : '...mwWms...',
-      spin ? '..mwWwmsS..' : '..smwWwmS..',
-      spin ? '.smwWwwmsS.' : '.smwwWwmsS.',
-      '..soyYyoS..',
-      '...smwms...',
-    ], 10, 1));
+    // A drill bit, after the references (pixel drill robots, Drill Man): a cone with a spiral groove — diagonal light and
+    // dark bands, lit on the left and shaded on the right — and the bands shift every frame so the bit visibly turns.
+    else layer((L) => {
+      const rows = [];
+      for (let y = 0; y < 8; y++) {
+        const h = Math.min(5, Math.floor(y * 0.72));
+        let r = '';
+        for (let x = 0; x < 11; x++) {
+          const d = x - 5;
+          if (Math.abs(d) > h) { r += '.'; continue; }
+          const band = (((x - y + spin * 2) % 4) + 4) % 4 < 2;
+          r += d < 0 ? (band ? 'W' : 'm') : d > 0 ? (band ? 'm' : 'S') : (band ? 'W' : 's');
+        }
+        rows.push(r);
+      }
+      rows.push('..soyYyoS..', '...smwms...');
+      put(L, rows, 10, 1);
+    });
 
     // ---- face: slanted eyes with a gold streak, the mouth slot, cheek sockets, and the V necklace with its pendant
     both(p, ['.mm.....', 'mkkmm...', 'mkWkkmm.', 'mkWWWkkm', '.mkWWWkm', '..mkkkm.'], 6, 12);
@@ -1352,6 +1358,11 @@
     // the wick stands clear of the outline, like the original's
     const out = bossFinish(p, null);
     if (!broken.flame) for (let y = 0; y < 5; y++) { out.set(23, y, '#ffffff'); out.set(24, y, '#a8a8c0'); }
+    // After the references (pixel fire spiders, searched twice): a spider has a cluster of small eyes — four glowing
+    // ones sit on the dark brow bar above the big eyes — and its feet glow through lava cracks in the slits.
+    for (const x of [21, 23, 24, 26]) out.set(x, 25, (x + s) % 2 ? '#ff5a3a' : '#ffb03a');
+    for (const [x, y] of [[17, 42], [16, 45]]) { out.set(x, y, '#ff8a3a'); out.set(47 - x, y, '#ff8a3a'); }
+    for (const [x, y] of [[18, 42], [17, 45]]) { out.set(x, y, '#ffd23f'); out.set(47 - x, y, '#ffd23f'); }
     return hurt ? brightenBoss(out) : out;
   }
 
@@ -1507,6 +1518,14 @@
     // see-through gaps between each arm and the chest, and between the blades of each pincer
     const out = bossFinish(p, null);
     for (const [x, y] of [[11, 40], [11, 41], [11, 42], [11, 43], [5, 48], [5, 49], [5, 50], [5, 51]]) { out.clear(x, y); out.clear(W - 1 - x, y); }
+    // After the references (pixel mechs with a pilot in a glass bubble, searched twice): the glass gets a long
+    // diagonal reflection streak plus a second thin one, and a row of indicator lights blinks on the chest.
+    if (!broken.dome) {
+      for (const [x, y] of [[8, 7], [9, 6], [13, 2], [14, 2]]) if (out.solid(x, y)) out.set(x, y, '#ffffff');
+      for (const [x, y] of [[14, 6], [15, 5], [16, 4]]) if (out.solid(x, y)) out.set(x, y, '#d8f0ff');
+    }
+    const lamps = ['#ff4a5a', '#7af07a', '#ffd23f'];
+    [15, 18, 21].forEach((x, i) => { if (out.solid(x - 1, 36) && out.solid(x + 1, 36)) out.set(x - 1, 36, lamps[(i + f) % 3]); });
     return hurt ? brightenBoss(out) : out;
   }
 
