@@ -1768,6 +1768,13 @@
     // the shading tones the icons pick up: deep bomb shadow, ember rim, hot core, wood, bone grey, curse violet
     x: '#241b33', q: '#d9281c', e: '#fff3c0', m: '#c08a5a', z: '#5a4630', l: '#dcd8ea', h: '#8f88a8', v: '#c8a0ff', a: '#8ee07a',
   };
+  // the four everyday power-ups at 12x12 (bigger and rounder, after Bomberman's panels: a symbol that fills its card)
+  const ICONS_BIG = {
+    bomb: ['........kqeq', '.......nk.q.', '......kn....', '....kkykk...', '..kkDDyDDkk.', '.kDwwDDdddk.', 'kDwwcDddddxk', 'kDwcDdddddxk', 'kDDDdddddxxk', 'kddddddxxxxk', '.kdddxxxxxk.', '..kkkkkkkk..'],
+    fire: ['.....k......', '....kqk...k.', '....kqok.kqk', '...kqook.kqk', '..kqqoyok.qk', '..kqoyyook.k', '.kqoyyyeyok.', 'kqoyyeewyyok', 'kqoyeewwwyok', 'kqoyyewweyok', '.kqoyyyyyok.', '..kkkkkkkk..'],
+    speed: ['............', '...kkkk.....', '..kbbbbk....', '..kbwbbbk...', 'BBkbbwbbbk..', '..kbbbwbbbk.', 'BBkbbbbbbbbk', '..kBbbbbbbbk', 'BBkwwwwwwwwk', '..kkkkkkkkk.', '............', '............'],
+    heart: ['.kkk...kkk..', 'krrrk.krrrk.', 'krwwrkrrrRk.', 'krwrrrrrrRRk', 'krrrrrrrrRRk', 'krrrrrrrRRRk', '.krrrrrRRRk.', '..krrrRRRk..', '...krRRRk...', '....kRRk....', '.....kk.....', '............'],
+  };
   const ICONS = {
     bomb: ['.....k.q..', '....k.qeq.', '..kkyk.q..', '.kyYYYk...', 'kdDwdddk..', 'kdwddddxk.', 'kddddddxk.', 'kdddddxxk.', '.kdddxxk..', '..kkkkk...'],
     fire: ['....k.....', '...kqk....', '...kqok...', '..kqook.k.', '..kqoyokok', '.kqoyyeook', '.kqoywweok', '.kqoywwyok', '..kqoyyok.', '...kkkkk..'],
@@ -1803,7 +1810,8 @@
     for (let y = 9; y < 13; y++) p.hline(y === 12 ? 3 : 2, y, y === 12 ? 10 : 12, mix(bg, rim, 0.08 + (y - 9) * 0.06));
     p.hline(3, 2, 10, mix(bg, '#ffffff', 0.75));
     p.vline(2, 3, 9, mix(bg, '#ffffff', 0.6));
-    stamp(p, ICONS[type], 3, 3, ICON_PAL);
+    if (ICONS_BIG[type]) stamp(p, ICONS_BIG[type], 2, 2, ICON_PAL);
+    else stamp(p, ICONS[type], 3, 3, ICON_PAL);
     return p.outlined(K);
   }
   // an icy plate over a snow tile: lit at the top-left, a glint, a hairline crack, corners left open
