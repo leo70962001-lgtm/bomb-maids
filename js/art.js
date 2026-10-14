@@ -415,6 +415,26 @@
   // locks by the cheeks and over the shoulders dark, while each lock keeps its own highlight. The hair outline goes lighter
   // along the upper head (selective outline) and stays dark below. Rows count from the top of the head (bob), so a walking
   // frame never changes colour. Only hair and hair-ink pixels change.
+  // The angel ring, after the chibi maid sprite references (searched in English and Japanese): a bright band across
+  // the crown that follows the head's curve, two pixels under the top of the hair in every column, with a short shine
+  // toward the light (top-left). Only hair pixels change colour — the outline and every pixel's place stay as drawn.
+  function angelRing(pix, P, bob) {
+    if (!P.l || !P.h) return pix;
+    const hex = (c) => '#' + [c[0], c[1], c[2]].map((v) => v.toString(16).padStart(2, '0')).join('');
+    const tone = {};
+    for (const k of ['H', 'h', 'l', 'L']) tone[P[k].toLowerCase()] = k;
+    const set = [];
+    for (let x = 3; x <= 12; x++) {
+      let top = -1;
+      for (let y = bob; y < bob + 7; y++) { const c = pix.get(x, y); if (c && tone[hex(c)]) { top = y; break; } }
+      if (top < 0) continue;
+      const y = top + (x <= 4 || x >= 11 ? 1 : 2);
+      const c = pix.get(x, y);
+      if (c && (tone[hex(c)] === 'h' || tone[hex(c)] === 'H')) set.push([x, y, x >= 5 && x <= 6 ? P.L : P.l]);
+    }
+    for (const [x, y, col] of set) pix.set(x, y, col);
+    return pix;
+  }
   function shadeHair(pix, P, bob) {
     if (!P.Q) return pix;
     const hex = (c) => '#' + [c[0], c[1], c[2]].map((v) => v.toString(16).padStart(2, '0')).join('');
@@ -593,7 +613,7 @@
       pix.blit(fromRows(pad(14, rows16(BODY[dir][f], 'body ' + dir + f)), P), 0, 0);
       pix.blit(fromRows(pad(0, rows16(headRows, name + ' head ' + dir)), P), 0, bob);
       if (over) pix.blit(swing(over), 0, bob);
-      return chibi(polishHead(shadeHair(inkHair(pix, P), P, bob), P, bob));
+      return rimLight(chibi(polishHead(shadeHair(angelRing(inkHair(pix, P), P, bob), P, bob), P, bob)), '#c8d8ff', 0.3);
     };
     const heads = {};
     for (const dir of ['down', 'up', 'side']) {
