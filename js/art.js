@@ -2412,7 +2412,10 @@
       return c;
     });
   }
-  const block = (pix) => softInk(bevel(inkOutline(pix)), 0.5);
+  // Blocks are shaded the way the pixel-scene timelapses do it (the user's 「學習點圖」 reference): value AND hue move
+  // together — the lit top warms toward cream and the side away from the light sinks toward a cool violet instead of
+  // just going darker, so a green hedge's shadow reads blue-violet and a brown crate's reads plum.
+  const block = (pix) => softInk(volume(bevel(inkOutline(pix)), 0.75), 0.5);
   // the frame round the field: give each wall tile a lit top-left and a shaded bottom-right so it has thickness
   function wallDepth(p, amt) {
     const a = amt == null ? 1 : amt;
@@ -2479,11 +2482,49 @@
       [['c.c', '...', '.c.'], { c: '#dcc09a' }],
     ],
   };
+  // Small things that gather where the ground meets something standing on it (the last pass of the timelapse: tufts,
+  // pebbles, flowers at the foot of every rock tie the objects to the ground). Drawn at the foot of walls and hard blocks.
+  const BASE_TUFTS = {
+    classroom: [
+      [['..d..', '.dDd.'], { d: '#d8c8b0', D: '#bfae94' }],
+      [['s.s', '.ss'], { s: '#f0d0a0' }],
+    ],
+    garden: [
+      [['g.g.g', 'GgGgG'], { g: '#62b84e', G: '#3f8a3a' }],
+      [['.f.g', 'gGgG'], { f: '#ffb4d0', g: '#62b84e', G: '#3f8a3a' }],
+      [['..w..', 'gGgGg'], { w: '#ffffff', g: '#62b84e', G: '#3f8a3a' }],
+    ],
+    snow: [
+      [['.www.', 'wwwww'], { w: '#ffffff' }],
+      [['..w', 'wwB'], { w: '#ffffff', B: '#c8d8f0' }],
+    ],
+    candy: [
+      [['r.b.y', '.....'], { r: '#ff6f91', b: '#6ad0ff', y: '#ffd23f' }],
+      [['.cc.', 'cCCc'], { c: '#f0d2a8', C: '#d8b480' }],
+    ],
+    lab: [
+      [['.d.d.', 'dDdDd'], { d: '#b0b6c8', D: '#8c92aa' }],
+      [['w..', '.ww'], { w: '#dfe4f0' }],
+    ],
+    toy: [
+      [['y.r.b'], { y: '#ffd23f', r: '#ff6f91', b: '#6aa8ff' }],
+      [['.yy.', 'yYYy'], { y: '#ffe680', Y: '#e8b830' }],
+    ],
+    jewel: [
+      [['.ss..', 'sSSss'], { s: '#d8bc88', S: '#bf9f68' }],
+      [['..w..', '.sSs.'], { w: '#fff6d4', s: '#d8bc88', S: '#bf9f68' }],
+    ],
+    cafe: [
+      [['c.c', '.cc'], { c: '#dcc09a' }],
+      [['.p.', 'ppp'], { p: '#ffc4d8' }],
+    ],
+  };
   function buildTheme(key) {
     const T = THEMES[key];
     return {
       key, name: T.name, bg: T.bg,
       decals: (FLOOR_DECALS[key] || []).map(([rows, pal]) => fromRows(rows, pal)),
+      tufts: (BASE_TUFTS[key] || []).map(([rows, pal]) => fromRows(rows, pal)),
       floor: [calm(T.floor(0), 0.4), calm(T.floor(1), 0.4)],
       hard: block(T.hard()),
       hard2: T.hard2 ? block(T.hard2()) : null,
@@ -2526,32 +2567,90 @@
       p.rect(22, 58, 4, 4, '#b78a5a');
       return p.outlined(K);
     }
-    if (kind === 'well') { // the garden's wishing well: a wooden barrel under a red roof on two posts
+    if (kind === 'well') {
+      // The garden's wishing well, painted after RPG pixel wells and the scene timelapses (the user's 「學習點圖」):
+      // a ring of rounded field stones round a dark mouth with water in it, two posts holding a shingled red roof, a
+      // windlass with rope wound on it and a little wooden bucket hanging into the well. Light from the top-left; every
+      // shadow shifts hue (stone → blue-violet, wood → plum, roof → crimson-plum) instead of only going darker.
       p = new Pix(48, 62);
-      // the roof, overhanging, with its ridges
-      for (let j = 0; j < 12; j++) {
-        const half = 5 + j * 2;
-        for (let x = 24 - half; x < 24 + half; x++) p.set(x, 8 + j, x < 24 - half + 2 ? '#ff8a72' : x > 24 + half - 3 ? '#9c2418' : '#e8402a');
+      const WOOD = ['#d9a066', '#b07444', '#7c4a2e', '#5a3448'];
+      const STONE = ['#e6e8f0', '#b8bccb', '#8a8aa6', '#5e5a80'];
+      const MORTAR = '#4a4660';
+      // posts first (the stone lip is laid over their feet), lit on their left face
+      for (const x0 of [9, 36]) {
+        p.rect(x0, 17, 4, 24, WOOD[1]);
+        p.vline(x0, 17, 24, WOOD[0]);
+        p.vline(x0 + 3, 17, 24, WOOD[2]);
+        for (let y = 20; y < 40; y += 6) p.set(x0 + 1, y, WOOD[2]); // grain knots
       }
-      for (let x = 6; x < 42; x += 7) p.vline(x, 10, 9, '#c8301e');
-      p.hline(2, 20, 44, '#7a1a10');
-      p.rect(23, 2, 2, 7, '#8c5530'); p.rect(21, 0, 6, 3, '#ffd23f'); p.set(21, 0, '#fff3c0');
-      // the posts
-      p.rect(8, 20, 4, 21, '#a8683c'); p.rect(36, 20, 4, 21, '#a8683c');
-      p.vline(8, 20, 21, '#c98a5a'); p.vline(39, 20, 21, '#6b4527');
-      // the crank across them, with its rope
-      p.rect(10, 25, 28, 3, '#8c5530'); p.hline(10, 25, 28, '#c08a5a');
-      p.vline(24, 28, 5, '#e8e4d8');
-      p.rect(21, 33, 6, 4, '#a8683c'); p.hline(21, 33, 6, '#d9a05e');
-      // the barrel: staves round a dark mouth with water in it
-      ball(p, 6, 36, 36, 20, '#d9a05e', '#b0743c', '#7a4a20');
-      for (let x = 9; x < 40; x += 5) p.vline(x, 40, 14, '#8c5a2c');
-      p.rect(9, 38, 30, 4, '#c08a4a'); p.hline(9, 38, 30, '#e8b878');
-      ball(p, 12, 36, 24, 9, null, '#3a2a18', null);
-      ball(p, 14, 38, 20, 6, '#6aa8d8', '#2e6ea8', '#17436e');
-      p.set(20, 40, '#bfe4ff'); p.set(21, 41, '#8fc8ee');
-      // grass tucked round its foot
-      for (const [x, y] of [[4, 55], [42, 54], [12, 58], [34, 58]]) { p.set(x, y, '#4cb84c'); p.set(x + 1, y - 1, '#6cd06a'); }
+      // the windlass: a roller with the rope wound round it, a crank handle off the right post
+      p.rect(12, 23, 24, 4, WOOD[1]);
+      p.hline(12, 23, 24, WOOD[0]); p.hline(12, 26, 24, WOOD[3]);
+      for (let x = 17; x < 31; x += 2) { p.vline(x, 23, 4, '#efe2c0'); p.set(x, 26, '#c8b890'); }
+      p.rect(40, 22, 2, 2, WOOD[2]); p.rect(41, 24, 2, 5, WOOD[1]); p.set(41, 24, WOOD[0]); p.rect(40, 28, 4, 2, WOOD[2]);
+      // the rope down to a bucket hanging over the water
+      p.vline(24, 27, 6, '#efe2c0'); p.vline(25, 27, 6, '#c8b890');
+      p.rect(21, 33, 7, 5, WOOD[1]); p.hline(21, 33, 7, WOOD[0]); p.vline(27, 33, 5, WOOD[3]);
+      p.hline(21, 35, 7, '#9aa0b4'); p.set(21, 35, '#d0d4e0');
+      p.hline(22, 32, 5, '#efe2c0');
+      // the roof: three courses of rounded shingles over a dark eave, ridge cap and a gold finial
+      for (let j = 0; j < 12; j++) {
+        const half = 6 + Math.round(j * 1.6);
+        for (let x = 24 - half; x < 24 + half; x++) {
+          const t = (x - (24 - half)) / (2 * half);
+          const course = Math.floor(j / 4), row = j % 4;
+          let col = t < 0.18 ? '#ff8f74' : t > 0.82 ? '#a02a3c' : '#e44a30';
+          // each course's lower edge is scalloped: a shadow line under every shingle, lit on its left edge
+          if (row === 3) col = ((x + course * 3) % 5 === 0) ? '#7a1c34' : (t > 0.82 ? '#7a1c34' : '#b8303a');
+          else if (row === 0 && (x + course * 3) % 5 === 1) col = '#ffb39a';
+          p.set(x, 5 + j, col);
+        }
+      }
+      p.hline(4, 17, 40, '#5a1a2a'); p.hline(6, 18, 36, '#3a2238'); // the eave and its shadow on the posts
+      p.hline(17, 4, 14, '#ffd0b8'); p.hline(17, 5, 14, '#e44a30');
+      p.rect(23, 0, 2, 5, WOOD[2]); p.rect(21, 0, 6, 2, '#ffd23f'); p.set(21, 0, '#fff3c0'); p.set(26, 1, '#c89a20');
+      // the stone wall: a short cylinder of field stones in staggered courses with dark mortar between them
+      ball(p, 4, 46, 40, 14, STONE[1], STONE[2], STONE[3]);
+      p.rect(4, 41, 40, 12, STONE[1]);
+      const courses = [[42, 0], [47, 3]]; // two courses up the face, a third round the foot below
+      for (const [y, off] of courses) {
+        p.hline(4, y + 4, 40, MORTAR);
+        for (let x = 4 + off; x < 44; x += 7) {
+          const w = Math.min(6, 44 - x);
+          if (w < 2) continue;
+          const t = (x - 4) / 40; // round wall: the right side turns away from the light
+          const base = t < 0.25 ? STONE[0] : t > 0.7 ? STONE[2] : STONE[1];
+          p.rect(x, y, w, 4, base);
+          p.hline(x, y, w - 1, t > 0.7 ? STONE[1] : STONE[0]); // top edge catches the light
+          p.vline(x + w - 1, y, 4, t < 0.25 ? STONE[1] : STONE[3]);
+          p.vline(x + w, y, 4, MORTAR);
+        }
+      }
+      // the bottom course follows the round foot: whole stones again, darker (the wall turns under, away from the light)
+      for (let y = 52; y < 60; y++) for (let x = 4; x < 44; x++) if (p.solid(x, y)) p.set(x, y, MORTAR);
+      for (let x = 5; x < 43; x += 7) {
+        for (let y = 53; y < 59; y++) for (let i = 0; i < 6; i++) {
+          if (!p.solid(x + i, y) || !p.solid(x + i, y + 1) || !p.solid(x + i - 1, y) || !p.solid(x + i + 1, y)) continue;
+          const t = (x - 4) / 40;
+          p.set(x + i, y, y === 53 ? (t > 0.7 ? STONE[2] : STONE[1]) : i === 5 || y === 58 ? STONE[3] : t > 0.7 ? STONE[3] : STONE[2]);
+        }
+      }
+      // moss creeping up the shaded foot
+      for (const [x, y, w] of [[6, 51, 5], [30, 50, 6], [38, 47, 4], [16, 53, 4]]) { p.hline(x, y, w, '#4f9a44'); p.hline(x + 1, y - 1, w - 2, '#78c060'); }
+      // the lip: a ring of capstones, lit along its near-left, with the dark mouth and the water inside
+      ball(p, 3, 35, 42, 13, STONE[0], STONE[1], STONE[2]);
+      for (let x = 7; x < 44; x += 6) p.vline(x, 41, 2, MORTAR);
+      ball(p, 8, 37, 32, 8, null, '#262036', null);
+      ball(p, 10, 39, 28, 6, '#8fd6ff', '#3a8ec8', '#1c4c7e');
+      p.hline(14, 40, 4, '#e6f6ff'); p.set(30, 42, '#bfe8ff'); // the sky caught on the water
+      p.hline(9, 37, 30, '#14101e'); // inner wall in shadow under the far lip
+      // the bucket hangs in front of the far rim
+      p.rect(21, 33, 7, 5, WOOD[1]); p.hline(21, 33, 7, WOOD[0]); p.vline(27, 33, 5, WOOD[3]);
+      p.hline(21, 35, 7, '#9aa0b4'); p.set(21, 35, '#d0d4e0');
+      // grass, a flower and pebbles round its foot, tying it to the lawn
+      for (const [x, y] of [[2, 57], [44, 56], [9, 60], [37, 60], [24, 61]]) { p.set(x, y, '#3f8a3a'); p.set(x + 1, y - 1, '#62b84e'); p.set(x + 2, y, '#3f8a3a'); }
+      p.set(44, 53, '#ffffff'); p.set(43, 54, '#ffffff'); p.set(45, 54, '#ffffff'); p.set(44, 54, '#ffd23f');
+      p.rect(14, 60, 2, 1, STONE[1]); p.set(14, 59, STONE[0]); p.rect(31, 61, 2, 1, STONE[2]);
       return p.outlined(K);
     }
     if (kind === 'igloo') {

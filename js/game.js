@@ -2014,14 +2014,30 @@
         ctx.fillStyle = 'rgba(42,20,24,' + (0.3 * Math.min(1, sc / 60)).toFixed(3) + ')';
         ctx.fillRect(x + 4, y + 5, 8, 7); ctx.fillRect(x + 3, y + 6, 10, 5); ctx.fillRect(x + 2, y + 7, 12, 3);
       }
-      // shadows under solid blocks
-      ctx.fillStyle = 'rgba(42,27,48,0.22)';
+      // shadows under solid blocks, cast down and to the right (light from the top-left): a dark cool contact line where
+      // the block meets the ground, then a lighter band — two tones of violet rather than one flat grey, so it is grounded
       for (let r = 1; r < ROWS - 1; r++)
         for (let c = 1; c < COLS - 1; c++) {
+          if (this.grid[idx(c, r)] === WALL) continue;
+          const x = ox + c * T, y = oy + r * T;
           const above = this.grid[idx(c, r - 1)];
-          if (this.grid[idx(c, r)] !== WALL && (above === HARD || above === SOFT || above === BURN || above === DECOR)) ctx.fillRect(ox + c * T, oy + r * T, T, 3);
+          if (above === HARD || above === SOFT || above === BURN || above === DECOR || (r === 1 && above === WALL)) {
+            ctx.fillStyle = 'rgba(34,22,64,0.34)'; ctx.fillRect(x, y, T, 1);
+            ctx.fillStyle = 'rgba(42,27,72,0.2)'; ctx.fillRect(x, y + 1, T, 3);
+          }
           const left = this.grid[idx(c - 1, r)];
-          if (this.grid[idx(c, r)] !== WALL && (left === HARD || left === SOFT || left === DECOR)) ctx.fillRect(ox + c * T, oy + r * T + 3, 2, T - 3);
+          if (left === HARD || left === SOFT || left === DECOR || (c === 1 && left === WALL)) {
+            ctx.fillStyle = 'rgba(34,22,64,0.26)'; ctx.fillRect(x, y + (above === WALL || above === HARD || above === SOFT ? 4 : 3), 1, T - 3);
+            ctx.fillStyle = 'rgba(42,27,72,0.14)'; ctx.fillRect(x + 1, y + 3, 2, T - 3);
+          }
+          // at the foot of what stays (walls, hard blocks): a tuft, pebbles or a flower on about half of them
+          if (TH.tufts && TH.tufts.length && (above === HARD || above === WALL)) {
+            const h = (((c * 2654435761) ^ (r * 40503) ^ (this.decalSeed || 0)) >>> 0) % 1000;
+            if (h < 520) {
+              const d = TH.tufts[h % TH.tufts.length];
+              ctx.drawImage(d, x + (h & 1 ? T - d.width - 1 - ((h >> 3) % 3) : 1 + ((h >> 3) % 3)), y + 1);
+            }
+          }
         }
       // boss shadow + missile targets
       if (this.boss && (this.boss.alive || this.boss.deadT < 110)) {
@@ -2214,7 +2230,30 @@
       const x = ox + d.c * T, y = oy + d.r * T;
       const w = d.w || 3, h = d.h || 3;
       if (img) E.ctx.drawImage(img, x + Math.round((w * T - img.width) / 2), y + h * T - img.height);
+      if (img && d.kind === 'well') this.drawWellWater(x + Math.round((w * T - img.width) / 2), y + h * T - img.height);
       else for (let r = 0; r < h; r++) for (let c = 0; c < w; c++) E.ctx.drawImage(E.spr.themes[this.themeKey].hard, x + c * T, y + r * T - 4);
+    }
+
+    // The well's water moves the way pixel ponds do (the user's reference, AnasAbdin's pond): a net of light lines
+    // drifting across the surface and a couple of glints that twinkle. The water in the well sprite is the ellipse
+    // centred at (24, 41.5), 28 x 6 pixels; only its inner part is touched so the rim stays clean.
+    drawWellWater(sx, sy) {
+      const ctx = E.ctx, t = this.frame;
+      for (let j = 0; j < 5; j++) for (let i = 0; i < 26; i++) {
+        const dx = (i - 12.5) / 12.5, dy = (j - 2) / 2.4;
+        if (dx * dx + dy * dy > 0.9) continue;
+        const v = Math.sin(i * 0.9 + t * 0.07) + Math.sin(j * 1.7 - i * 0.45 - t * 0.05);
+        if (v > 1.45) { ctx.fillStyle = 'rgba(200,240,255,0.85)'; ctx.fillRect(sx + 11 + i, sy + 39 + j, 1, 1); }
+        else if (v > 1.1 && (i + j) % 2 === 0) { ctx.fillStyle = 'rgba(150,215,250,0.6)'; ctx.fillRect(sx + 11 + i, sy + 39 + j, 1, 1); }
+      }
+      for (const [gx, gy, ph] of [[16, 40, 0], [30, 42, 37], [23, 43, 71]]) {
+        const k = (t + ph) % 110;
+        if (k < 14) {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(sx + gx, sy + gy, 1, 1);
+          if (k > 3 && k < 10) { ctx.fillRect(sx + gx - 1, sy + gy, 3, 1); ctx.fillRect(sx + gx, sy + gy - 1, 1, 3); }
+        }
+      }
     }
 
     drawMaid(m, ox, oy, front) {
