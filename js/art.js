@@ -733,6 +733,9 @@
     },
     // slime: a curly antenna with a bead, a droplet body outlined in dark grey, round eyes, a pale band, a deeper skirt
     jelly: {
+      // what a slime is (researched): a translucent blob — a lighter rim just inside its edge all round where light
+      // passes through, a big glossy highlight on the top-left, a darker core and a few bubbles inside, and a puddle at
+      // its foot. Eyes are its focal point: wide, with a catchlight.
       pal: { L: '#d0ecff', l: '#8cc8ff', M: '#3a9af0', D: '#1a62c8', X: '#0e3c8a', G: '#344058' },
       rows: [
         '.......kk......',
@@ -741,28 +744,28 @@
         '.......kkG.....',
         '.........G.....',
         '......GGG......',
-        '.....GlMlG.....',
-        '....GlMMMMG....',
-        '...GlMMMMLwG...',
-        '..GlMMMMMLwMG..',
-        '.GMMMMMMMMLLMG.',
-        '.GMMkMMMMMkMMG.',
-        'GMMkwkMMMkwkMMG',
-        'GMMMkMMMMMkMMMG',
-        'GMMlLLLLLLLlMMG',
-        'GMLLwwwwwwwLLMG',
-        'GMlLLLLLLLLLlMG',
-        'GDMMDDDDDDDMMDG',
-        'GDMDDDDDDDDDMDG',
-        'GwDDDDDDDDDDDwG',
-        'GwDDXDDDDDXDDwG',
-        '.GDXXDDDDDXXDG.',
+        '.....GLlLG.....',
+        '....GLwlMlG....',
+        '...GLwwlMMlG...',
+        '..GlwlMMMMMlG..',
+        '.GlLMMMMMMMMlG.',
+        '.GlMkkMMMkkMlG.',
+        'GlMkwXkMkwXkMlG',
+        'GlMkXXkMkXXkMlG',
+        'GlMMkkMMMkkMMlG',
+        'GlMMMMMkMMMMMlG',
+        'GlMLMMMMMMMLMlG',
+        'GlDMMMLMMMMMDlG',
+        'GlDDMMMMMMLDDlG',
+        'GLDDDDDMDDDDDLG',
+        'GLDDXDDDDDXDDLG',
+        '.GLXXDDDDDXXLG.',
         '..GGGXXXXXGGG..',
         '....GGGGGGG....',
       ],
     },
-    // grey cat: hooked ears, a light brow band, big sleepy closed eyes, front legs, a pale belly and orange paw pads
     dustcat: {
+      // 塵塵貓 is 「住在課桌底下的灰塵團」 — a ball of dust shaped like a cat: fluffy tufts stick out round its body
       pal: { L: '#b8b8c8', M: '#76768a', D: '#4a4a5c', X: '#2c2c38', o: '#ffa040', p: '#ff8aa0' },
       rows: [
         '..kk.......kk..',
@@ -771,15 +774,15 @@
         '.kMkDkkkkkDkMk.',
         '..kkDDMMMDDkk..',
         '.kDMMLLLLLMMDk.',
-        '.kDLLLLLLLLLDk.',
+        'LkDLLLLLLLLLDkL',
         '.kMDDDDDDDDDMk.',
-        '.kDDDDDDDDDDDk.',
+        'MkDDDDDDDDDDDkM',
         '.kDkkkDpDkkkDk.',
-        '.kDDDDDDDDDDDk.',
+        'LkDDDDDDDDDDDkL',
         '..kXDDDDDDDXk..',
         '.kMkMkkkkkMkMk.',
         '.kMkLkLLLkLkMk.',
-        '.kDkMLLLLLMkDk.',
+        'LkDkMLLLLLMkDkL',
         '.kDkMMMMMMMkDk.',
         '..kokkkkkkkok..',
         '..kookMMMkook..',
@@ -788,25 +791,28 @@
     },
     // white bunny: pointed ears with white insides, a red gem between them, red eyes and mouth, a collar and a round belly
     snowkid: {
-      pal: { l: '#dce8f8', m: '#a8b8d0', M: '#6a7890', r: '#e8203c', R: '#9a1020', Y: '#fff4a8', o: '#ffa040', b: '#c8e0f8' },
+      // 雪寶寶 is 「會躲開炸彈的聰明雪人」 — a snowman (researched): a bucket hat, coal eyes and smile, a carrot nose, a red
+      // scarf with its tail hanging, twig arms and coal buttons on a bigger lower ball; cool blue shade on the snow.
+      pal: { l: '#dce8f8', m: '#a8b8d0', M: '#6a7890', r: '#e8203c', R: '#9a1020', o: '#ff8a2a', O: '#c85a10', t: '#7a4a2a', h: '#4a5a80', H: '#2a3350' },
       rows: [
-        '.......r.......',
-        '.kkkk.rYr.kkkk.',
-        '.kmllk.o.kllmk.',
-        '.kmwlkkRkklwmk.',
-        '..kmwlmmmlwmk..',
-        '...kmwwwwwmk...',
-        '..kmwwwwwwwmk..',
-        '..kmwRwwwRwmk..',
-        '..kmlwrrrwlmk..',
-        '...kmlllllmk...',
-        '....kkkkkkk....',
-        '....kbwwwbk....',
-        '...kbwwwwwbk...',
-        '...kbwwwwwbk...',
-        '....kbbbbbk....',
-        '....kmkkkmk....',
-        '....kk...kk....',
+        '.....kkkkk.....',
+        '.....khhHk.....',
+        '.....krrRk.....',
+        '...kkkkkkkkk...',
+        '...kwwwwwwlk...',
+        '..kwwkkwkkwlk..',
+        '..kwwkwwkwwlk..',
+        '..kwwwwooOwlk..',
+        '..klwkwkwkwmk..',
+        '...kmwwwwlmk...',
+        '..krrrrrrrRRk..',
+        '.tkwwwrRwwwlkt.',
+        'tkwwwwrRwwwlmkt',
+        '.kwwwkwwwwwlmk.',
+        '.kwwwwwwwwlmmk.',
+        '.kwwwkwwwwlmMk.',
+        '..kmwwwwwlmMk..',
+        '...kkkkkkkkk...',
       ],
     },
     // cat in a red helmet: blue ribbon bow, a banded dome over a white face with happy eyes and blush, a dark jacket,
@@ -848,7 +854,7 @@
         '....kkyyykk....',
         '..kkyYYYYyykk..',
         '.kyYkkkkkkkoyk.',
-        '.kykqqqqqqqkok.',
+        '.kykqwqqqqqkok.',
         'kyYkpPwPwPpkoOk',
         'kyokwqwqwqwkoOk',
         'kyokpPPPPPpkoOk',
@@ -927,9 +933,13 @@
     },
     // penguin: a blue-black round head with bright eyes, an orange beak, flippers, a big white belly and orange feet
     penguin: {
-      pal: { L: '#5a6a90', M: '#2a3350', D: '#161c30', o: '#ffb03a', O: '#d06a10', l: '#dce6f4', m: '#a8b4cc', b: '#7ab0ff' },
+      // 企鵝紳士 — a gentleman (researched): a small top hat with a red band and a red bow tie under the beak
+      pal: { L: '#5a6a90', M: '#2a3350', D: '#161c30', o: '#ffb03a', O: '#d06a10', l: '#dce6f4', m: '#a8b4cc', b: '#7ab0ff', G: '#4a4a66', g: '#6a6a88', r: '#e8203c', R: '#9a1020' },
       rows: [
         '.....kkkkk.....',
+        '.....kgGGk.....',
+        '.....krrRk.....',
+        '...kkkkkkkkk...',
         '...kkMLLLMkk...',
         '..kMLLMMMMMMk..',
         '.kMLMMMMMMMMMk.',
@@ -938,7 +948,7 @@
         'kMMMMMkoOkMMMMk',
         'kDMMMkooooOkMDk',
         'kDMMklkOOklkMDk',
-        'kDMklllllllkMDk',
+        'kDMklrRkRrlkMDk',
         'kMklllllllllkMk',
         'kMkllllllllmkMk',
         'kDkllllllllmkDk',
@@ -2400,6 +2410,21 @@
       if (t < 0.35) return mix(c, '#fff4e0', (0.35 - t) * 0.3 * k);
       if (t > 0.6) return mix(c, '#3a2c5a', (t - 0.6) * 0.42 * k);
       return c;
+    });
+  }
+  // Rim light, after the user's monster references (「參考學習」): a thin cool light on the shadow side, just inside the
+  // outline on the right and the bottom, so a figure separates from the floor behind it the way a back light does.
+  // Only body pixels next to the outline are touched; inks, eyes and highlights stay as drawn.
+  function rimLight(pix, col, amt) {
+    const c0 = col || '#bcd0ff', k = amt == null ? 0.38 : amt;
+    const ink = (c) => !c || c[0] + c[1] + c[2] < 140;
+    return pix.map((c, x, y) => {
+      if (ink(c)) return c;
+      const lum = c[0] * 0.3 + c[1] * 0.6 + c[2] * 0.1;
+      if (lum > 215) return c;
+      const right = ink(pix.get(x + 1, y)) && !pix.get(x + 2, y) === false ? ink(pix.get(x + 1, y)) && !pix.solid(x + 2, y) : false;
+      const below = ink(pix.get(x, y + 1)) && !pix.solid(x, y + 2);
+      return right || below ? mix(c, c0, k) : c;
     });
   }
   function bevel(pix) {
@@ -4352,7 +4377,7 @@
       art.maids[m] = art.outfits[m].maid;
     }
     for (const k of Object.keys(MONSTERS)) {
-      const frames = [volume(softInk(bevel(MONSTERS[k](0)))), volume(softInk(bevel(MONSTERS[k](1))))];
+      const frames = [0, 1].map((f) => rimLight(volume(softInk(bevel(MONSTERS[k](f))))));
       art.monsters[k] = { frames, flipped: frames.map((f) => f.flipped()), white: frames.map((f) => tinted(f, '#ffffff', 0.8)) };
     }
     art.boss = { frames: [volume(buildBoss(0, false)), volume(buildBoss(1, false))], hurt: buildBoss(0, true) };
