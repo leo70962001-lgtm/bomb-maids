@@ -1794,6 +1794,15 @@
     fire: ['.....k......', '....kqk...k.', '....kqok.kqk', '...kqook.kqk', '..kqqoyok.qk', '..kqoyyook.k', '.kqoyyyeyok.', 'kqoyyeewyyok', 'kqoyeewwwyok', 'kqoyyewweyok', '.kqoyyyyyok.', '..kkkkkkkk..'],
     speed: ['............', '...kkkk.....', '..kbbbbk....', '..kbwbbbk...', 'BBkbbwbbbk..', '..kbbbwbbbk.', 'BBkbbbbbbbbk', '..kBbbbbbbbk', 'BBkwwwwwwwwk', '..kkkkkkkkk.', '............', '............'],
     heart: ['.kkk...kkk..', 'krrrk.krrrk.', 'krwwrkrrrRk.', 'krwrrrrrrRRk', 'krrrrrrrrRRk', 'krrrrrrrRRRk', '.krrrrrRRRk.', '..krrrRRRk..', '...krRRRk...', '....kRRk....', '.....kk.....', '............'],
+    clock: ['....kkk.....', '....kyk..k..', '..kkkkkkkyk.', '.kllwwwwlkk.', 'klwwwkwwwhk.', 'klwkwkwwkhk.', 'klwwwkkwwhk.', 'klwkwwwwkhk.', 'klwwwkwwwhk.', '.khwwwwwhhk.', '..khhhhhkk..', '...kkkkk....'],
+    star: ['.....kk...w.', '.....kyk....', '....kyek....', 'kkkkkyekkkkk', 'kyyyyeeyyyYk', '.kyyeweeyYk.', '..kyeeeeYk..', '..kyyeeyYk..', '.kyyYkkYYYk.', '.kyYk..kYYk.', 'kYYk....kYYk', 'kkk......kkk'],
+    tea: ['...l..l.....', '..l..l......', '...l..l.....', '.kkkkkkkk...', '.kGaaaaGkkk.', '.kwwwwwckk.k', '.kwwwwwck..k', '..kwwwcckkk.', '...kcccck...', 'kkkkkkkkkkk.', 'kcwwwwwwcck.', '.kkkkkkkkk..'],
+    kick: ['...kkkk.....', '...krrRk....', '...krrRk....', '...krrRk....', 'w..krrRkk...', '...krrrrRkk.', 'ww.krrrrrrRk', '...kwwrrrrRk', 'w..kwwwwwwwk', '....kkkkkkk.', '............', '............'],
+    pierce: ['............', '....kkkk....', '...kmnnzk...', 'kkkkmnnzkkkk', 'qoyewwwweyoq', 'qoyewwwweyoq', 'kkkkzmnzkkkk', '...kzznzk...', '....kkkk....', '............', '............', '............'],
+    line: ['..q...q...q.', '..k...k...k.', '.kyk.kyk.kyk', 'kDwDkDwDkDwD', 'kDDdkDDdkDDd', 'kddxkddxkddx', '.kxk.kxk.kxk', '..k...k...k.', '............', 'q.lllllllll.', '............', '............'],
+    fullfire: ['...k....k.w.', '..kqk..kqk..', '..kqok.kqok.', '.kqoykkqoyk.', '.kqoyyqoyyok', 'kqoyyeyyeyok', 'kqoyeewweyok', 'kqoyewwwweok', 'kqoyeewweyok', '.kqoyyyyyok.', '..kkkkkkkk..', '............'],
+    skull: ['...kkkkkk...', '..kwwwwwlk..', '.kwwwwwwwlk.', 'kwwwwwwwwwlk', 'kwvvkwwvvklk', 'kwvkkwwkkvlk', 'kwwwwkwwwllk', '.kwwwkkwwlk.', '..kwlwlwlk..', '..kwkwkwkk..', '...kkkkkk...', '............'],
+    glove: ['........kqk.', '.......kdxk.', '..k.k.kddxk.', '.kwkwk.kkk..', '.kwkwkwk....', 'kwwwwwwkk...', 'kwwwwwwwck..', 'kwwwwwwwck..', '.kwwwwwcck..', '.kbbbbbbbk..', '.kBBBBBBBk..', '..kkkkkkk...'],
   };
   const ICONS = {
     bomb: ['.....k.q..', '....k.qeq.', '..kkyk.q..', '.kyYYYk...', 'kdDwdddk..', 'kdwddddxk.', 'kddddddxk.', 'kdddddxxk.', '.kdddxxk..', '..kkkkk...'],
