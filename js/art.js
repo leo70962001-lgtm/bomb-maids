@@ -2040,12 +2040,18 @@
     snow: {
       name: '雪原', bg: '#1c2a4a',
       floor(i) {
+        // packed snow (looked up: pixel snow ground tiles): soft drifts in two cool tones, a few blue footprints of shadow,
+        // and sparkles where the sun catches the crystals
         const p = new Pix(16, 16);
-        p.rect(0, 0, 16, 16, i ? '#e6f0ff' : '#f2f8ff');
+        p.rect(0, 0, 16, 16, i ? '#e8f2ff' : '#f2f8ff');
+        for (let x = 0; x < 16; x++) {
+          const y = 9 + Math.round(Math.sin((x + i * 5) * 0.55) * 2);
+          p.set(x, y, '#d6e6f8'); p.set(x, y + 1, '#e0ecfa');
+        }
         p.hline(0, 15, 16, '#d3e3f8'); p.vline(15, 0, 16, '#d3e3f8');
-        if (hash(i, 1, 31) > 0.4) p.set(4, 5, '#ffffff');
-        p.set(12, 3, '#d3e3f8'); p.set(2, 12, '#d3e3f8'); p.set(3, 12, '#ffffff');
-        p.set(10, 11, '#c9dcf5');
+        const glints = i ? [[3, 3], [11, 12]] : [[12, 4], [5, 13]];
+        for (const [x, y] of glints) { p.set(x, y, '#ffffff'); p.set(x + 1, y, '#cfe6ff'); }
+        p.set(i ? 9 : 2, i ? 5 : 6, '#c4d8f2');
         return p;
       },
       hard() { // ice block
@@ -2066,13 +2072,15 @@
         p.rect(7, 18, 2, 2, '#6d4a36');
         return p.outlined('#2c3b5c');
       },
-      soft(i) { // snowman
+      soft(i) {
+        // a pile of snowballs (defined: what in a snowfield breaks apart; looked up: pixel snowballs — cool blue shadow
+        // side, a white catch of light, snow powder at the foot), three below and one on top, a little different each time
         const p = new Pix(16, 20);
-        ball(p, 1, 8, 14, 12, '#ffffff', '#eef4ff', '#b8cdeb');
-        ball(p, 3, 1, 10, 9, '#ffffff', '#f4f8ff', '#c3d5ef');
-        p.rect(3, 8, 10, 2, i % 2 ? '#ec3d5f' : '#3d86f0');
-        p.set(6, 4, K); p.set(9, 4, K);
-        p.set(7, 6, '#ff8c2e'); p.set(8, 6, '#ff8c2e');
+        const sb = (x, y, d) => ball(p, x, y, d, d, '#ffffff', '#e8f2ff', '#a8c4e8', 0.18);
+        sb(0, 10, 8); sb(8, 10, 8); sb(4, 11, 8);
+        sb(i === 1 ? 3 : 4, 4, 8);
+        if (i === 2) sb(9, 5, 6);
+        for (const [x, y] of [[1, 18], [6, 19], [11, 18], [14, 17]]) { p.set(x, y, '#d8e8fa'); p.set(x + 1, y, '#ffffff'); }
         return p.outlined('#2c3b5c');
       },
       wallTop(i) { // snow falling out of a blue sky onto a line of little pines
@@ -2097,12 +2105,18 @@
     },
     candy: {
       name: '糖果城', bg: '#4a1f3a',
-      floor(i) { // sugar cubes, as in the original: white blocks with a soft seam and a sprinkle now and then
+      floor(i) {
+        // sugar cubes, as in the original — and after the references (ドット絵 角砂糖): each cube's face is grainy, a
+        // scatter of brighter and duller crystals, lit on its top and left edges with a soft seam, a sprinkle now and then
         const p = new Pix(16, 16);
         p.rect(0, 0, 16, 16, i ? '#f0f0f6' : '#fafaff');
+        for (let n = 0; n < 14; n++) {
+          const x = 1 + Math.floor(hash(n, i, 71) * 13), y = 1 + Math.floor(hash(n, i, 72) * 13);
+          p.set(x, y, hash(n, i, 73) > 0.5 ? '#ffffff' : (i ? '#e2e2ec' : '#ececf4'));
+        }
         p.hline(0, 0, 16, '#ffffff'); p.vline(0, 0, 16, '#ffffff');
-        p.hline(0, 15, 16, '#d6d6e2'); p.vline(15, 0, 16, '#d6d6e2');
-        p.hline(1, 14, 14, '#e8e8f0');
+        p.hline(0, 15, 16, '#d0d0de'); p.vline(15, 0, 16, '#d0d0de');
+        p.hline(1, 14, 14, '#e4e4ee'); p.vline(14, 1, 13, '#e4e4ee');
         const sp = ['#ec3d5f', '#3d86f0', '#ffd23f', '#4cb84c'];
         if (hash(i, 3, 41) > 0.45) {
           const x = Math.floor(hash(1, i, 41) * 10) + 3, y = Math.floor(hash(2, i, 42) * 10) + 3;
@@ -2264,16 +2278,21 @@
         ball(p, 2, 9, 12, 10, '#8d86a8', '#4a3d66', '#1c1526'); ball(p, 6, 12, 4, 4, null, '#ffd23f', null);
         return p.outlined(K);
       },
-      soft(i) { // a frothy mug, the toy box's own prize, handle out to one side
+      soft(i) {
+        // stacked wooden building blocks (defined: what lies in a toy box; looked up: ドット絵 積み木 — a cube, a triangle
+        // roof and a cylinder in primary colours, each lit on its top and left, the grain of the wood showing)
         const p = new Pix(16, 20);
-        p.rect(2, 6, 10, 13, '#ffc53a');
-        p.rect(3, 6, 8, 13, '#ffd76a'); p.vline(3, 7, 11, '#fff0b0');
-        for (let n = 0; n < 4; n++) p.set(5 + ((n * 3 + i) % 6), 10 + n * 2, '#ffe9a8');
-        p.rect(12, 9, 3, 6, '#f0b224'); p.rect(13, 10, 1, 4, '#ffe9a8');
-        p.rect(1, 3, 12, 4, '#ffffff');
-        ball(p, 1, 1, 6, 5, '#ffffff', '#f4f4fc', '#dcdce8');
-        ball(p, 6, 0, 7, 5, '#ffffff', '#f8f8ff', '#dcdce8');
-        p.hline(2, 18, 10, '#c88a00');
+        const cols = [['#3d86f0', '#6aa8ff', '#1f5ab0'], ['#4cb84c', '#7ad87a', '#2c7a33'], ['#ec3d5f', '#ff7a94', '#a51f40']];
+        const [M, L, D] = cols[i % 3];
+        const [M2, L2, D2] = cols[(i + 1) % 3];
+        // the cube at the bottom
+        p.rect(1, 9, 14, 10, M); p.hline(1, 9, 14, L); p.vline(1, 10, 9, L); p.vline(14, 10, 9, D); p.hline(1, 18, 14, D);
+        p.rect(4, 12, 8, 4, mix(M, '#ffffff', 0.25)); p.hline(4, 12, 8, mix(M, '#ffffff', 0.45));
+        // a yellow triangle roof
+        for (let j = 0; j < 6; j++) p.hline(7 - j, 3 + j, 2 + j * 2, j < 2 ? '#fff0a0' : '#ffd23f');
+        for (let j = 0; j < 6; j++) p.set(8 + j, 3 + j, '#e09a14');
+        // a small cylinder leaning beside it
+        p.rect(11, 4, 4, 5, M2); p.hline(11, 4, 4, L2); p.vline(14, 5, 4, D2);
         return p.outlined(K);
       },
       wallTop(i) { // a wall of amps, as the original stacks them behind its stage
@@ -2387,10 +2406,17 @@
     cafe: {
       name: '女僕咖啡廳', bg: '#2b1b30',
       floor(i) {
+        // a café floor (looked up: pixel café tilesets): checkered tiles — here the maid café's pink and cream — each
+        // tile glazed, a light streak across its top-left and a grout line on its lower and right edges
         const p = new Pix(16, 16);
-        p.rect(0, 0, 16, 16, i ? '#eee2fb' : '#fff7fa');
-        p.hline(0, 15, 16, i ? '#ddd0ee' : '#f3e6ee');
-        if (i) { p.set(7, 7, '#ffffff'); p.set(8, 7, '#ffffff'); p.set(7, 8, '#ffffff'); p.set(8, 8, '#ffffff'); }
+        const tiles = i ? ['#ffd6e4', '#fff7fa'] : ['#fff7fa', '#ffd6e4'];
+        for (let ty = 0; ty < 2; ty++) for (let tx = 0; tx < 2; tx++) {
+          const col = tiles[(tx + ty) % 2];
+          const x0 = tx * 8, y0 = ty * 8;
+          p.rect(x0, y0, 8, 8, col);
+          p.hline(x0, y0 + 7, 8, mix(col, '#b07890', 0.25)); p.vline(x0 + 7, y0, 8, mix(col, '#b07890', 0.25));
+          p.hline(x0 + 1, y0 + 1, 3, mix(col, '#ffffff', 0.6)); p.set(x0 + 1, y0 + 2, mix(col, '#ffffff', 0.6));
+        }
         return p;
       },
       hard() { // pink column with gold trim
