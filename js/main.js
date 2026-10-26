@@ -79,6 +79,36 @@
     });
   }
 
+  // Download as an app: where the browser offers an install (Chrome, Edge, Android) the button shows its install
+  // prompt; on iPhone and iPad, where only Safari's Share menu can add it, it explains that. Once installed, or when
+  // already running as the app, there is no button. The service worker (site/sw.js, written by tools/build-site.js)
+  // keeps the game playable offline; it is registered only on the website, which carries the manifest.
+  function setupInstall() {
+    const btn = document.getElementById('install');
+    const mq = (q) => window.matchMedia && window.matchMedia(q).matches;
+    const asApp = mq('(display-mode: fullscreen)') || mq('(display-mode: standalone)') || navigator.standalone;
+    const onSite = !!document.querySelector('link[rel="manifest"]');
+    if (onSite && 'serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+    if (!btn || asApp || !onSite) return;
+    let deferred = null;
+    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; btn.classList.add('show'); });
+    window.addEventListener('appinstalled', () => { deferred = null; btn.classList.remove('show'); toast(G.t('安裝好了！之後可以從主畫面或應用程式清單打開，沒有網路也能玩。')); });
+    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (ios) btn.classList.add('show');
+    btn.addEventListener('click', () => {
+      E.audio.unlock();
+      if (deferred) {
+        deferred.prompt();
+        deferred.userChoice.then(() => { deferred = null; btn.classList.remove('show'); }).catch(() => {});
+      } else if (ios) {
+        toast(G.t('iPhone / iPad：點下方的「分享」→「加入主畫面」，就會變成主畫面上的 App，沒有網路也能玩。'));
+      }
+      E.canvas.focus();
+    });
+  }
+
   // sideways play: some browsers (in-app ones especially) keep a phone upright, so the game can turn itself instead.
   // The choice is remembered; really turning the phone to landscape drops it.
   function setupRotate() {
@@ -114,6 +144,7 @@
     G.initSave();
     setupTouch();
     setupFullscreen();
+    setupInstall();
     setupRotate();
     canvas.addEventListener('pointerdown', () => { canvas.focus(); E.audio.unlock(); E.input.tapped = true; });
     E.go(G.SCENES.title, null, true);

@@ -334,6 +334,9 @@
 
     // ---- page (outside the canvas)
     '全螢幕': ['全画面', 'Fullscreen'],
+    '下載 App': ['アプリをダウンロード', 'Download app'],
+    '安裝好了！之後可以從主畫面或應用程式清單打開，沒有網路也能玩。': ['インストールしました！ホーム画面やアプリ一覧から開けます。オフラインでも遊べます。', 'Installed! Open it from your home screen or app list — it plays offline too.'],
+    'iPhone / iPad：點下方的「分享」→「加入主畫面」，就會變成主畫面上的 App，沒有網路也能玩。': ['iPhone / iPad：下の「共有」→「ホーム画面に追加」でホーム画面のアプリになり、オフラインでも遊べます。', 'iPhone / iPad: tap Share → Add to Home Screen to get it as an app on your home screen; it plays offline too.'],
     '橫向遊玩': ['横向きで遊ぶ', 'Play sideways'],
     '無法切換成全螢幕。': ['全画面にできませんでした。', 'Couldn\'t switch to fullscreen.'],
     '這個瀏覽器不支援全螢幕。iPhone 請點「分享」→「加入主畫面」，從主畫面打開就能全螢幕遊玩。': ['このブラウザは全画面に対応していません。iPhoneは「共有」→「ホーム画面に追加」から開くと全画面で遊べます。', 'This browser can\'t go fullscreen. On iPhone, tap Share → Add to Home Screen, then open the game from the home screen.'],

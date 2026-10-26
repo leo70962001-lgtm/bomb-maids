@@ -217,6 +217,29 @@
     touch-action: manipulation;
   }
   #fullscreen:hover { background: rgba(255, 248, 252, 0.22); }
+  /* download the game as an app (home-screen install): shown only where the browser can install it, or on iPhone */
+  #install {
+    position: fixed;
+    top: calc(8px + env(safe-area-inset-top));
+    left: calc(8px + env(safe-area-inset-left));
+    z-index: 5;
+    height: 42px;
+    padding: 0 12px 0 10px;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    border: 0;
+    border-radius: 8px;
+    color: var(--lace);
+    background: rgba(255, 159, 187, 0.3);
+    font: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  #install.show { display: flex; }
+  #install:hover { background: rgba(255, 159, 187, 0.45); }
+  #install:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--gold); }
   /* play sideways: a phone held upright whose browser will not turn can turn the game (body.rot) instead */
   #rotate {
     position: fixed;
@@ -310,6 +333,10 @@
 <button id="fullscreen" type="button" data-i18n-label="全螢幕" aria-label="全螢幕">
   <svg class="enter" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 9V3h6M15 3h6v6M21 15v6h-6M9 21H3v-6" fill="none" stroke="currentColor" stroke-width="2.5"/></svg>
   <svg class="exit" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M9 3v6H3M21 9h-6V3M15 21v-6h6M3 15h6v6" fill="none" stroke="currentColor" stroke-width="2.5"/></svg>
+</button>
+<button id="install" type="button" data-i18n-label="下載 App" aria-label="下載 App">
+  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 19h16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <span data-i18n="下載 App">下載 App</span>
 </button>
 <button id="rotate" type="button" data-i18n-label="橫向遊玩" aria-label="橫向遊玩">
   <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="3" y="7" width="18" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M8 3.5h5.5a4 4 0 0 1 4 4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 5.5l2 2.2 2.2-2" fill="none" stroke="currentColor" stroke-width="2"/></svg>
